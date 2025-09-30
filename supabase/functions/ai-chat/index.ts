@@ -13,67 +13,76 @@ serve(async (req) => {
 
   try {
     const { message } = await req.json();
-    console.log('Received message:', message);
-
-    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
-    if (!openRouterApiKey) {
-      console.error('OPENROUTER_API_KEY not configured');
-      return new Response(
-        JSON.stringify({ error: 'API key not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    
+    if (!message) {
+      throw new Error('Message is required');
     }
 
-    console.log('Calling OpenRouter API with DeepSeek model...');
+    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+    
+    if (!openRouterApiKey) {
+      console.error('OPENROUTER_API_KEY is not configured');
+      throw new Error('API key not configured');
+    }
+
+    console.log('Sending request to OpenRouter with DeepSeek model');
+
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openRouterApiKey}`,
-        'Content-Type': 'application/json',
         'HTTP-Referer': 'https://pdlugfyvocudumhdescp.supabase.co',
-        'X-Title': 'AI Learning Platform',
+        'X-Title': 'Model Egdu AI Learning Platform',
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model: 'deepseek/deepseek-chat-v3.1:free',
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful AI teacher assistant. You support Afaan Oromoo language and can help students with their studies in any language. Be encouraging, clear, and educational in your responses.'
+            content: 'You are a helpful AI teacher assistant for Ethiopian students. You support multiple languages including Afaan Oromoo, English, and other Ethiopian languages. Provide clear, educational responses to help students learn about Herrega, Saayinsii, and other subjects. Be patient, encouraging, and explain concepts in a way that is easy to understand. When responding in Afaan Oromoo, use proper grammar and be culturally appropriate.'
           },
           {
             role: 'user',
             content: message
           }
         ],
-        temperature: 0.7,
-        max_tokens: 1000,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenRouter API error:', response.status, errorText);
-      return new Response(
-        JSON.stringify({ error: 'AI service error', details: errorText }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw new Error(`API request failed: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('OpenRouter response received');
+    console.log('Received response from OpenRouter');
     
-    const aiResponse = data.choices?.[0]?.message?.content || 'I apologize, but I could not generate a response.';
+    const aiResponse = data.choices?.[0]?.message?.content;
+    
+    if (!aiResponse) {
+      throw new Error('No response content from AI');
+    }
 
     return new Response(
       JSON.stringify({ response: aiResponse }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
     );
 
   } catch (error) {
     console.error('Error in ai-chat function:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Unknown error occurred' 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      }
     );
   }
 });
