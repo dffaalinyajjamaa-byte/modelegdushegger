@@ -62,41 +62,33 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   };
 
   const generateAIResponse = async (userMessage: string, selectedLanguage: string) => {
-    // Simulate AI response based on language and content
-    const responses = {
-      en: {
-        greeting: "Hello! I'm your AI teacher. How can I help you learn today?",
-        herrega: "Herrega is a beautiful subject! Let me help you understand the concepts better. Based on your question, I recommend watching the Herrega Grade 8 video lessons available in your content library.",
-        saayinsii: "Science (Saayinsii) is fascinating! For Grade 8 Saayinsii, we have excellent video lessons that explain complex concepts in simple terms. Would you like me to guide you to specific topics?",
-        task: "I can help you manage your study tasks! Try creating specific, measurable goals like 'Complete Chapter 3 exercises' or 'Review Herrega Unit 2 notes'.",
-        motivation: "You're doing amazing! Remember, every expert was once a beginner. Keep learning, keep growing! 🌟",
-        default: "That's a great question! I'm here to help you learn. You can ask me about Herrega, Saayinsii, study tips, or anything related to your education. I can also recommend video lessons and study materials from your content library."
-      },
-      om: {
-        greeting: "Akkam! Ani barsiisaa AI kee ti. Har'a barnoota kee keessatti akkamitti si gargaaruu danda'a?",
-        herrega: "Herrega barnoota bareedduu dha! Yaad-rimee kana caalaatti akka hubattu si gargaaruu danda'a. Gaaffii kee irratti hundaa'uudhaan, viidiyoo barnootaa Herrega Kutaa 8 mana kitaaba qabiyyee kee keessatti argamu ilaaluu si gorsa.",
-        saayinsii: "Saayinsii (Science) nama hawwata! Saayinsii Kutaa 8tiif, viidiyoo barnoota gaarii yaad-rimee walxaxaa karaa salphaadhaan ibsan qabna. Mata duree addaa tokkotti si qajeelchuu barbaaddaa?",
-        task: "Hojiiwwan barnoota kee bulchuuf si gargaaruu danda'a! Galma addaa fi tilmaamamuu uumuu yaali akka 'Shoora 3 shaakala xumuruun' ykn 'Herrega Yuunitii 2 yaadannoo gamaaggamuu'.",
-        motivation: "Ati hojii gaarii hojjechaa jirta! Yaadadhu, ogeessi hundi jalqaba barataa turaniiru. Baruu itti fufi, guddachuu itti fufi! 🌟",
-        default: "Gaaffiin kee gaarii dha! Akka bartu si gargaaruuf as jira. Waa'ee Herrega, Saayinsii, gorsa barnoota, ykn wanti barnoota keetiin walqabatu tokko illee na gaafachuu dandeessa. Akkasumas viidiyoo barnoota fi meeshaalee barnoota mana kitaaba qabiyyee keetii gorsuun danda'a."
+    try {
+      const languagePrefix = selectedLanguage === 'om' 
+        ? 'Please respond in Afaan Oromoo: ' 
+        : '';
+      
+      const response = await fetch(
+        'https://pdlugfyvocudumhdescp.supabase.co/functions/v1/ai-chat',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: languagePrefix + userMessage }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to get AI response');
       }
-    };
 
-    const langResponses = responses[selectedLanguage];
-    const lowerMessage = userMessage.toLowerCase();
-
-    if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('akkam')) {
-      return langResponses.greeting;
-    } else if (lowerMessage.includes('herrega')) {
-      return langResponses.herrega;
-    } else if (lowerMessage.includes('saayinsii') || lowerMessage.includes('science')) {
-      return langResponses.saayinsii;
-    } else if (lowerMessage.includes('task') || lowerMessage.includes('hojii')) {
-      return langResponses.task;
-    } else if (lowerMessage.includes('motivation') || lowerMessage.includes('encourage')) {
-      return langResponses.motivation;
-    } else {
-      return langResponses.default;
+      const data = await response.json();
+      return data.response || 'I apologize, but I could not generate a response.';
+    } catch (error) {
+      console.error('Error getting AI response:', error);
+      return selectedLanguage === 'en' 
+        ? 'I apologize, but I encountered an error. Please try again.'
+        : 'Dhiifama, dogongora tokkotu uumame. Maaloo irra deebii yaali.';
     }
   };
 
