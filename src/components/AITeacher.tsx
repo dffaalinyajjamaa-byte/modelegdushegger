@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { User } from '@supabase/supabase-js';
-import { Send, Bot, User as UserIcon, Sparkles } from 'lucide-react';
+import { Send, Bot, User as UserIcon, Sparkles, Plus, Image as ImageIcon, FileText } from 'lucide-react';
 
 interface AITeacherProps {
   user: User;
@@ -26,6 +26,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [language, setLanguage] = useState<'en' | 'om'>('en');
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [uploadedPDF, setUploadedPDF] = useState<File | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -92,16 +94,33 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
     }
   };
 
+  const handleNewChat = () => {
+    setMessages([]);
+    setMessage('');
+    setUploadedImage(null);
+    setUploadedPDF(null);
+  };
+
   const handleSendMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() && !uploadedImage && !uploadedPDF) return;
 
     setLoading(true);
     const userMessage = message;
     setMessage('');
 
     try {
+      let contextMessage = userMessage;
+      
+      // Add context for uploaded files
+      if (uploadedImage) {
+        contextMessage += ' [User uploaded an image]';
+      }
+      if (uploadedPDF) {
+        contextMessage += ' [User uploaded a PDF document]';
+      }
+
       // Generate AI response
-      const aiResponse = await generateAIResponse(userMessage, language);
+      const aiResponse = await generateAIResponse(contextMessage, language);
 
       // Save to database
       const { data, error } = await supabase
@@ -119,11 +138,17 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
 
       // Update local state
       setMessages(prev => [...prev, data]);
+      
+      // Clear uploaded files after sending
+      setUploadedImage(null);
+      setUploadedPDF(null);
 
       // Log activity
       onLogActivity('ai_chat', `Asked AI teacher: ${userMessage}`, {
         language,
-        response_length: aiResponse.length
+        response_length: aiResponse.length,
+        has_image: !!uploadedImage,
+        has_pdf: !!uploadedPDF
       });
 
     } catch (error) {
@@ -155,6 +180,14 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleNewChat}
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                New Chat
+              </Button>
               <Button
                 variant={language === 'en' ? 'default' : 'outline'}
                 size="sm"
@@ -239,8 +272,58 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
               </div>
             </ScrollArea>
             
+            {/* File Upload Indicators */}
+            {(uploadedImage || uploadedPDF) && (
+              <div className="flex gap-2">
+                {uploadedImage && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <ImageIcon className="w-3 h-3" />
+                    Image attached
+                  </Badge>
+                )}
+                {uploadedPDF && (
+                  <Badge variant="secondary" className="flex items-center gap-1">
+                    <FileText className="w-3 h-3" />
+                    PDF attached
+                  </Badge>
+                )}
+              </div>
+            )}
+            
             {/* Message Input */}
             <div className="flex gap-2">
+              <div className="flex gap-1">
+                <label htmlFor="image-upload">
+                  <Button type="button" variant="outline" size="icon" disabled={loading} asChild>
+                    <span className="cursor-pointer">
+                      <ImageIcon className="w-4 h-4" />
+                    </span>
+                  </Button>
+                </label>
+                <input
+                  id="image-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => setUploadedImage(e.target.files?.[0] || null)}
+                />
+                
+                <label htmlFor="pdf-upload">
+                  <Button type="button" variant="outline" size="icon" disabled={loading} asChild>
+                    <span className="cursor-pointer">
+                      <FileText className="w-4 h-4" />
+                    </span>
+                  </Button>
+                </label>
+                <input
+                  id="pdf-upload"
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={(e) => setUploadedPDF(e.target.files?.[0] || null)}
+                />
+              </div>
+              
               <Input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -255,7 +338,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
               />
               <Button 
                 onClick={handleSendMessage} 
-                disabled={loading || !message.trim()}
+                disabled={loading || (!message.trim() && !uploadedImage && !uploadedPDF)}
                 variant="primary"
               >
                 <Send className="w-4 h-4" />

@@ -45,7 +45,7 @@ void main() {
 }
 `;
 
-interface IridescenceProps extends React.HTMLAttributes<HTMLDivElement> {
+interface IridescenceProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'color'> {
   color?: number[];
   speed?: number;
   amplitude?: number;

@@ -4,13 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User, Session } from '@supabase/supabase-js';
-import { BookOpen, MessageCircle, CheckSquare, Video, FileText, LogOut, Sparkles } from 'lucide-react';
+import { BookOpen, MessageCircle, CheckSquare, Video, FileText, LogOut, Sparkles, Settings as SettingsIcon } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { useToast } from '@/hooks/use-toast';
 import AITeacher from './AITeacher';
 import TaskManager from './TaskManager';
 import VideoViewer from './VideoViewer';
 import PDFViewer from './PDFViewer';
+import Settings from './Settings';
+import DigitalBooksLibrary from './DigitalBooksLibrary';
+import VideoLessonsLibrary from './VideoLessonsLibrary';
+import Hyperspeed from './Hyperspeed';
 
 interface DashboardProps {
   user: User;
@@ -36,7 +40,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'video' | 'pdf';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'video' | 'pdf' | 'settings' | 'books' | 'videos';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -117,6 +121,24 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         return <AITeacher user={user} onLogActivity={logActivity} />;
       case 'tasks':
         return <TaskManager user={user} onLogActivity={logActivity} />;
+      case 'settings':
+        return <Settings user={user} onBack={() => setActiveView('dashboard')} />;
+      case 'books':
+        return (
+          <DigitalBooksLibrary
+            user={user}
+            onBack={() => setActiveView('dashboard')}
+            onBookClick={handleContentClick}
+          />
+        );
+      case 'videos':
+        return (
+          <VideoLessonsLibrary
+            user={user}
+            onBack={() => setActiveView('dashboard')}
+            onVideoClick={handleContentClick}
+          />
+        );
       case 'video':
         return selectedContent ? (
           <VideoViewer 
@@ -183,23 +205,29 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
           </CardHeader>
         </Card>
 
-        <Card className="cursor-pointer hover-glow transition-smooth hover-scale">
+        <Card 
+          className="cursor-pointer hover-glow transition-smooth hover-scale"
+          onClick={() => setActiveView('videos')}
+        >
           <CardHeader className="text-center pb-4">
             <div className="mx-auto w-16 h-16 gradient-accent rounded-full flex items-center justify-center mb-4">
               <Video className="w-8 h-8 text-white" />
             </div>
             <CardTitle>Video Lessons</CardTitle>
-            <CardDescription>Watch educational videos</CardDescription>
+            <CardDescription>Watch educational videos by subject</CardDescription>
           </CardHeader>
         </Card>
 
-        <Card className="cursor-pointer hover-glow transition-smooth hover-scale">
+        <Card 
+          className="cursor-pointer hover-glow transition-smooth hover-scale"
+          onClick={() => setActiveView('books')}
+        >
           <CardHeader className="text-center pb-4">
             <div className="mx-auto w-16 h-16 gradient-hero rounded-full flex items-center justify-center mb-4">
-              <FileText className="w-8 h-8 text-white" />
+              <BookOpen className="w-8 h-8 text-white" />
             </div>
-            <CardTitle>PDF Documents</CardTitle>
-            <CardDescription>Access study materials</CardDescription>
+            <CardTitle>Digital Books</CardTitle>
+            <CardDescription>Browse books by subject</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -270,7 +298,10 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative">
+      {/* Animated Background */}
+      <Hyperspeed />
+      
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -293,6 +324,14 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
                 Dashboard
               </Button>
             )}
+            <Button
+              variant="outline"
+              onClick={() => setActiveView('settings')}
+              className="flex items-center gap-2"
+            >
+              <SettingsIcon className="w-4 h-4" />
+              Settings
+            </Button>
             <Button
               variant="outline"
               onClick={handleSignOut}

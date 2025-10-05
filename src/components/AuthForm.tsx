@@ -19,7 +19,21 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +53,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
           description: "Successfully logged in to Model Egdu learning platform.",
         });
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data: authData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -52,6 +66,11 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
         });
         
         if (error) throw error;
+
+        // TODO: Upload avatar when types are updated
+        // if (avatarFile && authData.user) {
+        //   Upload to storage and update profile
+        // }
         
         toast({
           title: "Account Created Successfully!",
@@ -88,18 +107,40 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Enter your full name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required={!isLogin}
-                  className="h-11"
-                />
-              </div>
+              <>
+                <div className="flex flex-col items-center gap-2 mb-4">
+                  <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-2xl text-muted-foreground">📷</span>
+                    )}
+                  </div>
+                  <Label htmlFor="avatar" className="cursor-pointer text-primary hover:underline">
+                    Upload Photo
+                  </Label>
+                  <Input
+                    id="avatar"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required={!isLogin}
+                    className="h-11"
+                  />
+                </div>
+              </>
             )}
             
             <div className="space-y-2">
