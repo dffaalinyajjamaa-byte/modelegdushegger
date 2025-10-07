@@ -17,6 +17,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [grade, setGrade] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -60,7 +61,8 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
             emailRedirectTo: `${window.location.origin}/`,
             data: {
               full_name: fullName,
-              role: 'student'
+              role: 'student',
+              grade: grade
             }
           }
         });
@@ -136,6 +138,19 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                     placeholder="Enter your full name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
+                    required={!isLogin}
+                    className="h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="grade">Grade Level</Label>
+                  <Input
+                    id="grade"
+                    type="text"
+                    placeholder="Enter your grade (e.g., Grade 9)"
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value)}
                     required={!isLogin}
                     className="h-11"
                   />

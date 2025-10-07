@@ -15,6 +15,9 @@ import Settings from './Settings';
 import DigitalBooksLibrary from './DigitalBooksLibrary';
 import VideoLessonsLibrary from './VideoLessonsLibrary';
 import Hyperspeed from './Hyperspeed';
+import Messenger from './Messenger';
+import ExtraExam from './ExtraExam';
+import AboutUs from './AboutUs';
 
 interface DashboardProps {
   user: User;
@@ -40,7 +43,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'video' | 'pdf' | 'settings' | 'books' | 'videos';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'video' | 'pdf' | 'settings' | 'books' | 'videos' | 'messenger' | 'exams';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -123,6 +126,10 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         return <TaskManager user={user} onLogActivity={logActivity} />;
       case 'settings':
         return <Settings user={user} onBack={() => setActiveView('dashboard')} />;
+      case 'messenger':
+        return <Messenger user={user} onBack={() => setActiveView('dashboard')} />;
+      case 'exams':
+        return <ExtraExam user={user} onBack={() => setActiveView('dashboard')} />;
       case 'books':
         return (
           <DigitalBooksLibrary
@@ -178,17 +185,16 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
       </div>
 
       {/* Navigation Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <Card 
           className="cursor-pointer hover-glow transition-smooth hover-scale"
           onClick={() => setActiveView('ai-teacher')}
         >
-          <CardHeader className="text-center pb-4">
-            <div className="mx-auto w-16 h-16 gradient-primary rounded-full flex items-center justify-center mb-4">
-              <MessageCircle className="w-8 h-8 text-white" />
+          <CardHeader className="text-center pb-4 p-4">
+            <div className="mx-auto w-12 h-12 gradient-primary rounded-full flex items-center justify-center mb-2">
+              <MessageCircle className="w-6 h-6 text-white" />
             </div>
-            <CardTitle>AI Teacher</CardTitle>
-            <CardDescription>Chat with your AI learning assistant</CardDescription>
+            <CardTitle className="text-sm">AI Teacher</CardTitle>
           </CardHeader>
         </Card>
 
@@ -196,25 +202,11 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
           className="cursor-pointer hover-glow transition-smooth hover-scale"
           onClick={() => setActiveView('tasks')}
         >
-          <CardHeader className="text-center pb-4">
-            <div className="mx-auto w-16 h-16 gradient-secondary rounded-full flex items-center justify-center mb-4">
-              <CheckSquare className="w-8 h-8 text-white" />
+          <CardHeader className="text-center pb-4 p-4">
+            <div className="mx-auto w-12 h-12 gradient-secondary rounded-full flex items-center justify-center mb-2">
+              <CheckSquare className="w-6 h-6 text-white" />
             </div>
-            <CardTitle>My Tasks</CardTitle>
-            <CardDescription>Manage your study tasks and progress</CardDescription>
-          </CardHeader>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover-glow transition-smooth hover-scale"
-          onClick={() => setActiveView('videos')}
-        >
-          <CardHeader className="text-center pb-4">
-            <div className="mx-auto w-16 h-16 gradient-accent rounded-full flex items-center justify-center mb-4">
-              <Video className="w-8 h-8 text-white" />
-            </div>
-            <CardTitle>Video Lessons</CardTitle>
-            <CardDescription>Watch educational videos by subject</CardDescription>
+            <CardTitle className="text-sm">Tasks</CardTitle>
           </CardHeader>
         </Card>
 
@@ -222,103 +214,77 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
           className="cursor-pointer hover-glow transition-smooth hover-scale"
           onClick={() => setActiveView('books')}
         >
-          <CardHeader className="text-center pb-4">
-            <div className="mx-auto w-16 h-16 gradient-hero rounded-full flex items-center justify-center mb-4">
-              <BookOpen className="w-8 h-8 text-white" />
+          <CardHeader className="text-center pb-4 p-4">
+            <div className="mx-auto w-12 h-12 gradient-hero rounded-full flex items-center justify-center mb-2">
+              <BookOpen className="w-6 h-6 text-white" />
             </div>
-            <CardTitle>Digital Books</CardTitle>
-            <CardDescription>Browse books by subject</CardDescription>
+            <CardTitle className="text-sm">Books</CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover-glow transition-smooth hover-scale"
+          onClick={() => setActiveView('exams')}
+        >
+          <CardHeader className="text-center pb-4 p-4">
+            <div className="mx-auto w-12 h-12 gradient-accent rounded-full flex items-center justify-center mb-2">
+              <FileText className="w-6 h-6 text-white" />
+            </div>
+            <CardTitle className="text-sm">Exams</CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover-glow transition-smooth hover-scale"
+          onClick={() => setActiveView('messenger')}
+        >
+          <CardHeader className="text-center pb-4 p-4">
+            <div className="mx-auto w-12 h-12 gradient-secondary rounded-full flex items-center justify-center mb-2">
+              <MessageCircle className="w-6 h-6 text-white" />
+            </div>
+            <CardTitle className="text-sm">Chat</CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover-glow transition-smooth hover-scale"
+          onClick={() => setActiveView('videos')}
+        >
+          <CardHeader className="text-center pb-4 p-4">
+            <div className="mx-auto w-12 h-12 gradient-primary rounded-full flex items-center justify-center mb-2">
+              <Video className="w-6 h-6 text-white" />
+            </div>
+            <CardTitle className="text-sm">Videos</CardTitle>
           </CardHeader>
         </Card>
       </div>
 
-      {/* Content Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Video Lessons */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Video className="w-5 h-5 text-primary" />
-              Video Lessons
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {content.filter(item => item.type === 'video').map((item) => (
-              <div 
-                key={item.id}
-                className="flex items-center justify-between p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-smooth"
-                onClick={() => handleContentClick(item)}
-              >
-                <div>
-                  <h4 className="font-medium">{item.title}</h4>
-                  <div className="flex gap-2 mt-1">
-                    <Badge variant="secondary">{item.subject}</Badge>
-                    <Badge variant="outline">{item.grade_level}</Badge>
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm">
-                  Watch
-                </Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        {/* PDF Documents */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-primary" />
-              PDF Documents
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {content.filter(item => item.type === 'pdf').map((item) => (
-              <div 
-                key={item.id}
-                className="flex items-center justify-between p-3 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 transition-smooth"
-                onClick={() => handleContentClick(item)}
-              >
-                <div>
-                  <h4 className="font-medium">{item.title}</h4>
-                  <div className="flex gap-2 mt-1">
-                    <Badge variant="secondary">{item.subject}</Badge>
-                    <Badge variant="outline">{item.grade_level}</Badge>
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm">
-                  Read
-                </Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative flex flex-col">
       {/* Animated Background */}
       <Hyperspeed />
       
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-md border-b shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="Model Egdu" className="w-10 h-10 rounded-full" />
+        <div className="max-w-7xl mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2 md:gap-3">
+            <img src={logo} alt="Model Egdu" className="w-8 h-8 md:w-10 md:h-10 rounded-full" />
             <div>
-              <h1 className="text-xl font-bold gradient-primary bg-clip-text text-transparent">
+              <h1 className="text-lg md:text-xl font-bold gradient-primary bg-clip-text text-transparent">
                 Model Egdu
               </h1>
-              <p className="text-sm text-muted-foreground">AI-Powered Learning</p>
+              <p className="text-xs text-muted-foreground hidden md:block">AI-Powered Learning</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             {activeView !== 'dashboard' && (
               <Button 
-                variant="outline" 
+                variant="outline"
+                size="sm"
                 onClick={() => setActiveView('dashboard')}
               >
                 Dashboard
@@ -326,28 +292,29 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
             )}
             <Button
               variant="outline"
+              size="sm"
               onClick={() => setActiveView('settings')}
-              className="flex items-center gap-2"
             >
               <SettingsIcon className="w-4 h-4" />
-              Settings
             </Button>
             <Button
               variant="outline"
+              size="sm"
               onClick={handleSignOut}
-              className="flex items-center gap-2"
             >
               <LogOut className="w-4 h-4" />
-              Sign Out
             </Button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-4 md:py-8">
         {renderActiveView()}
       </main>
+
+      {/* About Us Footer */}
+      {activeView === 'dashboard' && <AboutUs />}
     </div>
   );
 }
