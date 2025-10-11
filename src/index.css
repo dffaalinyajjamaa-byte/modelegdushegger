@@ -9,10 +9,10 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* Model Egdu Learning Platform Design System */
-    /* Orange, Pink, Purple color scheme with beautiful gradients */
+    /* Soft neon glow with pastel orange, pink, and purple gradients */
     
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 240 20% 99%;
+    --foreground: 240 10% 10%;
 
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -20,20 +20,20 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    /* Orange primary theme */
-    --primary: 20 95% 55%;
+    /* Orange (#FF7A00) - Soft neon glow */
+    --primary: 25 100% 50%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 25 95% 65%;
+    --primary-glow: 25 100% 60%;
     
-    /* Pink secondary theme */
-    --secondary: 320 85% 65%;
+    /* Pink (#FF3DAE) - Soft neon glow */
+    --secondary: 326 100% 62%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-glow: 325 85% 75%;
+    --secondary-glow: 326 100% 70%;
     
-    /* Purple accent theme */
-    --accent: 270 75% 65%;
+    /* Purple (#8A2BE2) - Soft neon glow */
+    --accent: 271 76% 53%;
     --accent-foreground: 0 0% 100%;
-    --accent-glow: 275 75% 75%;
+    --accent-glow: 271 76% 65%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
@@ -200,5 +200,44 @@ All colors MUST be HSL.
   
   .hover-scale:hover {
     transform: scale(1.05);
+  }
+  
+  /* Smooth parallax and scroll animations */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  @keyframes wave {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(10px); }
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px hsl(25 100% 50% / 0.3); }
+    50% { box-shadow: 0 0 40px hsl(25 100% 50% / 0.6); }
+  }
+  
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+  
+  .animate-wave {
+    animation: wave 4s ease-in-out infinite;
+  }
+  
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  /* Mobile optimizations */
+  @media (max-width: 768px) {
+    .mobile-card {
+      @apply rounded-2xl shadow-lg;
+    }
+    
+    .mobile-header {
+      @apply sticky top-0 z-50 backdrop-blur-xl bg-background/80;
+    }
   }
 }

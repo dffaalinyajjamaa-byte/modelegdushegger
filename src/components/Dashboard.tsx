@@ -7,7 +7,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { BookOpen, MessageCircle, CheckSquare, Video, FileText, LogOut, Sparkles, Settings as SettingsIcon } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { useToast } from '@/hooks/use-toast';
-import AITeacher from './AITeacher';
+import AITeacherStreaming from './AITeacherStreaming';
 import TaskManager from './TaskManager';
 import VideoViewer from './VideoViewer';
 import PDFViewer from './PDFViewer';
@@ -15,7 +15,7 @@ import Settings from './Settings';
 import DigitalBooksLibrary from './DigitalBooksLibrary';
 import VideoLessonsLibrary from './VideoLessonsLibrary';
 import Hyperspeed from './Hyperspeed';
-import Messenger from './Messenger';
+import MessengerTelegram from './MessengerTelegram';
 import ExtraExam from './ExtraExam';
 import AboutUs from './AboutUs';
 
@@ -121,13 +121,13 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
   const renderActiveView = () => {
     switch (activeView) {
       case 'ai-teacher':
-        return <AITeacher user={user} onLogActivity={logActivity} />;
+        return <AITeacherStreaming user={user} onLogActivity={logActivity} />;
       case 'tasks':
         return <TaskManager user={user} onLogActivity={logActivity} />;
       case 'settings':
         return <Settings user={user} onBack={() => setActiveView('dashboard')} />;
       case 'messenger':
-        return <Messenger user={user} onBack={() => setActiveView('dashboard')} />;
+        return <MessengerTelegram user={user} onBack={() => setActiveView('dashboard')} />;
       case 'exams':
         return <ExtraExam user={user} onBack={() => setActiveView('dashboard')} />;
       case 'books':
