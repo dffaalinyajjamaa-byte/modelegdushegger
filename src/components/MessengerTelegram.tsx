@@ -222,6 +222,37 @@ export default function MessengerTelegram({ user, onBack }: MessengerProps) {
     }
   };
 
+  const handleFileUpload = async (file: File, type: 'image' | 'pdf' | 'audio' | 'file') => {
+    if (!selectedChat) return;
+
+    setLoading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const filePath = `${selectedChat.chat_id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      await sendMessage(type, publicUrl, file.name);
+    } catch (error: any) {
+      toast({
+        title: 'Upload failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const sendMessage = async (type: 'text' | 'pdf' | 'image' | 'audio' | 'file' = 'text', fileUrl?: string, fileName?: string) => {
     if (!selectedChat || (!newMessage.trim() && type === 'text')) return;
 
@@ -236,6 +267,7 @@ export default function MessengerTelegram({ user, onBack }: MessengerProps) {
           content: type === 'text' ? newMessage : null,
           file_url: fileUrl,
           file_name: fileName,
+          file_size: null,
           status: 'sent'
         });
 
@@ -247,6 +279,7 @@ export default function MessengerTelegram({ user, onBack }: MessengerProps) {
         .eq('chat_id', selectedChat.chat_id);
       
       setNewMessage('');
+      setTyping(false);
     } catch (error: any) {
       toast({
         title: 'Error sending message',
@@ -414,22 +447,23 @@ export default function MessengerTelegram({ user, onBack }: MessengerProps) {
                   }`}
                 >
                   {msg.type === 'text' && <p className="text-sm md:text-base whitespace-pre-wrap">{msg.content}</p>}
-                  {msg.type === 'image' && (
-                    <div className="flex items-center gap-2">
-                      <ImageIcon className="w-4 h-4" />
-                      <span className="text-sm">Image</span>
+                  {msg.type === 'image' && msg.file_url && (
+                    <div className="space-y-2">
+                      <img src={msg.file_url} alt="Shared image" className="rounded-lg max-w-full h-auto" />
+                      <span className="text-xs">{msg.file_name}</span>
                     </div>
                   )}
-                  {msg.type === 'pdf' && (
-                    <div className="flex items-center gap-2">
+                  {msg.type === 'pdf' && msg.file_url && (
+                    <a href={msg.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:underline">
                       <FileText className="w-4 h-4" />
                       <span className="text-sm">{msg.file_name || 'PDF Document'}</span>
-                    </div>
+                    </a>
                   )}
-                  {msg.type === 'audio' && (
+                  {msg.type === 'audio' && msg.file_url && (
                     <div className="flex items-center gap-2">
-                      <Mic className="w-4 h-4" />
-                      <span className="text-sm">Voice message</span>
+                      <audio controls className="max-w-full">
+                        <source src={msg.file_url} />
+                      </audio>
                     </div>
                   )}
                 </div>
@@ -446,19 +480,51 @@ export default function MessengerTelegram({ user, onBack }: MessengerProps) {
 
       <div className="border-t p-4">
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" className="rounded-full hover-scale">
-            <ImageIcon className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="icon" className="rounded-full hover-scale">
-            <FileText className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="icon" className="rounded-full hover-scale">
-            <Mic className="w-4 h-4" />
-          </Button>
+          <input
+            type="file"
+            id="image-upload-msg"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'image')}
+          />
+          <label htmlFor="image-upload-msg">
+            <Button variant="outline" size="icon" className="rounded-full hover-scale" type="button" disabled={loading}>
+              <ImageIcon className="w-4 h-4" />
+            </Button>
+          </label>
+          
+          <input
+            type="file"
+            id="pdf-upload-msg"
+            accept="application/pdf"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'pdf')}
+          />
+          <label htmlFor="pdf-upload-msg">
+            <Button variant="outline" size="icon" className="rounded-full hover-scale" type="button" disabled={loading}>
+              <FileText className="w-4 h-4" />
+            </Button>
+          </label>
+          
+          <input
+            type="file"
+            id="audio-upload-msg"
+            accept="audio/*"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], 'audio')}
+          />
+          <label htmlFor="audio-upload-msg">
+            <Button variant="outline" size="icon" className="rounded-full hover-scale" type="button" disabled={loading}>
+              <Mic className="w-4 h-4" />
+            </Button>
+          </label>
           
           <Input
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(e) => {
+              setNewMessage(e.target.value);
+              setTyping(e.target.value.length > 0);
+            }}
             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
             placeholder="Type a message..."
             disabled={loading}

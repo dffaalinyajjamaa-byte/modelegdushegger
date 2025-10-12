@@ -18,46 +18,45 @@ serve(async (req) => {
       throw new Error('Message is required');
     }
 
-    const openRouterApiKey = Deno.env.get('OPENROUTER_API_KEY');
+    const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
     
-    if (!openRouterApiKey) {
-      console.error('OPENROUTER_API_KEY is not configured');
+    if (!deepseekApiKey) {
+      console.error('DEEPSEEK_API_KEY is not configured');
       throw new Error('API key not configured');
     }
 
-    console.log('Sending request to OpenRouter with DeepSeek model');
+    console.log('Sending request to DeepSeek API');
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openRouterApiKey}`,
-        'HTTP-Referer': 'https://pdlugfyvocudumhdescp.supabase.co',
-        'X-Title': 'Model Egdu AI Learning Platform',
+        'Authorization': `Bearer ${deepseekApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'deepseek/deepseek-chat-v3.1:free',
+        model: 'deepseek-chat',
         messages: [
           {
             role: 'system',
-            content: 'You are a helpful AI teacher assistant for Ethiopian students. You support multiple languages including Afaan Oromoo, English, and other Ethiopian languages. Provide clear, educational responses to help students learn about Herrega, Saayinsii, and other subjects. Be patient, encouraging, and explain concepts in a way that is easy to understand. When responding in Afaan Oromoo, use proper grammar and be culturally appropriate.'
+            content: 'You are a helpful AI teacher assistant for Ethiopian students. You support multiple languages including Afaan Oromoo, English, and other Ethiopian languages. Provide clear, educational responses to help students learn about Math (Herrega), Science (Saayinsii), and other subjects. Be patient, encouraging, and explain concepts in a way that is easy to understand. When responding in Afaan Oromoo, use proper grammar and be culturally appropriate. Answer all questions in real-time with comprehensive, accurate information.'
           },
           {
             role: 'user',
             content: message
           }
         ],
+        stream: false
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenRouter API error:', response.status, errorText);
+      console.error('DeepSeek API error:', response.status, errorText);
       throw new Error(`API request failed: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('Received response from OpenRouter');
+    console.log('Received response from DeepSeek');
     
     const aiResponse = data.choices?.[0]?.message?.content;
     
