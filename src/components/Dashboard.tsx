@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User, Session } from '@supabase/supabase-js';
-import { BookOpen, MessageCircle, CheckSquare, Video, FileText, LogOut, Sparkles, Settings as SettingsIcon } from 'lucide-react';
+import { BookOpen, MessageCircle, CheckSquare, Video, FileText, LogOut, Sparkles, Settings as SettingsIcon, Brain, Heart, Network } from 'lucide-react';
 import logo from '@/assets/logo.png';
 import { useToast } from '@/hooks/use-toast';
 import AITeacherStreaming from './AITeacherStreaming';
@@ -18,6 +18,9 @@ import Hyperspeed from './Hyperspeed';
 import MessengerTelegram from './MessengerTelegram';
 import ExtraExam from './ExtraExam';
 import AboutUs from './AboutUs';
+import StudyCoach from './StudyCoach';
+import MoodBasedStudy from './MoodBasedStudy';
+import MindMapBuilder from './MindMapBuilder';
 
 interface DashboardProps {
   user: User;
@@ -43,7 +46,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'video' | 'pdf' | 'settings' | 'books' | 'videos' | 'messenger' | 'exams';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'video' | 'pdf' | 'settings' | 'books' | 'videos' | 'messenger' | 'exams' | 'study-coach' | 'mood' | 'mindmap';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -130,6 +133,12 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         return <MessengerTelegram user={user} onBack={() => setActiveView('dashboard')} />;
       case 'exams':
         return <ExtraExam user={user} onBack={() => setActiveView('dashboard')} />;
+      case 'study-coach':
+        return <StudyCoach user={user} onLogActivity={logActivity} />;
+      case 'mood':
+        return <MoodBasedStudy user={user} onLogActivity={logActivity} />;
+      case 'mindmap':
+        return <MindMapBuilder user={user} onLogActivity={logActivity} />;
       case 'books':
         return (
           <DigitalBooksLibrary
@@ -255,6 +264,42 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
               <Video className="w-6 h-6 text-white" />
             </div>
             <CardTitle className="text-sm">Videos</CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover-glow transition-smooth hover-scale"
+          onClick={() => setActiveView('study-coach')}
+        >
+          <CardHeader className="text-center pb-4 p-4">
+            <div className="mx-auto w-12 h-12 gradient-hero rounded-full flex items-center justify-center mb-2">
+              <Brain className="w-6 h-6 text-white" />
+            </div>
+            <CardTitle className="text-sm">Study Coach</CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover-glow transition-smooth hover-scale"
+          onClick={() => setActiveView('mood')}
+        >
+          <CardHeader className="text-center pb-4 p-4">
+            <div className="mx-auto w-12 h-12 gradient-accent rounded-full flex items-center justify-center mb-2">
+              <Heart className="w-6 h-6 text-white" />
+            </div>
+            <CardTitle className="text-sm">Study Mood</CardTitle>
+          </CardHeader>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover-glow transition-smooth hover-scale"
+          onClick={() => setActiveView('mindmap')}
+        >
+          <CardHeader className="text-center pb-4 p-4">
+            <div className="mx-auto w-12 h-12 gradient-primary rounded-full flex items-center justify-center mb-2">
+              <Network className="w-6 h-6 text-white" />
+            </div>
+            <CardTitle className="text-sm">Mind Maps</CardTitle>
           </CardHeader>
         </Card>
       </div>

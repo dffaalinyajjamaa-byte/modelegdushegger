@@ -161,6 +161,36 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_study_tips: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          subject: string | null
+          tip_content: string
+          tip_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          subject?: string | null
+          tip_content: string
+          tip_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          subject?: string | null
+          tip_content?: string
+          tip_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       exam_submissions: {
         Row: {
           answers: Json
@@ -324,6 +354,80 @@ export type Database = {
         }
         Relationships: []
       }
+      mind_map_notes: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          mind_map_id: string
+          node_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          mind_map_id: string
+          node_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          mind_map_id?: string
+          node_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mind_map_notes_mind_map_id_fkey"
+            columns: ["mind_map_id"]
+            isOneToOne: false
+            referencedRelation: "mind_maps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mind_maps: {
+        Row: {
+          collaborators: string[] | null
+          created_at: string
+          edges: Json
+          id: string
+          is_collaborative: boolean
+          nodes: Json
+          subject: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          collaborators?: string[] | null
+          created_at?: string
+          edges?: Json
+          id?: string
+          is_collaborative?: boolean
+          nodes?: Json
+          subject: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          collaborators?: string[] | null
+          created_at?: string
+          edges?: Json
+          id?: string
+          is_collaborative?: boolean
+          nodes?: Json
+          subject?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -394,6 +498,99 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      study_mood_preferences: {
+        Row: {
+          animation_speed: string
+          created_at: string
+          current_mood: string
+          id: string
+          theme_preference: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          animation_speed?: string
+          created_at?: string
+          current_mood?: string
+          id?: string
+          theme_preference?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          animation_speed?: string
+          created_at?: string
+          current_mood?: string
+          id?: string
+          theme_preference?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      study_sessions: {
+        Row: {
+          completed_at: string
+          created_at: string
+          duration_minutes: number
+          id: string
+          mood: string | null
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          duration_minutes: number
+          id?: string
+          mood?: string | null
+          subject: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          duration_minutes?: number
+          id?: string
+          mood?: string | null
+          subject?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      study_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          id: string
+          last_study_date: string | null
+          longest_streak: number
+          total_study_days: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_study_date?: string | null
+          longest_streak?: number
+          total_study_days?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_study_date?: string | null
+          longest_streak?: number
+          total_study_days?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       tasks: {
         Row: {
