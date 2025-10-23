@@ -485,6 +485,33 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_verifications: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          otp_hash: string
+          phone_number: string
+          verified: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          otp_hash: string
+          phone_number: string
+          verified?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          otp_hash?: string
+          phone_number?: string
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -493,6 +520,7 @@ export type Database = {
           full_name: string
           grade: string | null
           id: string
+          phone_number: string | null
           role: string
           updated_at: string
           user_id: string
@@ -504,6 +532,7 @@ export type Database = {
           full_name: string
           grade?: string | null
           id?: string
+          phone_number?: string | null
           role?: string
           updated_at?: string
           user_id: string
@@ -515,6 +544,7 @@ export type Database = {
           full_name?: string
           grade?: string | null
           id?: string
+          phone_number?: string | null
           role?: string
           updated_at?: string
           user_id?: string
@@ -722,6 +752,7 @@ export type Database = {
       }
     }
     Functions: {
+      clean_expired_otps: { Args: never; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -729,10 +760,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "teacher" | "student"

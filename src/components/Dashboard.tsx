@@ -15,7 +15,7 @@ import Settings from './Settings';
 import DigitalBooksLibrary from './DigitalBooksLibrary';
 import VideoLessonsLibrary from './VideoLessonsLibrary';
 import Hyperspeed from './Hyperspeed';
-import MessengerTelegram from './MessengerTelegram';
+import Messenger from './Messenger';
 import ExtraExam from './ExtraExam';
 import AboutUs from './AboutUs';
 import StudyCoach from './StudyCoach';
@@ -130,7 +130,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
       case 'settings':
         return <Settings user={user} onBack={() => setActiveView('dashboard')} />;
       case 'messenger':
-        return <MessengerTelegram user={user} onBack={() => setActiveView('dashboard')} />;
+        return <Messenger user={user} onBack={() => setActiveView('dashboard')} />;
       case 'exams':
         return <ExtraExam user={user} onBack={() => setActiveView('dashboard')} />;
       case 'study-coach':
