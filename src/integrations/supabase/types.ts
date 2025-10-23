@@ -41,63 +41,6 @@ export type Database = {
         }
         Relationships: []
       }
-      announcements: {
-        Row: {
-          content: string
-          created_at: string | null
-          created_by: string | null
-          expires_at: string | null
-          id: string
-          is_pinned: boolean | null
-          target_audience: string[] | null
-          title: string
-          type: string | null
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          created_by?: string | null
-          expires_at?: string | null
-          id?: string
-          is_pinned?: boolean | null
-          target_audience?: string[] | null
-          title: string
-          type?: string | null
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          created_by?: string | null
-          expires_at?: string | null
-          id?: string
-          is_pinned?: boolean | null
-          target_audience?: string[] | null
-          title?: string
-          type?: string | null
-        }
-        Relationships: []
-      }
-      app_analytics: {
-        Row: {
-          created_at: string | null
-          id: string
-          metric_type: string
-          metric_value: Json
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          metric_type: string
-          metric_value: Json
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          metric_type?: string
-          metric_value?: Json
-        }
-        Relationships: []
-      }
       blocked_users: {
         Row: {
           blocked_user_id: string
@@ -215,36 +158,6 @@ export type Database = {
           type?: string
           updated_at?: string
           url?: string
-        }
-        Relationships: []
-      }
-      daily_study_tips: {
-        Row: {
-          created_at: string
-          id: string
-          is_read: boolean
-          subject: string | null
-          tip_content: string
-          tip_type: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_read?: boolean
-          subject?: string | null
-          tip_content: string
-          tip_type: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_read?: boolean
-          subject?: string | null
-          tip_content?: string
-          tip_type?: string
-          user_id?: string
         }
         Relationships: []
       }
@@ -411,107 +324,6 @@ export type Database = {
         }
         Relationships: []
       }
-      mind_map_notes: {
-        Row: {
-          content: string
-          created_at: string
-          created_by: string
-          id: string
-          mind_map_id: string
-          node_id: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          created_by: string
-          id?: string
-          mind_map_id: string
-          node_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          created_by?: string
-          id?: string
-          mind_map_id?: string
-          node_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mind_map_notes_mind_map_id_fkey"
-            columns: ["mind_map_id"]
-            isOneToOne: false
-            referencedRelation: "mind_maps"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      mind_maps: {
-        Row: {
-          collaborators: string[] | null
-          created_at: string
-          edges: Json
-          id: string
-          is_collaborative: boolean
-          nodes: Json
-          subject: string
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          collaborators?: string[] | null
-          created_at?: string
-          edges?: Json
-          id?: string
-          is_collaborative?: boolean
-          nodes?: Json
-          subject: string
-          title: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          collaborators?: string[] | null
-          created_at?: string
-          edges?: Json
-          id?: string
-          is_collaborative?: boolean
-          nodes?: Json
-          subject?: string
-          title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      otp_verifications: {
-        Row: {
-          created_at: string | null
-          expires_at: string
-          id: string
-          otp_hash: string
-          phone_number: string
-          verified: boolean | null
-        }
-        Insert: {
-          created_at?: string | null
-          expires_at: string
-          id?: string
-          otp_hash: string
-          phone_number: string
-          verified?: boolean | null
-        }
-        Update: {
-          created_at?: string | null
-          expires_at?: string
-          id?: string
-          otp_hash?: string
-          phone_number?: string
-          verified?: boolean | null
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -520,7 +332,6 @@ export type Database = {
           full_name: string
           grade: string | null
           id: string
-          phone_number: string | null
           role: string
           updated_at: string
           user_id: string
@@ -532,7 +343,6 @@ export type Database = {
           full_name: string
           grade?: string | null
           id?: string
-          phone_number?: string | null
           role?: string
           updated_at?: string
           user_id: string
@@ -544,7 +354,6 @@ export type Database = {
           full_name?: string
           grade?: string | null
           id?: string
-          phone_number?: string | null
           role?: string
           updated_at?: string
           user_id?: string
@@ -586,99 +395,6 @@ export type Database = {
           },
         ]
       }
-      study_mood_preferences: {
-        Row: {
-          animation_speed: string
-          created_at: string
-          current_mood: string
-          id: string
-          theme_preference: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          animation_speed?: string
-          created_at?: string
-          current_mood?: string
-          id?: string
-          theme_preference?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          animation_speed?: string
-          created_at?: string
-          current_mood?: string
-          id?: string
-          theme_preference?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      study_sessions: {
-        Row: {
-          completed_at: string
-          created_at: string
-          duration_minutes: number
-          id: string
-          mood: string | null
-          subject: string
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string
-          created_at?: string
-          duration_minutes: number
-          id?: string
-          mood?: string | null
-          subject: string
-          user_id: string
-        }
-        Update: {
-          completed_at?: string
-          created_at?: string
-          duration_minutes?: number
-          id?: string
-          mood?: string | null
-          subject?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      study_streaks: {
-        Row: {
-          created_at: string
-          current_streak: number
-          id: string
-          last_study_date: string | null
-          longest_streak: number
-          total_study_days: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          current_streak?: number
-          id?: string
-          last_study_date?: string | null
-          longest_streak?: number
-          total_study_days?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          current_streak?: number
-          id?: string
-          last_study_date?: string | null
-          longest_streak?: number
-          total_study_days?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       tasks: {
         Row: {
           completed: boolean
@@ -715,55 +431,15 @@ export type Database = {
         }
         Relationships: []
       }
-      user_roles: {
-        Row: {
-          created_at: string | null
-          id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
-      admin_users: {
-        Row: {
-          avatar_url: string | null
-          created_at: string | null
-          email: string | null
-          full_name: string | null
-          id: string | null
-          role: Database["public"]["Enums"]["app_role"] | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
-      clean_expired_otps: { Args: never; Returns: undefined }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      is_admin: { Args: never; Returns: boolean }
+      [_ in never]: never
     }
     Enums: {
-      app_role: "admin" | "moderator" | "teacher" | "student"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -890,8 +566,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      app_role: ["admin", "moderator", "teacher", "student"],
-    },
+    Enums: {},
   },
 } as const
