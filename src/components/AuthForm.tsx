@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/oro-logo.png';
 
 interface AuthFormProps {
   onAuthChange: () => void;
@@ -50,8 +50,8 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
         if (error) throw error;
         
         toast({
-          title: "Baga Nagaan Gara Moodela Eegduutti Dhuftan!",
-          description: "Successfully logged in to Model Egdu learning platform.",
+          title: "Welcome Back!",
+          description: "Successfully logged in to Oro Digital School.",
         });
       } else {
         const { data: authData, error } = await supabase.auth.signUp({
@@ -69,14 +69,48 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
         
         if (error) throw error;
 
-        // TODO: Upload avatar when types are updated
-        // if (avatarFile && authData.user) {
-        //   Upload to storage and update profile
-        // }
+        // Upload avatar to storage
+        let avatarUrl = null;
+        if (avatarFile && authData.user) {
+          const fileExt = avatarFile.name.split('.').pop();
+          const fileName = `${authData.user.id}/avatar.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, avatarFile, {
+              cacheControl: '3600',
+              upsert: true
+            });
+          
+          if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('avatars')
+              .getPublicUrl(fileName);
+            avatarUrl = publicUrl;
+          }
+        }
+
+        // Create profile with avatar
+        if (authData.user) {
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              user_id: authData.user.id,
+              email: email,
+              full_name: fullName,
+              grade: grade,
+              role: 'student',
+              avatar_url: avatarUrl
+            });
+          
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+          }
+        }
         
         toast({
           title: "Account Created Successfully!",
-          description: "Welcome to Model Egdu! Please check your email to verify your account.",
+          description: "Welcome to Oro Digital School! Please check your email to verify your account.",
         });
       }
       
@@ -97,13 +131,13 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
       <Card className="w-full max-w-md shadow-glow border-0">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
-            <img src={logo} alt="Model Egdu" className="w-20 h-20 rounded-full shadow-elegant" />
+            <img src={logo} alt="Oro Digital School" className="w-20 h-20 rounded-full shadow-elegant" />
           </div>
           <CardTitle className="text-2xl font-bold gradient-primary bg-clip-text text-transparent">
-            Model Egdu
+            Oro Digital School
           </CardTitle>
           <CardDescription className="text-lg">
-            {isLogin ? 'Welcome back to your learning journey' : 'Join the AI-powered learning platform'}
+            {isLogin ? 'Welcome back to your learning journey' : 'Join the AI-powered educational platform'}
           </CardDescription>
         </CardHeader>
         <CardContent>
