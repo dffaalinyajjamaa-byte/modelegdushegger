@@ -1,1 +1,7 @@
 project_id = "ogeylnnoujifnsypkeaq"
+
+[functions.ai-chat]
+verify_jwt = false
+
+[functions.ai-teacher-oromo]
+verify_jwt = false

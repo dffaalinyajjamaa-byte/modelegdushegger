@@ -25,7 +25,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
-  const [language, setLanguage] = useState<'en' | 'om'>('en');
+  const [language] = useState<'om'>('om'); // Only Afaan Oromo supported
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [uploadedPDF, setUploadedPDF] = useState<File | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -63,34 +63,87 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
     }
   };
 
-  const generateAIResponse = async (userMessage: string, selectedLanguage: string) => {
+  const generateAIResponse = async (userMessage: string): Promise<string> => {
     try {
-      const languagePrefix = selectedLanguage === 'om' 
-        ? 'Please respond in Afaan Oromoo: ' 
-        : '';
+      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-teacher-oromo`;
       
-      const response = await fetch(
-        'https://pdlugfyvocudumhdescp.supabase.co/functions/v1/ai-chat',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ message: languagePrefix + userMessage }),
-        }
-      );
+      // Build conversation history for context
+      const conversationMessages = messages.map(msg => ([
+        { role: 'user', content: msg.message },
+        { role: 'assistant', content: msg.response }
+      ])).flat();
+      
+      // Add current message
+      conversationMessages.push({ role: 'user', content: userMessage });
+
+      const response = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: conversationMessages }),
+      });
 
       if (!response.ok) {
+        if (response.status === 429) {
+          return "Maaloo yeroo muraasa booda yaali. Fedhiin baay'ee guddaa jira.";
+        }
+        if (response.status === 402) {
+          return "Tajaajilli kun yeroo ammaa hin argamu. Maaloo booda yaali.";
+        }
         throw new Error('Failed to get AI response');
       }
 
-      const data = await response.json();
-      return data.response || 'I apologize, but I could not generate a response.';
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      // Stream the response
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = '';
+      let fullResponse = '';
+      let streamDone = false;
+
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') {
+            streamDone = true;
+            break;
+          }
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+            if (content) {
+              fullResponse += content;
+            }
+          } catch {
+            textBuffer = line + '\n' + textBuffer;
+            break;
+          }
+        }
+      }
+
+      return fullResponse || 'Deebiin hin argamne. Maaloo irra deebi\'ii yaali.';
     } catch (error) {
       console.error('Error getting AI response:', error);
-      return selectedLanguage === 'en' 
-        ? 'I apologize, but I encountered an error. Please try again.'
-        : 'Dhiifama, dogongora tokkotu uumame. Maaloo irra deebii yaali.';
+      return 'Dhiifama, dogongora tokkotu uumame. Maaloo irra deebi\'ii yaali.';
     }
   };
 
@@ -120,7 +173,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
       }
 
       // Generate AI response
-      const aiResponse = await generateAIResponse(contextMessage, language);
+      const aiResponse = await generateAIResponse(contextMessage);
 
       // Save to database
       const { data, error } = await supabase
@@ -129,7 +182,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
           user_id: user.id,
           message: userMessage,
           response: aiResponse,
-          language: language
+          language: 'om'
         })
         .select()
         .single();
@@ -144,8 +197,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
       setUploadedPDF(null);
 
       // Log activity
-      onLogActivity('ai_chat', `Asked AI teacher: ${userMessage}`, {
-        language,
+      onLogActivity('ai_chat', `Barsiisaa AI gaafate: ${userMessage}`, {
+        language: 'om',
         response_length: aiResponse.length,
         has_image: !!uploadedImage,
         has_pdf: !!uploadedPDF
@@ -175,34 +228,18 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
                 <Bot className="w-6 h-6 text-white" />
               </div>
               <div>
-                <CardTitle className="text-2xl">AI Teacher</CardTitle>
-                <p className="text-muted-foreground">Your personal learning assistant</p>
+                <CardTitle className="text-2xl">Barsiisaa AI</CardTitle>
+                <p className="text-muted-foreground">Gargaaraa barnootaa kee dhuunfaa</p>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNewChat}
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                New Chat
-              </Button>
-              <Button
-                variant={language === 'en' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setLanguage('en')}
-              >
-                English
-              </Button>
-              <Button
-                variant={language === 'om' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setLanguage('om')}
-              >
-                Afaan Oromo
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNewChat}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Haaraa
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -214,16 +251,10 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
                   <div className="text-center py-8 text-muted-foreground">
                     <Sparkles className="w-12 h-12 mx-auto mb-4 text-primary" />
                     <p className="text-lg">
-                      {language === 'en' 
-                        ? "Start a conversation with your AI teacher!" 
-                        : "Barsiisaa AI kee wajjin haasa'uu jalqabi!"
-                      }
+                      Barsiisaa AI kee wajjin haasa'uu jalqabi!
                     </p>
                     <p className="text-sm mt-2">
-                      {language === 'en'
-                        ? "Ask about Herrega, Saayinsii, study tips, or any learning topic."
-                        : "Waa'ee Herrega, Saayinsii, gorsa barnoota, ykn mata duree barnoota kamiyyuu gaafi."
-                      }
+                      Waa'ee Herrega, Saayinsii, gorsa barnoota, ykn mata duree barnoota kamiyyuu gaafi.
                     </p>
                   </div>
                 )}
@@ -248,7 +279,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
                       <div className="bg-muted rounded-lg px-4 py-2 max-w-xs">
                         <p>{msg.response}</p>
                         <Badge variant="outline" className="mt-2 text-xs">
-                          {msg.language === 'en' ? 'English' : 'Afaan Oromo'}
+                          Afaan Oromoo
                         </Badge>
                       </div>
                     </div>
@@ -278,13 +309,13 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
                 {uploadedImage && (
                   <Badge variant="secondary" className="flex items-center gap-1">
                     <ImageIcon className="w-3 h-3" />
-                    Image attached
+                    Suuraa maxxanfame
                   </Badge>
                 )}
                 {uploadedPDF && (
                   <Badge variant="secondary" className="flex items-center gap-1">
                     <FileText className="w-3 h-3" />
-                    PDF attached
+                    PDF maxxanfame
                   </Badge>
                 )}
               </div>
@@ -328,11 +359,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={
-                  language === 'en' 
-                    ? "Ask your AI teacher anything..." 
-                    : "Barsiisaa AI kee waan kamiyyuu gaafi..."
-                }
+                placeholder="Barsiisaa AI kee waan kamiyyuu gaafi..."
                 disabled={loading}
                 className="flex-1"
               />
