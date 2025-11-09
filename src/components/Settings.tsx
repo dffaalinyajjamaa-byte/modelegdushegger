@@ -17,6 +17,7 @@ interface SettingsProps {
 export default function Settings({ user, onBack }: SettingsProps) {
   const [fullName, setFullName] = useState('');
   const [originalName, setOriginalName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
@@ -30,7 +31,7 @@ export default function Settings({ user, onBack }: SettingsProps) {
       setLoading(true);
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name')
+        .select('full_name, avatar_url')
         .eq('user_id', user.id)
         .single();
 
@@ -38,6 +39,7 @@ export default function Settings({ user, onBack }: SettingsProps) {
       if (data) {
         setFullName(data.full_name);
         setOriginalName(data.full_name);
+        setAvatarUrl(data.avatar_url || '');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -47,10 +49,51 @@ export default function Settings({ user, onBack }: SettingsProps) {
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    toast({
-      title: 'Coming soon!',
-      description: 'Avatar upload will be available shortly.',
-    });
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setLoading(true);
+      
+      // Upload to storage
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${user.id}/${Math.random()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: 'Success!',
+        description: 'Profile picture updated successfully.',
+      });
+      
+      // Refresh to show new avatar
+      window.location.reload();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSaveProfile = async () => {
@@ -99,6 +142,7 @@ export default function Settings({ user, onBack }: SettingsProps) {
           {/* Avatar */}
           <div className="flex flex-col items-center gap-4">
             <Avatar className="w-32 h-32">
+              <AvatarImage src={avatarUrl} alt={fullName} />
               <AvatarFallback className="text-2xl">
                 {fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
               </AvatarFallback>

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { User, Session } from '@supabase/supabase-js';
 import { BookOpen, MessageCircle, CheckSquare, Video, FileText, LogOut, Sparkles, Settings as SettingsIcon } from 'lucide-react';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/oro-logo.png';
 import { useToast } from '@/hooks/use-toast';
 import AITeacher from './AITeacher';
 import TaskManager from './TaskManager';
@@ -271,10 +271,10 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
       <header className="bg-white/80 backdrop-blur-md border-b shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 md:gap-3">
-            <img src={logo} alt="Model Egdu" className="w-8 h-8 md:w-10 md:h-10 rounded-full" />
+            <img src={logo} alt="Oro Digital School" className="w-8 h-8 md:w-10 md:h-10 rounded-full" />
             <div>
               <h1 className="text-lg md:text-xl font-bold gradient-primary bg-clip-text text-transparent">
-                Model Egdu
+                Oro Digital School
               </h1>
               <p className="text-xs text-muted-foreground hidden md:block">AI-Powered Learning</p>
             </div>
