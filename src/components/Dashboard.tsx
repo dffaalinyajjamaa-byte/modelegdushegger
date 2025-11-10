@@ -453,9 +453,6 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative flex flex-col pb-20 md:pb-0">
-      {/* Animated Background */}
-      <Hyperspeed />
-      
       {/* Header - Mobile Native Style */}
       <header className="glass-card border-b border-border/40 sticky top-0 z-50 mobile-p">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -476,7 +473,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
               onClick={() => setActiveView('settings')}
               className="hover:bg-primary/20 transition-all"
             >
-              <SettingsIcon className="w-5 h-5 text-primary" />
+              <Settings className="w-5 h-5 text-primary" />
             </Button>
             <Button
               variant="ghost"
