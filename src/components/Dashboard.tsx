@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Session } from '@supabase/supabase-js';
 import { BookOpen, MessageCircle, CheckSquare, Video, FileText, LogOut, Sparkles, Settings as SettingsIcon } from 'lucide-react';
 import logo from '@/assets/oro-logo.png';
@@ -31,6 +32,7 @@ interface Profile {
   full_name: string;
   email: string;
   role: string;
+  avatar_url: string | null;
 }
 
 interface Content {
@@ -69,6 +71,11 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
       setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load profile data',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -268,15 +275,28 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
       <Hyperspeed />
       
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b shadow-sm sticky top-0 z-50">
+      <header className="bg-white/80 dark:bg-background/80 backdrop-blur-md border-b shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
           <div className="flex items-center gap-2 md:gap-3">
-            <img src={logo} alt="Oro Digital School" className="w-8 h-8 md:w-10 md:h-10 rounded-full" />
-            <div>
-              <h1 className="text-lg md:text-xl font-bold gradient-primary bg-clip-text text-transparent">
-                Oro Digital School
-              </h1>
-              <p className="text-xs text-muted-foreground hidden md:block">AI-Powered Learning</p>
+            <Avatar 
+              className="w-10 h-10 md:w-12 md:h-12 border-2 border-primary/20 cursor-pointer hover:border-primary/40 transition-all"
+              onClick={() => setActiveView('settings')}
+            >
+              <AvatarImage src={profile?.avatar_url || ''} alt={profile?.full_name || 'User'} />
+              <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-primary-foreground font-bold">
+                {profile?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex items-center gap-2">
+              <img src={logo} alt="Oro Digital School" className="w-6 h-6 md:w-8 md:h-8 rounded-full" />
+              <div>
+                <h1 className="text-sm md:text-base font-bold gradient-primary bg-clip-text text-transparent">
+                  Oro Digital School
+                </h1>
+                <p className="text-xs text-muted-foreground hidden sm:block">
+                  {profile?.full_name || 'Welcome'}
+                </p>
+              </div>
             </div>
           </div>
           
@@ -286,6 +306,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
                 variant="outline"
                 size="sm"
                 onClick={() => setActiveView('dashboard')}
+                className="hidden sm:flex"
               >
                 Dashboard
               </Button>
