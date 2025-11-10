@@ -1,4 +1,4 @@
-import { Home, Video, CheckSquare, User } from 'lucide-react';
+import { Home, Bot, Video, CheckSquare, MessageCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useScreenSize } from '@/hooks/use-screen-size';
@@ -13,9 +13,10 @@ export default function BottomNav() {
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/', activeView: 'dashboard' },
+    { icon: Bot, label: 'AI Teacher', path: '/', activeView: 'ai-teacher' },
     { icon: Video, label: 'Videos', path: '/', activeView: 'videos' },
     { icon: CheckSquare, label: 'Tasks', path: '/', activeView: 'tasks' },
-    { icon: User, label: 'Profile', path: '/', activeView: 'settings' },
+    { icon: MessageCircle, label: 'Chat', path: '/', activeView: 'messenger' },
   ];
 
   const handleNavClick = (path: string, activeView: string) => {
@@ -35,21 +36,24 @@ export default function BottomNav() {
                 key={item.label}
                 onClick={() => handleNavClick(item.path, item.activeView)}
                 className={cn(
-                  'flex flex-col items-center justify-center gap-1 px-4 py-2 rounded-2xl transition-all',
+                  'flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-2xl transition-all duration-300',
                   'hover-scale active:scale-95',
                   isActive
-                    ? 'text-accent shadow-neon-lime'
+                    ? 'text-accent shadow-neon-blue'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 <Icon
                   className={cn(
-                    'w-6 h-6 transition-all',
-                    isActive && 'drop-shadow-[0_0_8px_rgba(0,230,118,0.6)]'
+                    'w-6 h-6 transition-all duration-300',
+                    isActive && 'drop-shadow-[0_0_10px_hsl(217,91%,60%)]'
                   )}
                   fill={isActive ? 'currentColor' : 'none'}
                 />
-                <span className="text-xs font-medium">{item.label}</span>
+                <span className={cn(
+                  "text-xs font-medium transition-all duration-300",
+                  isActive && "font-bold"
+                )}>{item.label}</span>
               </button>
             );
           })}

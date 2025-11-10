@@ -55,13 +55,16 @@ export default function Settings({ user, onBack }: SettingsProps) {
     try {
       setLoading(true);
       
-      // Upload to storage
+      // Upload to storage with upsert to replace existing
       const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}/${Math.random()}.${fileExt}`;
+      const filePath = `${user.id}/avatar.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true // Replace existing file
+        });
 
       if (uploadError) throw uploadError;
 
@@ -70,25 +73,25 @@ export default function Settings({ user, onBack }: SettingsProps) {
         .from('avatars')
         .getPublicUrl(filePath);
 
-      // Update profile
+      // Update profile with timestamp to bust cache
+      const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: urlWithTimestamp })
         .eq('user_id', user.id);
 
       if (updateError) throw updateError;
 
+      setAvatarUrl(urlWithTimestamp);
+      
       toast({
         title: 'Success!',
         description: 'Profile picture updated successfully.',
       });
-      
-      // Refresh to show new avatar
-      window.location.reload();
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message,
+        description: error.message || 'Failed to upload avatar',
         variant: 'destructive',
       });
     } finally {
@@ -141,17 +144,31 @@ export default function Settings({ user, onBack }: SettingsProps) {
         <CardContent className="space-y-6">
           {/* Avatar */}
           <div className="flex flex-col items-center gap-4">
-            <Avatar className="w-32 h-32">
-              <AvatarImage src={avatarUrl} alt={fullName} />
-              <AvatarFallback className="text-2xl">
-                {fullName.split(' ').map(n => n[0]).join('').toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="w-32 h-32 border-4 border-primary/30">
+                <AvatarImage 
+                  src={avatarUrl} 
+                  alt={fullName}
+                  onError={(e) => {
+                    console.error('Avatar failed to load:', avatarUrl);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <AvatarFallback className="text-2xl bg-gradient-to-br from-primary to-secondary text-white">
+                  {fullName.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
+                  <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+            </div>
             <div>
               <Label htmlFor="avatar" className="cursor-pointer">
-                <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition">
+                <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition neon-glow-orange">
                   <Camera className="w-4 h-4" />
-                  Upload Photo
+                  {avatarUrl ? 'Change Photo' : 'Upload Photo'}
                 </div>
               </Label>
               <Input
@@ -160,6 +177,7 @@ export default function Settings({ user, onBack }: SettingsProps) {
                 accept="image/*"
                 className="hidden"
                 onChange={handleAvatarUpload}
+                disabled={loading}
               />
             </div>
           </div>

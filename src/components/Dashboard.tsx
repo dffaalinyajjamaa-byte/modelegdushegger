@@ -1,27 +1,26 @@
 import { useState, useEffect } from 'react';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Session } from '@supabase/supabase-js';
-import { BookOpen, MessageCircle, CheckSquare, Video, FileText, LogOut, Sparkles, Settings as SettingsIcon, Library } from 'lucide-react';
-import logo from '@/assets/oro-logo.png';
-import ProfileCard from '@/components/ProfileCard';
-import { useToast } from '@/hooks/use-toast';
+import { Card } from '@/components/ui/card';
+import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import AITeacher from './AITeacher';
 import TaskManager from './TaskManager';
+import VideoLessonsLibrary from './VideoLessonsLibrary';
+import DigitalBooksLibrary from './DigitalBooksLibrary';
 import VideoViewer from './VideoViewer';
 import PDFViewer from './PDFViewer';
-import Settings from './Settings';
-import DigitalBooksLibrary from './DigitalBooksLibrary';
-import VideoLessonsLibrary from './VideoLessonsLibrary';
-import Hyperspeed from './Hyperspeed';
-import Messenger from './Messenger';
+import SettingsComponent from './Settings';
 import ExtraExam from './ExtraExam';
+import ProfileCard from './ProfileCard';
 import AboutUs from './AboutUs';
 import BottomNav from './BottomNav';
+import ProgressCharts from './ProgressCharts';
+import Messenger from './Messenger';
 import { useLocation } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import logo from '@/assets/oro-logo.png';
 
 interface DashboardProps {
   user: User;
@@ -55,7 +54,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'video' | 'pdf' | 'settings' | 'books' | 'videos' | 'messenger' | 'exams';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'exam';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -216,10 +215,10 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
           />
         );
       case 'settings':
-        return <Settings user={user} onBack={() => setActiveView('dashboard')} />;
+        return <SettingsComponent user={user} onBack={() => setActiveView('dashboard')} />;
       case 'messenger':
         return <Messenger user={user} onBack={() => setActiveView('dashboard')} />;
-      case 'exams':
+      case 'exam':
         return <ExtraExam user={user} onBack={() => setActiveView('dashboard')} />;
       case 'books':
         return (
@@ -261,97 +260,194 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
   };
 
   const renderDashboard = () => (
-    <div className="space-y-8">
-      {/* Motivational Header */}
-      <div className="text-center py-8">
-        <h1 className="text-4xl font-bold motivational-text mb-4">
-          Baga Nagaan Gara Moodela Eegduutti Dhuftan
-        </h1>
-        <p className="text-xl text-muted-foreground mb-2">
-          Welcome back, {profile?.full_name || 'Student'}!
-        </p>
-        <div className="flex items-center justify-center gap-2 text-lg font-medium gradient-secondary bg-clip-text text-transparent">
-          <Sparkles className="w-5 h-5 text-secondary" />
-          Keep going, you're doing great!
-          <Sparkles className="w-5 h-5 text-secondary" />
+    <div className="space-y-8 animate-fade-slide-up">
+      {/* Hero Section with Oromo Greeting */}
+      <section className="hero-section relative overflow-hidden rounded-3xl">
+        <div className="absolute inset-0 hero-gradient" />
+        
+        <div className="relative z-10 glass-card rounded-3xl p-6 md:p-8 backdrop-blur-xl border-2 border-primary/20">
+          {/* Animated Logo */}
+          <div className="flex justify-center mb-6">
+            <div className="relative">
+              <img 
+                src={logo} 
+                alt="Oro Digital School"
+                className="w-20 h-20 md:w-24 md:h-24 rounded-full animate-logo-pulse border-4 border-white/20"
+              />
+              <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-spin-slow" />
+              <div className="absolute inset-0 rounded-full border-2 border-secondary/30 animate-spin-reverse" />
+            </div>
+          </div>
+          
+          {/* Oromo Greeting */}
+          <h1 className="text-3xl md:text-4xl font-bold text-center mb-3 gradient-text">
+            Baga Nagaan Gara Oro Digital School Dhuftan
+          </h1>
+          
+          {/* English Translation */}
+          <p className="text-xl text-center text-foreground/80 mb-6">
+            Welcome to Oro Digital School, <span className="font-bold text-primary">{profile?.full_name}</span>!
+          </p>
+          
+          {/* Quick Stats Cards */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="glass-card rounded-2xl p-4 text-center border-2 border-primary/30 hover-scale">
+              <div className="text-3xl md:text-4xl font-bold text-primary neon-glow-orange">{userStats.tasks_completed}</div>
+              <div className="text-sm text-foreground/70 mt-1">Tasks Done</div>
+            </div>
+            <div className="glass-card rounded-2xl p-4 text-center border-2 border-secondary/30 hover-scale">
+              <div className="text-3xl md:text-4xl font-bold text-secondary neon-glow-red">{userStats.videos_watched}</div>
+              <div className="text-sm text-foreground/70 mt-1">Videos</div>
+            </div>
+            <div className="glass-card rounded-2xl p-4 text-center border-2 border-accent/30 hover-scale">
+              <div className="text-3xl md:text-4xl font-bold text-accent neon-glow-blue">{userStats.materials_read}</div>
+              <div className="text-sm text-foreground/70 mt-1">Books</div>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* Progress Charts */}
+      <ProgressCharts userId={user.id} stats={userStats} compact={true} />
 
       {/* Navigation Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <Card 
-          className="cursor-pointer hover-glow transition-smooth hover-scale"
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+        {/* AI Teacher */}
+        <Card
+          className={cn(
+            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-orange border-2 border-primary/20",
+            "flex flex-col items-center text-center gap-4"
+          )}
           onClick={() => setActiveView('ai-teacher')}
         >
-          <CardHeader className="text-center pb-4 p-4">
-            <div className="mx-auto w-12 h-12 gradient-primary rounded-full flex items-center justify-center mb-2">
-              <MessageCircle className="w-6 h-6 text-white" />
-            </div>
-            <CardTitle className="text-sm">AI Teacher</CardTitle>
-          </CardHeader>
+          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center neon-glow-orange">
+            <Bot className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg mb-1">AI Teacher</h3>
+            <p className="text-sm text-muted-foreground">Learn with AI</p>
+          </div>
         </Card>
 
-        <Card 
-          className="cursor-pointer hover-glow transition-smooth hover-scale"
-          onClick={() => setActiveView('tasks')}
-        >
-          <CardHeader className="text-center pb-4 p-4">
-            <div className="mx-auto w-12 h-12 gradient-secondary rounded-full flex items-center justify-center mb-2">
-              <CheckSquare className="w-6 h-6 text-white" />
-            </div>
-            <CardTitle className="text-sm">Tasks</CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover-glow transition-smooth hover-scale"
-          onClick={() => setActiveView('books')}
-        >
-          <CardHeader className="text-center pb-4 p-4">
-            <div className="mx-auto w-12 h-12 gradient-hero rounded-full flex items-center justify-center mb-2">
-              <BookOpen className="w-6 h-6 text-white" />
-            </div>
-            <CardTitle className="text-sm">Books</CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover-glow transition-smooth hover-scale"
-          onClick={() => setActiveView('exams')}
-        >
-          <CardHeader className="text-center pb-4 p-4">
-            <div className="mx-auto w-12 h-12 gradient-accent rounded-full flex items-center justify-center mb-2">
-              <FileText className="w-6 h-6 text-white" />
-            </div>
-            <CardTitle className="text-sm">Exams</CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover-glow transition-smooth hover-scale"
-          onClick={() => setActiveView('messenger')}
-        >
-          <CardHeader className="text-center pb-4 p-4">
-            <div className="mx-auto w-12 h-12 gradient-secondary rounded-full flex items-center justify-center mb-2">
-              <MessageCircle className="w-6 h-6 text-white" />
-            </div>
-            <CardTitle className="text-sm">Chat</CardTitle>
-          </CardHeader>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover-glow transition-smooth hover-scale"
+        {/* Video Lessons */}
+        <Card
+          className={cn(
+            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-red border-2 border-secondary/20",
+            "flex flex-col items-center text-center gap-4"
+          )}
           onClick={() => setActiveView('videos')}
         >
-          <CardHeader className="text-center pb-4 p-4">
-            <div className="mx-auto w-12 h-12 gradient-primary rounded-full flex items-center justify-center mb-2">
-              <Video className="w-6 h-6 text-white" />
-            </div>
-            <CardTitle className="text-sm">Videos</CardTitle>
-          </CardHeader>
+          <div className="w-16 h-16 rounded-2xl gradient-secondary flex items-center justify-center neon-glow-red">
+            <Video className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg mb-1">Video Lessons</h3>
+            <p className="text-sm text-muted-foreground">Watch & Learn</p>
+          </div>
+        </Card>
+
+        {/* Digital Books */}
+        <Card
+          className={cn(
+            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-blue border-2 border-accent/20",
+            "flex flex-col items-center text-center gap-4"
+          )}
+          onClick={() => setActiveView('books')}
+        >
+          <div className="w-16 h-16 rounded-2xl gradient-accent flex items-center justify-center neon-glow-blue">
+            <BookOpen className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg mb-1">Digital Books</h3>
+            <p className="text-sm text-muted-foreground">Read Materials</p>
+          </div>
+        </Card>
+
+        {/* Task Manager */}
+        <Card
+          className={cn(
+            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-orange border-2 border-primary/20",
+            "flex flex-col items-center text-center gap-4"
+          )}
+          onClick={() => setActiveView('tasks')}
+        >
+          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center neon-glow-orange">
+            <CheckSquare className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg mb-1">Tasks</h3>
+            <p className="text-sm text-muted-foreground">Your Assignments</p>
+          </div>
+        </Card>
+
+        {/* Chat/Messenger */}
+        <Card
+          className={cn(
+            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-blue border-2 border-accent/20",
+            "flex flex-col items-center text-center gap-4"
+          )}
+          onClick={() => setActiveView('messenger')}
+        >
+          <div className="w-16 h-16 rounded-2xl gradient-accent flex items-center justify-center neon-glow-blue">
+            <MessageCircle className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg mb-1">Chat</h3>
+            <p className="text-sm text-muted-foreground">Connect</p>
+          </div>
+        </Card>
+
+        {/* Materials Upload */}
+        <Card
+          className={cn(
+            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-red border-2 border-secondary/20",
+            "flex flex-col items-center text-center gap-4"
+          )}
+          onClick={() => setActiveView('exam')}
+        >
+          <div className="w-16 h-16 rounded-2xl gradient-secondary flex items-center justify-center neon-glow-red">
+            <FileText className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg mb-1">Materials</h3>
+            <p className="text-sm text-muted-foreground">Upload Files</p>
+          </div>
+        </Card>
+
+        {/* Quizzes */}
+        <Card
+          className={cn(
+            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-orange border-2 border-primary/20",
+            "flex flex-col items-center text-center gap-4"
+          )}
+          onClick={() => setActiveView('exam')}
+        >
+          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center neon-glow-orange">
+            <Brain className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg mb-1">Quizzes</h3>
+            <p className="text-sm text-muted-foreground">Test Yourself</p>
+          </div>
+        </Card>
+
+        {/* Settings */}
+        <Card
+          className={cn(
+            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-blue border-2 border-accent/20",
+            "flex flex-col items-center text-center gap-4"
+          )}
+          onClick={() => setActiveView('settings')}
+        >
+          <div className="w-16 h-16 rounded-2xl gradient-accent flex items-center justify-center neon-glow-blue">
+            <Settings className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg mb-1">Settings</h3>
+            <p className="text-sm text-muted-foreground">Your Profile</p>
+          </div>
         </Card>
       </div>
-
     </div>
   );
 

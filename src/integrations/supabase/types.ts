@@ -161,6 +161,42 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_stats: {
+        Row: {
+          ai_interactions: number | null
+          created_at: string | null
+          date: string
+          id: string
+          learning_time_minutes: number | null
+          materials_read: number | null
+          tasks_completed: number | null
+          user_id: string
+          videos_watched: number | null
+        }
+        Insert: {
+          ai_interactions?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          learning_time_minutes?: number | null
+          materials_read?: number | null
+          tasks_completed?: number | null
+          user_id: string
+          videos_watched?: number | null
+        }
+        Update: {
+          ai_interactions?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          learning_time_minutes?: number | null
+          materials_read?: number | null
+          tasks_completed?: number | null
+          user_id?: string
+          videos_watched?: number | null
+        }
+        Relationships: []
+      }
       exam_submissions: {
         Row: {
           answers: Json
@@ -466,7 +502,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      increment_daily_stat: {
+        Args: { p_increment?: number; p_stat_type: string; p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
