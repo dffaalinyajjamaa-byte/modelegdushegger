@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User, Session } from '@supabase/supabase-js';
-import { BookOpen, MessageCircle, CheckSquare, Video, FileText, LogOut, Sparkles, Settings as SettingsIcon } from 'lucide-react';
+import { BookOpen, MessageCircle, CheckSquare, Video, FileText, LogOut, Sparkles, Settings as SettingsIcon, Library } from 'lucide-react';
 import logo from '@/assets/oro-logo.png';
+import ProfileCard from '@/components/ProfileCard';
 import { useToast } from '@/hooks/use-toast';
 import AITeacher from './AITeacher';
 import TaskManager from './TaskManager';
@@ -32,6 +33,7 @@ interface Profile {
   full_name: string;
   email: string;
   role: string;
+  grade: string | null;
   avatar_url: string | null;
 }
 
@@ -274,56 +276,34 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
       {/* Animated Background */}
       <Hyperspeed />
       
-      {/* Header */}
-      <header className="bg-white/80 dark:bg-background/80 backdrop-blur-md border-b shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2 md:gap-3">
-            <Avatar 
-              className="w-10 h-10 md:w-12 md:h-12 border-2 border-primary/20 cursor-pointer hover:border-primary/40 transition-all"
+      {/* Header - Mobile Native Style */}
+      <header className="glass-card border-b border-border/40 sticky top-0 z-50 mobile-p">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <ProfileCard
+              user={user}
+              profile={profile || { full_name: 'User', grade: null, avatar_url: null }}
+              compact
               onClick={() => setActiveView('settings')}
-            >
-              <AvatarImage src={profile?.avatar_url || ''} alt={profile?.full_name || 'User'} />
-              <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-primary-foreground font-bold">
-                {profile?.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex items-center gap-2">
-              <img src={logo} alt="Oro Digital School" className="w-6 h-6 md:w-8 md:h-8 rounded-full" />
-              <div>
-                <h1 className="text-sm md:text-base font-bold gradient-primary bg-clip-text text-transparent">
-                  Oro Digital School
-                </h1>
-                <p className="text-xs text-muted-foreground hidden sm:block">
-                  {profile?.full_name || 'Welcome'}
-                </p>
-              </div>
-            </div>
+            />
           </div>
           
           <div className="flex items-center gap-2">
-            {activeView !== 'dashboard' && (
-              <Button 
-                variant="outline"
-                size="sm"
-                onClick={() => setActiveView('dashboard')}
-                className="hidden sm:flex"
-              >
-                Dashboard
-              </Button>
-            )}
             <Button
-              variant="outline"
-              size="sm"
+              variant="ghost"
+              size="icon"
               onClick={() => setActiveView('settings')}
+              className="hover:bg-primary/20 transition-all"
             >
-              <SettingsIcon className="w-4 h-4" />
+              <SettingsIcon className="w-5 h-5 text-primary" />
             </Button>
             <Button
-              variant="outline"
-              size="sm"
+              variant="ghost"
+              size="icon"
               onClick={handleSignOut}
+              className="hover:bg-destructive/20 transition-all"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-5 h-5 text-destructive" />
             </Button>
           </div>
         </div>

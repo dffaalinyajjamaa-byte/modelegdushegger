@@ -3,7 +3,8 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, FolderOpen, BookOpen } from 'lucide-react';
+import { FileText, FolderOpen, BookOpen, ArrowLeft } from 'lucide-react';
+import { validateContentUrl } from '@/lib/content-utils';
 
 interface DigitalBooksLibraryProps {
   user: User;
@@ -49,32 +50,33 @@ const DigitalBooksLibrary = ({ user, onBack, onBookClick }: DigitalBooksLibraryP
     : books;
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
+    <div className="min-h-screen mobile-p">
       <div className="max-w-7xl mx-auto">
-        <Button onClick={onBack} variant="ghost" className="mb-6">
-          ← Back
+        <Button onClick={onBack} variant="outline" className="mb-4 glass-card hover:neon-glow-cyan tap-scale">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
         </Button>
 
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2 flex items-center gap-3">
-            <BookOpen className="w-8 h-8 md:w-10 md:h-10 text-primary" />
-            Digital Books Library
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-3 motivational-text">
+            <BookOpen className="w-7 h-7 md:w-8 md:h-8" />
+            Digital Books
           </h1>
-          <p className="text-muted-foreground">Browse books by subject</p>
+          <p className="text-sm md:text-base text-muted-foreground">Browse by subject</p>
         </div>
 
         {!selectedSubject ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             {subjects.map((subject) => (
               <Card
                 key={subject}
-                className="cursor-pointer hover-scale bg-gradient-to-br from-primary/10 to-accent/10 border-primary/20 backdrop-blur-sm"
+                className="cursor-pointer hover-scale tap-scale glass-card hover:neon-glow-cyan border-primary/30"
                 onClick={() => setSelectedSubject(subject)}
               >
-                <CardContent className="p-6 md:p-8 text-center">
-                  <FolderOpen className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 text-primary" />
-                  <h3 className="text-xl md:text-2xl font-bold">{subject}</h3>
-                  <p className="text-sm text-muted-foreground mt-2">
+                <CardContent className="p-4 md:p-6 text-center">
+                  <FolderOpen className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 text-primary" />
+                  <h3 className="text-base md:text-lg font-bold">{subject}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
                     {books.filter(b => b.subject === subject).length} books
                   </p>
                 </CardContent>
@@ -86,34 +88,40 @@ const DigitalBooksLibrary = ({ user, onBack, onBookClick }: DigitalBooksLibraryP
             <Button
               onClick={() => setSelectedSubject(null)}
               variant="outline"
-              className="mb-6"
+              className="mb-4 glass-card hover:neon-glow-cyan tap-scale"
             >
-              ← All Subjects
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              All Subjects
             </Button>
-            <h2 className="text-2xl font-bold mb-6">{selectedSubject}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {filteredBooks.map((book) => (
-                <Card
-                  key={book.id}
-                  className="cursor-pointer hover-scale bg-card/80 backdrop-blur-sm border-primary/20"
-                  onClick={() => onBookClick(book)}
-                >
-                  <CardContent className="p-6">
-                    <FileText className="w-12 h-12 text-primary mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">{book.title}</h3>
-                    {book.description && (
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {book.description}
-                      </p>
-                    )}
-                    {book.grade_level && (
-                      <p className="text-xs text-muted-foreground">
-                        Grade: {book.grade_level}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+            <h2 className="text-xl md:text-2xl font-bold mb-4">{selectedSubject}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              {filteredBooks.map((book) => {
+                const bookUrl = validateContentUrl(book.url, 'pdf');
+                return (
+                  <Card
+                    key={book.id}
+                    className="cursor-pointer hover-scale tap-scale glass-card hover:neon-glow-purple border-secondary/20"
+                    onClick={() => onBookClick({ ...book, url: bookUrl })}
+                  >
+                    <CardContent className="p-4">
+                      <div className="glass-card rounded-xl p-4 mb-3 flex items-center justify-center shadow-neon">
+                        <FileText className="w-10 h-10 md:w-12 md:h-12 text-secondary" />
+                      </div>
+                      <h3 className="text-sm md:text-base font-semibold mb-1 line-clamp-2">{book.title}</h3>
+                      {book.description && (
+                        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                          {book.description}
+                        </p>
+                      )}
+                      {book.grade_level && (
+                        <p className="text-xs text-secondary">
+                          {book.grade_level}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         )}

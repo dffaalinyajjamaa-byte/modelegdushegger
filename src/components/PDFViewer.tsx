@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, FileText, ExternalLink, Download } from 'lucide-react';
+import { validateContentUrl } from '@/lib/content-utils';
 
 interface Content {
   id: string;
@@ -48,19 +49,7 @@ export default function PDFViewer({ content, onBack, onLogActivity }: PDFViewerP
     };
   }, []);
 
-  // Convert Google Drive sharing URL to embeddable URL
-  const getEmbedUrl = (url: string) => {
-    if (url.includes('docs.google.com')) {
-      // Extract document ID from Google Docs URL
-      const docIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-      if (docIdMatch) {
-        return `https://docs.google.com/document/d/${docIdMatch[1]}/preview`;
-      }
-    }
-    return url;
-  };
-
-  const embedUrl = getEmbedUrl(content.url);
+  const embedUrl = validateContentUrl(content.url, 'pdf');
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">

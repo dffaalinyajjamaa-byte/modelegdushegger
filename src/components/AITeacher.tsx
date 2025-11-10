@@ -219,66 +219,67 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <Card className="shadow-glow">
-        <CardHeader>
+    <div className="max-w-4xl mx-auto mobile-p space-y-4">
+      <Card className="glass-card shadow-glow border-primary/30">
+        <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 gradient-primary rounded-full flex items-center justify-center">
-                <Bot className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 md:w-12 md:h-12 gradient-primary rounded-full flex items-center justify-center shadow-neon">
+                <Bot className="w-5 h-5 md:w-6 md:h-6 text-white" />
               </div>
               <div>
-                <CardTitle className="text-2xl">Barsiisaa AI</CardTitle>
-                <p className="text-muted-foreground">Gargaaraa barnootaa kee dhuunfaa</p>
+                <CardTitle className="text-lg md:text-xl">Barsiisaa AI</CardTitle>
+                <p className="text-xs md:text-sm text-muted-foreground">Your AI Tutor</p>
               </div>
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={handleNewChat}
+              className="glass-input hover:neon-glow-lime"
             >
               <Plus className="w-4 h-4 mr-1" />
-              Haaraa
+              New
             </Button>
           </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {/* Chat Messages */}
-            <ScrollArea className="h-96 pr-4" ref={scrollAreaRef}>
+            {/* Chat Messages - Mobile Native Bubbles */}
+            <ScrollArea className="h-[60vh] md:h-96 pr-2" ref={scrollAreaRef}>
               <div className="space-y-4">
                 {messages.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Sparkles className="w-12 h-12 mx-auto mb-4 text-primary" />
-                    <p className="text-lg">
-                      Barsiisaa AI kee wajjin haasa'uu jalqabi!
+                  <div className="text-center py-12 px-4">
+                    <Sparkles className="w-16 h-16 mx-auto mb-4 text-primary animate-pulse" />
+                    <p className="text-base md:text-lg font-semibold mb-2">
+                      Start chatting with your AI Tutor!
                     </p>
-                    <p className="text-sm mt-2">
-                      Waa'ee Herrega, Saayinsii, gorsa barnoota, ykn mata duree barnoota kamiyyuu gaafi.
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                      Ask anything about Math, Science, or any learning topic
                     </p>
                   </div>
                 )}
                 
                 {messages.map((msg) => (
-                  <div key={msg.id} className="space-y-3">
-                    {/* User Message */}
-                    <div className="flex items-start gap-3 justify-end">
-                      <div className="bg-primary text-primary-foreground rounded-lg px-4 py-2 max-w-xs shadow-elegant">
-                        <p>{msg.message}</p>
+                  <div key={msg.id} className="space-y-3 px-2">
+                    {/* User Message - Right Aligned */}
+                    <div className="flex items-end gap-2 justify-end">
+                      <div className="message-bubble-user text-white px-4 py-3 max-w-[80%] text-sm md:text-base">
+                        <p className="break-words">{msg.message}</p>
                       </div>
-                      <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 bg-gradient-to-br from-secondary to-accent rounded-full flex items-center justify-center flex-shrink-0 shadow-neon">
                         <UserIcon className="w-4 h-4 text-white" />
                       </div>
                     </div>
                     
-                    {/* AI Response */}
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 gradient-primary rounded-full flex items-center justify-center flex-shrink-0">
+                    {/* AI Response - Left Aligned */}
+                    <div className="flex items-end gap-2">
+                      <div className="w-8 h-8 gradient-primary rounded-full flex items-center justify-center flex-shrink-0 shadow-neon">
                         <Bot className="w-4 h-4 text-white" />
                       </div>
-                      <div className="bg-muted rounded-lg px-4 py-2 max-w-xs">
-                        <p>{msg.response}</p>
-                        <Badge variant="outline" className="mt-2 text-xs">
+                      <div className="message-bubble-ai text-foreground px-4 py-3 max-w-[80%] text-sm md:text-base">
+                        <p className="break-words">{msg.response}</p>
+                        <Badge variant="outline" className="mt-2 text-xs border-primary/30">
                           Afaan Oromoo
                         </Badge>
                       </div>
@@ -287,15 +288,15 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
                 ))}
                 
                 {loading && (
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 gradient-primary rounded-full flex items-center justify-center flex-shrink-0">
+                  <div className="flex items-end gap-2 px-2">
+                    <div className="w-8 h-8 gradient-primary rounded-full flex items-center justify-center flex-shrink-0 shadow-neon">
                       <Bot className="w-4 h-4 text-white" />
                     </div>
-                    <div className="bg-muted rounded-lg px-4 py-2">
+                    <div className="message-bubble-ai px-4 py-3">
                       <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="w-2 h-2 bg-primary rounded-full typing-dot"></div>
+                        <div className="w-2 h-2 bg-primary rounded-full typing-dot"></div>
+                        <div className="w-2 h-2 bg-primary rounded-full typing-dot"></div>
                       </div>
                     </div>
                   </div>
@@ -321,13 +322,13 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
               </div>
             )}
             
-            {/* Message Input */}
-            <div className="flex gap-2">
+            {/* Message Input - Glass Style */}
+            <div className="flex gap-2 p-2 glass-card rounded-2xl border-primary/20">
               <div className="flex gap-1">
                 <label htmlFor="image-upload">
-                  <Button type="button" variant="outline" size="icon" disabled={loading} asChild>
+                  <Button type="button" variant="ghost" size="icon" disabled={loading} asChild className="hover:neon-glow-cyan">
                     <span className="cursor-pointer">
-                      <ImageIcon className="w-4 h-4" />
+                      <ImageIcon className="w-4 h-4 text-primary" />
                     </span>
                   </Button>
                 </label>
@@ -340,9 +341,9 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
                 />
                 
                 <label htmlFor="pdf-upload">
-                  <Button type="button" variant="outline" size="icon" disabled={loading} asChild>
+                  <Button type="button" variant="ghost" size="icon" disabled={loading} asChild className="hover:neon-glow-cyan">
                     <span className="cursor-pointer">
-                      <FileText className="w-4 h-4" />
+                      <FileText className="w-4 h-4 text-primary" />
                     </span>
                   </Button>
                 </label>
@@ -359,14 +360,15 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Barsiisaa AI kee waan kamiyyuu gaafi..."
+                placeholder="Ask me anything..."
                 disabled={loading}
-                className="flex-1"
+                className="flex-1 glass-input border-0 focus-visible:ring-primary"
               />
               <Button 
                 onClick={handleSendMessage} 
                 disabled={loading || (!message.trim() && !uploadedImage && !uploadedPDF)}
-                variant="primary"
+                className="gradient-primary shadow-neon hover:shadow-glow tap-scale"
+                size="icon"
               >
                 <Send className="w-4 h-4" />
               </Button>

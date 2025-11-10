@@ -3,7 +3,8 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, FolderOpen, Video } from 'lucide-react';
+import { Play, FolderOpen, Video, ArrowLeft } from 'lucide-react';
+import { validateContentUrl } from '@/lib/content-utils';
 
 interface VideoLessonsLibraryProps {
   user: User;
@@ -49,32 +50,33 @@ const VideoLessonsLibrary = ({ user, onBack, onVideoClick }: VideoLessonsLibrary
     : videos;
 
   return (
-    <div className="min-h-screen p-4 md:p-8">
+    <div className="min-h-screen mobile-p">
       <div className="max-w-7xl mx-auto">
-        <Button onClick={onBack} variant="ghost" className="mb-6">
-          ← Back
+        <Button onClick={onBack} variant="outline" className="mb-4 glass-card hover:neon-glow-cyan tap-scale">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
         </Button>
 
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold mb-2 flex items-center gap-3">
-            <Video className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+        <div className="mb-6">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-3 motivational-text">
+            <Video className="w-7 h-7 md:w-8 md:h-8" />
             Video Lessons
           </h1>
-          <p className="text-muted-foreground">Browse lessons by subject</p>
+          <p className="text-sm md:text-base text-muted-foreground">Browse by subject</p>
         </div>
 
         {!selectedSubject ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             {subjects.map((subject) => (
               <Card
                 key={subject}
-                className="cursor-pointer hover-scale bg-gradient-to-br from-accent/10 to-primary/10 border-primary/20 backdrop-blur-sm"
+                className="cursor-pointer hover-scale tap-scale glass-card hover:neon-glow-purple border-secondary/30"
                 onClick={() => setSelectedSubject(subject)}
               >
-                <CardContent className="p-6 md:p-8 text-center">
-                  <FolderOpen className="w-16 h-16 md:w-20 md:h-20 mx-auto mb-4 text-accent" />
-                  <h3 className="text-xl md:text-2xl font-bold">{subject}</h3>
-                  <p className="text-sm text-muted-foreground mt-2">
+                <CardContent className="p-4 md:p-6 text-center">
+                  <FolderOpen className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-3 text-secondary" />
+                  <h3 className="text-base md:text-lg font-bold">{subject}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
                     {videos.filter(v => v.subject === subject).length} lessons
                   </p>
                 </CardContent>
@@ -86,36 +88,41 @@ const VideoLessonsLibrary = ({ user, onBack, onVideoClick }: VideoLessonsLibrary
             <Button
               onClick={() => setSelectedSubject(null)}
               variant="outline"
-              className="mb-6"
+              className="mb-4 glass-card hover:neon-glow-purple tap-scale"
             >
-              ← All Subjects
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              All Subjects
             </Button>
-            <h2 className="text-2xl font-bold mb-6">{selectedSubject}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {filteredVideos.map((video) => (
-                <Card
-                  key={video.id}
-                  className="cursor-pointer hover-scale bg-card/80 backdrop-blur-sm border-primary/20"
-                  onClick={() => onVideoClick(video)}
-                >
-                  <CardContent className="p-6">
-                    <div className="relative mb-4 bg-primary/10 rounded-lg aspect-video flex items-center justify-center">
-                      <Play className="w-16 h-16 text-primary" />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2">{video.title}</h3>
-                    {video.description && (
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {video.description}
-                      </p>
-                    )}
-                    {video.grade_level && (
-                      <p className="text-xs text-muted-foreground">
-                        Grade: {video.grade_level}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+            <h2 className="text-xl md:text-2xl font-bold mb-4">{selectedSubject}</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              {filteredVideos.map((video) => {
+                // Validate and fix video URL
+                const videoUrl = validateContentUrl(video.url, 'video');
+                return (
+                  <Card
+                    key={video.id}
+                    className="cursor-pointer hover-scale tap-scale glass-card hover:neon-glow-cyan border-primary/20"
+                    onClick={() => onVideoClick({ ...video, url: videoUrl })}
+                  >
+                    <CardContent className="p-4">
+                      <div className="relative mb-3 glass-card rounded-xl aspect-video flex items-center justify-center shadow-neon">
+                        <Play className="w-12 h-12 md:w-14 md:h-14 text-primary" />
+                      </div>
+                      <h3 className="text-sm md:text-base font-semibold mb-1 line-clamp-2">{video.title}</h3>
+                      {video.description && (
+                        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                          {video.description}
+                        </p>
+                      )}
+                      {video.grade_level && (
+                        <p className="text-xs text-primary">
+                          {video.grade_level}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         )}

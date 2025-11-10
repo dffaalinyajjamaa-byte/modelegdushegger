@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Play, ExternalLink } from 'lucide-react';
+import { validateContentUrl } from '@/lib/content-utils';
 
 interface Content {
   id: string;
@@ -48,19 +49,7 @@ export default function VideoViewer({ content, onBack, onLogActivity }: VideoVie
     };
   }, []);
 
-  // Extract YouTube video ID from URL
-  const getYouTubeEmbedUrl = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    
-    if (match && match[2].length === 11) {
-      return `https://www.youtube.com/embed/${match[2]}?autoplay=1&rel=0`;
-    }
-    
-    return url;
-  };
-
-  const embedUrl = getYouTubeEmbedUrl(content.url);
+  const embedUrl = validateContentUrl(content.url, 'video');
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
