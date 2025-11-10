@@ -15,9 +15,9 @@ interface ProfileCardProps {
   user: User;
   profile: Profile;
   stats?: {
-    tasksCompleted: number;
-    videosWatched: number;
-    materialsRead: number;
+    tasks_completed?: number;
+    videos_watched?: number;
+    materials_read?: number;
   };
   compact?: boolean;
   onClick?: () => void;
@@ -103,21 +103,21 @@ export default function ProfileCard({
                 <div className="flex justify-center mb-1">
                   <CheckCircle className="w-5 h-5 text-accent" />
                 </div>
-                <p className="text-2xl font-bold text-accent">{stats.tasksCompleted}</p>
+                <p className="text-2xl font-bold text-accent">{stats.tasks_completed || 0}</p>
                 <p className="text-xs text-muted-foreground">Tasks</p>
               </div>
               <div className="glass-card p-3 rounded-xl text-center">
                 <div className="flex justify-center mb-1">
                   <Video className="w-5 h-5 text-primary" />
                 </div>
-                <p className="text-2xl font-bold text-primary">{stats.videosWatched}</p>
+                <p className="text-2xl font-bold text-primary">{stats.videos_watched || 0}</p>
                 <p className="text-xs text-muted-foreground">Videos</p>
               </div>
               <div className="glass-card p-3 rounded-xl text-center">
                 <div className="flex justify-center mb-1">
                   <BookOpen className="w-5 h-5 text-secondary" />
                 </div>
-                <p className="text-2xl font-bold text-secondary">{stats.materialsRead}</p>
+                <p className="text-2xl font-bold text-secondary">{stats.materials_read || 0}</p>
                 <p className="text-xs text-muted-foreground">Books</p>
               </div>
             </div>

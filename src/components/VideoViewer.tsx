@@ -19,9 +19,19 @@ interface VideoViewerProps {
   content: Content;
   onBack: () => void;
   onLogActivity: (type: string, description: string, metadata?: any) => void;
+  onVideoWatched?: () => void;
 }
 
-export default function VideoViewer({ content, onBack, onLogActivity }: VideoViewerProps) {
+export default function VideoViewer({ content, onBack, onLogActivity, onVideoWatched }: VideoViewerProps) {
+  const [marked, setMarked] = useState(false);
+
+  const handleMarkWatched = () => {
+    if (!marked && onVideoWatched) {
+      onVideoWatched();
+      setMarked(true);
+      onLogActivity('video', `Marked as watched: ${content.title}`, { content_id: content.id });
+    }
+  };
   const [watchTime, setWatchTime] = useState(0);
 
   useEffect(() => {

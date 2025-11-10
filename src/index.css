@@ -177,8 +177,12 @@ All colors MUST be HSL.
     transition: var(--transition-smooth);
   }
   
-  .transition-bounce {
-    transition: var(--transition-bounce);
+  .mobile-p {
+    @apply p-4;
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0);
   }
   
   /* Shadow effects */

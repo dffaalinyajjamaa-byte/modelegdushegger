@@ -20,6 +20,8 @@ import Hyperspeed from './Hyperspeed';
 import Messenger from './Messenger';
 import ExtraExam from './ExtraExam';
 import AboutUs from './AboutUs';
+import BottomNav from './BottomNav';
+import { useLocation } from 'react-router-dom';
 
 interface DashboardProps {
   user: User;
@@ -37,6 +39,12 @@ interface Profile {
   avatar_url: string | null;
 }
 
+interface UserStats {
+  tasks_completed: number;
+  videos_watched: number;
+  materials_read: number;
+}
+
 interface Content {
   id: string;
   title: string;
@@ -51,15 +59,26 @@ type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'video' | 'pdf' | 'sett
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [userStats, setUserStats] = useState<UserStats>({ tasks_completed: 0, videos_watched: 0, materials_read: 0 });
   const [content, setContent] = useState<Content[]>([]);
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const { toast } = useToast();
+  const location = useLocation();
 
   useEffect(() => {
     fetchProfile();
+    fetchUserStats();
     fetchContent();
   }, [user]);
+
+  useEffect(() => {
+    // Handle navigation from BottomNav
+    const state = location.state as { activeView?: ActiveView } | undefined;
+    if (state?.activeView) {
+      setActiveView(state.activeView);
+    }
+  }, [location]);
 
   const fetchProfile = async () => {
     try {
@@ -78,6 +97,63 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         description: 'Failed to load profile data',
         variant: 'destructive',
       });
+    }
+  };
+
+  const fetchUserStats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_stats')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        // If no stats exist, create them
+        if (error.code === 'PGRST116') {
+          const { data: newStats, error: insertError } = await supabase
+            .from('user_stats')
+            .insert({ user_id: user.id })
+            .select()
+            .single();
+          
+          if (insertError) throw insertError;
+          setUserStats({
+            tasks_completed: newStats.tasks_completed,
+            videos_watched: newStats.videos_watched,
+            materials_read: newStats.materials_read,
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        setUserStats({
+          tasks_completed: data.tasks_completed,
+          videos_watched: data.videos_watched,
+          materials_read: data.materials_read,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    }
+  };
+
+  const updateUserStats = async (field: keyof UserStats, increment: number = 1) => {
+    try {
+      const newValue = userStats[field] + increment;
+      const { error } = await supabase
+        .from('user_stats')
+        .update({ [field]: newValue })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      setUserStats(prev => ({
+        ...prev,
+        [field]: newValue,
+      }));
+    } catch (error) {
+      console.error('Error updating user stats:', error);
     }
   };
 
@@ -132,7 +208,13 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
       case 'ai-teacher':
         return <AITeacher user={user} onLogActivity={logActivity} />;
       case 'tasks':
-        return <TaskManager user={user} onLogActivity={logActivity} />;
+        return (
+          <TaskManager 
+            user={user} 
+            onLogActivity={logActivity}
+            onTaskComplete={() => updateUserStats('tasks_completed')}
+          />
+        );
       case 'settings':
         return <Settings user={user} onBack={() => setActiveView('dashboard')} />;
       case 'messenger':
@@ -161,6 +243,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
             content={selectedContent} 
             onBack={() => setActiveView('dashboard')}
             onLogActivity={logActivity}
+            onVideoWatched={() => updateUserStats('videos_watched')}
           />
         ) : null;
       case 'pdf':
@@ -169,6 +252,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
             content={selectedContent} 
             onBack={() => setActiveView('dashboard')}
             onLogActivity={logActivity}
+            onMaterialRead={() => updateUserStats('materials_read')}
           />
         ) : null;
       default:
@@ -272,7 +356,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 relative flex flex-col pb-20 md:pb-0">
       {/* Animated Background */}
       <Hyperspeed />
       
@@ -283,6 +367,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
             <ProfileCard
               user={user}
               profile={profile || { full_name: 'User', grade: null, avatar_url: null }}
+              stats={userStats}
               compact
               onClick={() => setActiveView('settings')}
             />
@@ -316,6 +401,9 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
 
       {/* About Us Footer */}
       {activeView === 'dashboard' && <AboutUs />}
+
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 }

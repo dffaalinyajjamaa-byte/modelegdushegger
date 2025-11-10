@@ -19,9 +19,19 @@ interface PDFViewerProps {
   content: Content;
   onBack: () => void;
   onLogActivity: (type: string, description: string, metadata?: any) => void;
+  onMaterialRead?: () => void;
 }
 
-export default function PDFViewer({ content, onBack, onLogActivity }: PDFViewerProps) {
+export default function PDFViewer({ content, onBack, onLogActivity, onMaterialRead }: PDFViewerProps) {
+  const [marked, setMarked] = useState(false);
+
+  const handleMarkRead = () => {
+    if (!marked && onMaterialRead) {
+      onMaterialRead();
+      setMarked(true);
+      onLogActivity('pdf', `Marked as read: ${content.title}`, { content_id: content.id });
+    }
+  };
   const [readTime, setReadTime] = useState(0);
 
   useEffect(() => {

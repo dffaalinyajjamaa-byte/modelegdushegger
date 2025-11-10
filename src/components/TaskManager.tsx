@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 interface TaskManagerProps {
   user: User;
   onLogActivity: (type: string, description: string, metadata?: any) => void;
+  onTaskComplete?: () => void;
 }
 
 interface Task {
@@ -28,7 +29,7 @@ interface Task {
   created_at: string;
 }
 
-export default function TaskManager({ user, onLogActivity }: TaskManagerProps) {
+export default function TaskManager({ user, onLogActivity, onTaskComplete }: TaskManagerProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
