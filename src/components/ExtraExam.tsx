@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Clock, BookOpen, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Clock, BookOpen, ArrowLeft, CheckCircle, Globe, Book, Beaker, Users, Shield, Calculator } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ExtraExamProps {
@@ -34,8 +34,19 @@ interface Question {
   marks: number;
 }
 
+const GRADE_8_SUBJECTS = [
+  { id: 'Afaan Oromoo', name: 'Afaan Oromoo', icon: BookOpen, color: 'primary' },
+  { id: 'English', name: 'English', icon: Globe, color: 'secondary' },
+  { id: 'Amharic', name: 'Amharic', icon: Book, color: 'accent' },
+  { id: 'Sayinsii Waligalaa', name: 'Sayinsii Waligalaa', icon: Beaker, color: 'primary' },
+  { id: 'Gadaa', name: 'Gadaa', icon: Users, color: 'secondary' },
+  { id: 'Lammummaa', name: 'Lammummaa', icon: Shield, color: 'accent' },
+  { id: 'Herreega', name: 'Herreega', icon: Calculator, color: 'primary' },
+];
+
 export default function ExtraExam({ user, onBack }: ExtraExamProps) {
   const [exams, setExams] = useState<Exam[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<{ [key: string]: number }>({});
@@ -63,11 +74,17 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
     }
   }, [selectedExam, timeLeft]);
 
-  const fetchExams = async () => {
-    const { data } = await supabase
+  const fetchExams = async (subject?: string) => {
+    let query = supabase
       .from('exams')
       .select('*')
-      .order('created_at', { ascending: false });
+      .eq('grade_level', 'Grade 8');
+
+    if (subject) {
+      query = query.eq('subject', subject);
+    }
+
+    const { data } = await query.order('created_at', { ascending: false });
 
     if (data) {
       setExams(data as unknown as Exam[]);
@@ -223,43 +240,88 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
     );
   }
 
+  // Subject Selection Screen
+  if (!selectedSubject) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <BookOpen className="w-8 h-8 text-primary" />
+              Grade 8 Exams
+            </h1>
+            <p className="text-muted-foreground mt-2">Choose your subject</p>
+          </div>
+          <Button variant="outline" onClick={onBack}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {GRADE_8_SUBJECTS.map((subject) => {
+            const Icon = subject.icon;
+            const subjectExams = exams.filter(e => e.subject === subject.id);
+            return (
+              <Card
+                key={subject.id}
+                className="glass-card hover-scale cursor-pointer border-2 border-primary/30 transition-all hover:border-primary"
+                onClick={() => {
+                  setSelectedSubject(subject.id);
+                  fetchExams(subject.id);
+                }}
+              >
+                <CardContent className="pt-6 text-center">
+                  <div className={`w-16 h-16 mx-auto mb-4 rounded-full gradient-${subject.color} flex items-center justify-center shadow-neon`}>
+                    <Icon className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="font-bold text-lg mb-2">{subject.name}</h3>
+                  <Badge variant="secondary">{subjectExams.length} exam{subjectExams.length !== 1 ? 's' : ''}</Badge>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Exam List Screen
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <BookOpen className="w-8 h-8 text-primary" />
-            Extra Exams
+            {selectedSubject} Exams
           </h1>
-          <p className="text-muted-foreground mt-2">Test your knowledge with practice exams</p>
+          <Badge className="mt-2">Grade 8</Badge>
         </div>
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={() => setSelectedSubject(null)}>
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
+          Back to Subjects
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {exams.map((exam) => (
-          <Card key={exam.id} className="hover-scale cursor-pointer">
+          <Card key={exam.id} className="hover-scale cursor-pointer glass-card border-primary/30">
             <CardHeader>
               <CardTitle>{exam.title}</CardTitle>
               <p className="text-sm text-muted-foreground">{exam.description}</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
-                <Badge>{exam.subject}</Badge>
-                {exam.grade_level && <Badge variant="outline">{exam.grade_level}</Badge>}
                 <Badge variant="secondary">
                   <Clock className="w-3 h-3 mr-1" />
                   {exam.duration_minutes} min
                 </Badge>
+                <Badge variant="outline">{exam.total_marks} marks</Badge>
               </div>
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>{exam.questions?.length || 0} questions</span>
-                <span>{exam.total_marks} marks</span>
               </div>
-              <Button onClick={() => startExam(exam)} className="w-full">
+              <Button onClick={() => startExam(exam)} className="w-full gradient-primary">
                 Start Exam
               </Button>
             </CardContent>
@@ -267,10 +329,10 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
         ))}
 
         {exams.length === 0 && (
-          <Card className="col-span-full">
+          <Card className="col-span-full glass-card">
             <CardContent className="py-12 text-center text-muted-foreground">
               <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" />
-              <p>No exams available yet. Check back later!</p>
+              <p>No {selectedSubject} exams available yet. Check back later!</p>
             </CardContent>
           </Card>
         )}

@@ -302,11 +302,11 @@ export default function Messenger({ user, onBack }: MessengerProps) {
 
   return (
     <div className="flex h-[calc(100vh-8rem)] gap-4">
-      {/* Sidebar */}
-      <Card className="w-80 flex flex-col">
-        <CardHeader>
+      {/* Sidebar - Telegram Style */}
+      <Card className="w-80 flex flex-col glass-card border-border/40">
+        <CardHeader className="border-b border-border/40">
           <CardTitle className="flex items-center justify-between">
-            <span>Chats</span>
+            <span className="text-foreground">Chats</span>
             <Dialog>
               <DialogTrigger asChild>
                 <Button size="sm" variant="outline">
@@ -386,82 +386,106 @@ export default function Messenger({ user, onBack }: MessengerProps) {
         </CardContent>
       </Card>
 
-      {/* Chat Area */}
-      <Card className="flex-1 flex flex-col">
+      {/* Chat Area - Telegram Style */}
+      <Card className="flex-1 flex flex-col glass-card border-border/40">
         {selectedChat ? (
           <>
-            <CardHeader className="border-b">
+            {/* Telegram-style Header */}
+            <CardHeader className="border-b border-border/40 backdrop-blur-xl bg-card/80 sticky top-0 z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback>{getChatName(selectedChat)[0]}</AvatarFallback>
+                  <Avatar className="w-10 h-10 border-2 border-primary/30">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
+                      {getChatName(selectedChat)[0]}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
-                    <h3 className="font-semibold">{getChatName(selectedChat)}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedChat.is_group ? 'Group chat' : 'Direct message'}
+                    <h3 className="font-semibold text-foreground">{getChatName(selectedChat)}</h3>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedChat.is_group ? `${selectedChat.members.length} members` : 'online'}
                     </p>
                   </div>
                 </div>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
               </div>
             </CardHeader>
             
-            <CardContent className="flex-1 p-4 overflow-hidden flex flex-col">
+            {/* Messages Area - Telegram Style */}
+            <CardContent className="flex-1 p-4 overflow-hidden flex flex-col bg-background/50">
               <ScrollArea className="flex-1 pr-4">
-                <div className="space-y-4">
-                  {messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.sender_id === user.id ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div className={`max-w-[70%] ${msg.sender_id === user.id ? 'order-2' : 'order-1'}`}>
-                        <div
-                          className={`rounded-lg p-3 ${
-                            msg.sender_id === user.id
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted'
-                          }`}
-                        >
-                          {msg.type === 'text' && <p>{msg.content}</p>}
-                          {msg.type === 'image' && (
-                            <div className="flex items-center gap-2">
-                              <ImageIcon className="w-4 h-4" />
-                              <span>Image</span>
+                <div className="space-y-3">
+                  {messages.map((msg) => {
+                    const isOwnMessage = msg.sender_id === user.id;
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex items-end gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                      >
+                        {/* Avatar for received messages */}
+                        {!isOwnMessage && (
+                          <Avatar className="w-8 h-8 border-2 border-border/30 flex-shrink-0">
+                            <AvatarFallback className="bg-gradient-to-br from-accent to-secondary text-white text-xs">
+                              {getChatName(selectedChat)[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+
+                        {/* Message Bubble - Telegram Style */}
+                        <div className={`max-w-[65%] md:max-w-[70%] flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                          <div
+                            className={`relative px-4 py-2 ${
+                              isOwnMessage
+                                ? 'message-bubble-telegram-user text-white'
+                                : 'message-bubble-telegram-other text-foreground'
+                            }`}
+                          >
+                            {msg.type === 'text' && <p className="break-words text-sm">{msg.content}</p>}
+                            {msg.type === 'image' && (
+                              <div className="flex items-center gap-2">
+                                <ImageIcon className="w-4 h-4" />
+                                <span className="text-sm">Image</span>
+                              </div>
+                            )}
+                            {msg.type === 'pdf' && (
+                              <div className="flex items-center gap-2 p-2 bg-background/20 rounded">
+                                <FileText className="w-4 h-4 text-destructive" />
+                                <span className="text-sm">{msg.file_name || 'PDF Document'}</span>
+                              </div>
+                            )}
+                            {msg.type === 'audio' && (
+                              <div className="flex items-center gap-2">
+                                <Mic className="w-4 h-4" />
+                                <span className="text-sm">Voice message</span>
+                              </div>
+                            )}
+                            
+                            {/* Timestamp & Status */}
+                            <div className={`flex items-center gap-1 mt-1 text-[10px] ${isOwnMessage ? 'text-white/70' : 'text-muted-foreground'}`}>
+                              <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                              {isOwnMessage && (
+                                <span className={msg.status === 'seen' ? 'text-accent' : ''}>
+                                  {msg.status === 'seen' ? '✓✓' : '✓'}
+                                </span>
+                              )}
                             </div>
-                          )}
-                          {msg.type === 'pdf' && (
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-4 h-4" />
-                              <span>{msg.file_name || 'PDF Document'}</span>
-                            </div>
-                          )}
-                          {msg.type === 'audio' && (
-                            <div className="flex items-center gap-2">
-                              <Mic className="w-4 h-4" />
-                              <span>Voice message</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                          <span>{new Date(msg.timestamp).toLocaleTimeString()}</span>
-                          {msg.sender_id === user.id && (
-                            <span>
-                              {msg.status === 'seen' ? '✓✓' : msg.status === 'delivered' ? '✓' : '•'}
-                            </span>
-                          )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   <div ref={scrollRef} />
                 </div>
               </ScrollArea>
 
-              <div className="flex gap-2 mt-4">
+              {/* Input Area - Telegram Style */}
+              <div className="flex gap-2 mt-4 p-3 glass-card rounded-2xl border-primary/20">
+                {/* Attach Button */}
                 <label htmlFor="image-upload">
-                  <Button type="button" variant="outline" size="icon" asChild>
+                  <Button type="button" variant="ghost" size="icon" disabled={loading} asChild className="hover:bg-primary/20">
                     <span className="cursor-pointer">
-                      <ImageIcon className="w-4 h-4" />
+                      <ImageIcon className="w-4 h-4 text-primary" />
                     </span>
                   </Button>
                 </label>
@@ -474,9 +498,9 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                 />
 
                 <label htmlFor="pdf-upload">
-                  <Button type="button" variant="outline" size="icon" asChild>
+                  <Button type="button" variant="ghost" size="icon" disabled={loading} asChild className="hover:bg-primary/20">
                     <span className="cursor-pointer">
-                      <FileText className="w-4 h-4" />
+                      <FileText className="w-4 h-4 text-primary" />
                     </span>
                   </Button>
                 </label>
@@ -488,13 +512,35 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                   onChange={(e) => handleFileUpload(e, 'pdf')}
                 />
 
-                <label htmlFor="audio-upload">
-                  <Button type="button" variant="outline" size="icon" asChild>
-                    <span className="cursor-pointer">
-                      <Mic className="w-4 h-4" />
-                    </span>
+                {/* Message Input */}
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Message"
+                  disabled={loading}
+                  className="flex-1 glass-input border-0 focus-visible:ring-primary"
+                  onKeyPress={(e) => e.key === 'Enter' && !loading && sendMessage()}
+                />
+
+                {/* Send/Voice Button */}
+                {newMessage.trim() ? (
+                  <Button 
+                    onClick={() => sendMessage()} 
+                    disabled={loading}
+                    className="gradient-primary shadow-neon hover:shadow-glow tap-scale rounded-full"
+                    size="icon"
+                  >
+                    <Send className="w-4 h-4" />
                   </Button>
-                </label>
+                ) : (
+                  <label htmlFor="audio-upload">
+                    <Button type="button" variant="ghost" size="icon" disabled={loading} asChild className="hover:bg-primary/20">
+                      <span className="cursor-pointer">
+                        <Mic className="w-4 h-4 text-primary" />
+                      </span>
+                    </Button>
+                  </label>
+                )}
                 <input
                   id="audio-upload"
                   type="file"
@@ -502,18 +548,6 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                   className="hidden"
                   onChange={(e) => handleFileUpload(e, 'audio')}
                 />
-
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                  placeholder="Type a message..."
-                  disabled={loading}
-                  className="flex-1"
-                />
-                <Button onClick={() => sendMessage()} disabled={loading || !newMessage.trim()}>
-                  <Send className="w-4 h-4" />
-                </Button>
               </div>
             </CardContent>
           </>

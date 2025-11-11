@@ -269,7 +269,7 @@ All colors MUST be HSL.
     transform: scale(0.97);
   }
   
-  /* Message bubble styles */
+  /* Message bubble styles - AI Teacher */
   .message-bubble-user {
     background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
     border-radius: 20px 20px 4px 20px;
@@ -283,6 +283,43 @@ All colors MUST be HSL.
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px 20px 20px 4px;
     box-shadow: var(--shadow-elegant);
+  }
+
+  /* Telegram-style message bubbles */
+  .message-bubble-telegram-user {
+    background: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-glow)));
+    border-radius: 18px 18px 4px 18px;
+    position: relative;
+    box-shadow: var(--shadow-accent);
+  }
+
+  .message-bubble-telegram-user::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-left: 8px solid hsl(var(--accent));
+    border-bottom: 8px solid transparent;
+  }
+
+  .message-bubble-telegram-other {
+    background: hsl(var(--muted));
+    border-radius: 18px 18px 18px 4px;
+    position: relative;
+    border: 1px solid hsl(var(--border));
+  }
+
+  .message-bubble-telegram-other::after {
+    content: '';
+    position: absolute;
+    left: -8px;
+    bottom: 0;
+    width: 0;
+    height: 0;
+    border-right: 8px solid hsl(var(--muted));
+    border-bottom: 8px solid transparent;
   }
   
   /* Typing indicator animation */
