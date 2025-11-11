@@ -8,8 +8,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Send, Search, Users, Plus, Image as ImageIcon, FileText, Mic, MoreVertical, Flag, Ban } from 'lucide-react';
+import { Send, Search, Users, Plus, Image as ImageIcon, FileText, Mic, MoreVertical, Flag, Ban, Radio } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import Stories from './Stories';
+import Channels from './Channels';
+import GroupChatDialog from './GroupChatDialog';
 
 interface MessengerProps {
   user: User;
@@ -55,6 +58,7 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<MessagingUser | null>(null);
+  const [view, setView] = useState<'chats' | 'channels'>('chats');
   const scrollRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 

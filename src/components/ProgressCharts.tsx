@@ -10,6 +10,7 @@ interface ProgressChartsProps {
     tasks_completed: number;
     videos_watched: number;
     materials_read: number;
+    exams_taken?: number;
   };
   compact?: boolean;
 }
@@ -22,9 +23,10 @@ interface DailyStats {
 }
 
 const COLORS = {
-  tasks: 'hsl(25 95% 53%)', // Orange
-  videos: 'hsl(0 84% 60%)', // Red
-  materials: 'hsl(217 91% 60%)', // Blue
+  tasks: 'hsl(25 95% 53%)',
+  videos: 'hsl(0 84% 60%)',
+  materials: 'hsl(217 91% 60%)',
+  exams: 'hsl(142 76% 36%)',
 };
 
 export default function ProgressCharts({ userId, stats, compact = false }: ProgressChartsProps) {

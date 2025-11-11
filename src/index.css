@@ -56,15 +56,14 @@ All colors MUST be HSL.
     --gradient-hero: linear-gradient(135deg, hsl(220 64% 10%) 0%, hsl(25 95% 53%) 35%, hsl(0 84% 60%) 70%, hsl(217 91% 60%) 100%);
     --gradient-glass: linear-gradient(135deg, hsl(220 40% 15% / 0.8), hsl(220 40% 20% / 0.8));
     
-    /* Neon glow effects */
-    --shadow-elegant: 0 10px 30px -10px hsl(25 95% 53% / 0.3);
-    --shadow-glow: 0 0 40px hsl(25 95% 63% / 0.4);
-    --shadow-secondary: 0 10px 30px -10px hsl(0 84% 60% / 0.3);
-    --shadow-accent: 0 0 30px hsl(217 91% 60% / 0.4);
-    --shadow-neon: 0 0 20px hsl(25 95% 53% / 0.6);
-    --shadow-neon-orange: 0 0 20px hsl(25 95% 53% / 0.6), 0 0 40px hsl(25 95% 53% / 0.3);
-    --shadow-neon-red: 0 0 20px hsl(0 84% 60% / 0.6), 0 0 40px hsl(0 84% 60% / 0.3);
-    --shadow-neon-blue: 0 0 20px hsl(217 91% 60% / 0.6), 0 0 40px hsl(217 91% 60% / 0.3);
+    /* Modern Subtle Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
+    --shadow-primary: 0 10px 15px -3px hsl(25 95% 53% / 0.1);
+    --shadow-secondary: 0 10px 15px -3px hsl(0 84% 60% / 0.1);
+    --shadow-accent: 0 10px 15px -3px hsl(217 91% 60% / 0.1);
     
     /* Smooth transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -188,39 +187,28 @@ All colors MUST be HSL.
     padding-bottom: env(safe-area-inset-bottom, 0);
   }
   
-  /* Shadow effects */
-  .shadow-elegant {
-    box-shadow: var(--shadow-elegant);
+  /* Modern Hover Effects */
+  .hover-scale {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
   }
-  
-  .shadow-glow {
-    box-shadow: var(--shadow-glow);
-  }
-  
-  .shadow-secondary {
-    box-shadow: var(--shadow-secondary);
-  }
-  
-  .shadow-accent {
-    box-shadow: var(--shadow-accent);
-  }
-  
-  /* Hover effects */
-  .hover-glow:hover {
-    box-shadow: var(--shadow-glow);
-    transform: translateY(-2px);
-  }
-  
+
   .hover-scale:hover {
-    transform: scale(1.05);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .hover-scale:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-md);
   }
   
-  /* Glassmorphism utilities for mobile-native UI */
+  /* Modern Glass Card Styling */
   .glass-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: hsl(var(--card) / 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsl(var(--border) / 0.5);
+    box-shadow: var(--shadow-md);
   }
   
   .glass-input {
@@ -233,24 +221,36 @@ All colors MUST be HSL.
   .glass-input:focus {
     background: rgba(255, 255, 255, 0.12);
     border-color: hsl(var(--primary));
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.4);
+    box-shadow: var(--shadow-primary);
   }
-  
-  /* Neon glow effects */
-  .neon-glow-orange {
-    box-shadow: var(--shadow-neon-orange);
+
+  /* Quiz Option States */
+  .quiz-option-default {
+    border: 2px solid hsl(var(--border));
+    transition: all 0.2s ease;
   }
-  
-  .neon-glow-red {
-    box-shadow: var(--shadow-neon-red);
+
+  .quiz-option-default:hover {
+    border-color: hsl(var(--primary));
+    box-shadow: var(--shadow-primary);
   }
-  
-  .neon-glow-blue {
-    box-shadow: var(--shadow-neon-blue);
+
+  .quiz-option-selected {
+    border: 2px solid hsl(var(--primary));
+    background: hsl(var(--primary) / 0.1);
+    box-shadow: var(--shadow-primary);
   }
-  
-  .shadow-neon {
-    box-shadow: var(--shadow-neon);
+
+  .quiz-option-correct {
+    border: 2px solid hsl(142 76% 36%);
+    background: hsl(142 76% 36% / 0.15);
+    animation: ripple 0.6s ease-out;
+  }
+
+  .quiz-option-incorrect {
+    border: 2px solid hsl(0 84% 60%);
+    background: hsl(0 84% 60% / 0.15);
+    animation: shake 0.4s ease;
   }
   
   /* Mobile-optimized spacing */
@@ -273,7 +273,7 @@ All colors MUST be HSL.
   .message-bubble-user {
     background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
     border-radius: 20px 20px 4px 20px;
-    box-shadow: var(--shadow-elegant);
+    box-shadow: var(--shadow-md);
   }
   
   .message-bubble-ai {
@@ -282,15 +282,47 @@ All colors MUST be HSL.
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px 20px 20px 4px;
-    box-shadow: var(--shadow-elegant);
+    box-shadow: var(--shadow-md);
   }
+
+  /* Quiz Animations */
+  @keyframes slideInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes cascadeFade {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes ripple {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.05); opacity: 1; }
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+  }
+
+  .animate-slide-up { animation: slideInUp 0.4s ease-out; }
+  .animate-cascade { animation: cascadeFade 0.3s ease-out; }
+  .animate-ripple { animation: ripple 0.6s ease-out; }
+  .animate-pulse-dot { animation: pulse-dot 1s ease-in-out infinite; }
 
   /* Telegram-style message bubbles */
   .message-bubble-telegram-user {
     background: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-glow)));
     border-radius: 18px 18px 4px 18px;
     position: relative;
-    box-shadow: var(--shadow-accent);
+    box-shadow: var(--shadow-md);
   }
 
   .message-bubble-telegram-user::after {

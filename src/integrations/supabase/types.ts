@@ -62,6 +62,89 @@ export type Database = {
         }
         Relationships: []
       }
+      channel_posts: {
+        Row: {
+          author_id: string
+          channel_id: string
+          content: string | null
+          created_at: string | null
+          id: string
+          media_type: string | null
+          media_url: string | null
+          reactions: Json | null
+          views: number | null
+        }
+        Insert: {
+          author_id: string
+          channel_id: string
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          reactions?: Json | null
+          views?: number | null
+        }
+        Update: {
+          author_id?: string
+          channel_id?: string
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          reactions?: Json | null
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channel_posts_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      channels: {
+        Row: {
+          admins: string[]
+          avatar_url: string | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          subscribers: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          admins?: string[]
+          avatar_url?: string | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          subscribers?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          admins?: string[]
+          avatar_url?: string | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          subscribers?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           created_at: string
@@ -91,9 +174,11 @@ export type Database = {
       }
       chats: {
         Row: {
+          admins: string[] | null
           chat_id: string
           created_at: string | null
           created_by: string | null
+          group_avatar_url: string | null
           group_name: string | null
           id: string
           is_group: boolean | null
@@ -101,9 +186,11 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          admins?: string[] | null
           chat_id: string
           created_at?: string | null
           created_by?: string | null
+          group_avatar_url?: string | null
           group_name?: string | null
           id?: string
           is_group?: boolean | null
@@ -111,9 +198,11 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          admins?: string[] | null
           chat_id?: string
           created_at?: string | null
           created_by?: string | null
+          group_avatar_url?: string | null
           group_name?: string | null
           id?: string
           is_group?: boolean | null
@@ -166,6 +255,7 @@ export type Database = {
           ai_interactions: number | null
           created_at: string | null
           date: string
+          exams_taken: number | null
           id: string
           learning_time_minutes: number | null
           materials_read: number | null
@@ -177,6 +267,7 @@ export type Database = {
           ai_interactions?: number | null
           created_at?: string | null
           date?: string
+          exams_taken?: number | null
           id?: string
           learning_time_minutes?: number | null
           materials_read?: number | null
@@ -188,6 +279,7 @@ export type Database = {
           ai_interactions?: number | null
           created_at?: string | null
           date?: string
+          exams_taken?: number | null
           id?: string
           learning_time_minutes?: number | null
           materials_read?: number | null
@@ -202,8 +294,11 @@ export type Database = {
           answers: Json
           exam_id: string
           id: string
+          questions_correct: number | null
+          questions_wrong: number | null
           score: number | null
           submitted_at: string | null
+          time_taken: number | null
           total_marks: number | null
           user_id: string
         }
@@ -211,8 +306,11 @@ export type Database = {
           answers: Json
           exam_id: string
           id?: string
+          questions_correct?: number | null
+          questions_wrong?: number | null
           score?: number | null
           submitted_at?: string | null
+          time_taken?: number | null
           total_marks?: number | null
           user_id: string
         }
@@ -220,8 +318,11 @@ export type Database = {
           answers?: Json
           exam_id?: string
           id?: string
+          questions_correct?: number | null
+          questions_wrong?: number | null
           score?: number | null
           submitted_at?: string | null
+          time_taken?: number | null
           total_marks?: number | null
           user_id?: string
         }
@@ -427,6 +528,68 @@ export type Database = {
             columns: ["message_id"]
             isOneToOne: false
             referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stories: {
+        Row: {
+          background_color: string | null
+          content_type: string
+          content_url: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          text_content: string | null
+          user_id: string
+        }
+        Insert: {
+          background_color?: string | null
+          content_type: string
+          content_url?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          text_content?: string | null
+          user_id: string
+        }
+        Update: {
+          background_color?: string | null
+          content_type?: string
+          content_url?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          text_content?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      story_views: {
+        Row: {
+          id: string
+          story_id: string
+          viewed_at: string | null
+          viewer_id: string
+        }
+        Insert: {
+          id?: string
+          story_id: string
+          viewed_at?: string | null
+          viewer_id: string
+        }
+        Update: {
+          id?: string
+          story_id?: string
+          viewed_at?: string | null
+          viewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_views_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
             referencedColumns: ["id"]
           },
         ]

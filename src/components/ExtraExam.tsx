@@ -116,12 +116,25 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
     setScore(totalScore);
     setIsSubmitted(true);
 
+    const questionsCorrect = selectedExam.questions.filter(q => answers[q.id] === q.correct_answer).length;
+    const questionsWrong = selectedExam.questions.length - questionsCorrect;
+
     await supabase.from('exam_submissions').insert({
       exam_id: selectedExam.id,
       user_id: user.id,
       answers: answers,
       score: totalScore,
-      total_marks: selectedExam.total_marks
+      total_marks: selectedExam.total_marks,
+      questions_correct: questionsCorrect,
+      questions_wrong: questionsWrong,
+      time_taken: (selectedExam.duration_minutes * 60) - timeLeft
+    });
+
+    // Update daily stats
+    await supabase.rpc('increment_daily_stat', {
+      p_user_id: user.id,
+      p_stat_type: 'exams',
+      p_increment: 1
     });
 
     toast({

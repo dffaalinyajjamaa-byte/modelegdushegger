@@ -39,14 +39,13 @@ export default function BottomNav() {
                   'flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-2xl transition-all duration-300',
                   'hover-scale active:scale-95',
                   isActive
-                    ? 'text-accent shadow-neon-blue'
+                    ? 'text-accent bg-accent/10'
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 <Icon
                   className={cn(
-                    'w-6 h-6 transition-all duration-300',
-                    isActive && 'drop-shadow-[0_0_10px_hsl(217,91%,60%)]'
+                    'w-6 h-6 transition-all duration-300'
                   )}
                   fill={isActive ? 'currentColor' : 'none'}
                 />
