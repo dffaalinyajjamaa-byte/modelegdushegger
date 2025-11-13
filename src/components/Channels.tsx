@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Users, Send, ArrowLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -182,7 +182,6 @@ export default function Channels({ user, onBack }: ChannelsProps) {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <Avatar className="w-10 h-10">
-            <AvatarImage src={selectedChannel.avatar_url || undefined} />
             <AvatarFallback className="gradient-primary text-white">
               {selectedChannel.name[0].toUpperCase()}
             </AvatarFallback>
@@ -201,8 +200,9 @@ export default function Channels({ user, onBack }: ChannelsProps) {
               <CardContent className="pt-4">
                 <div className="flex items-start gap-3 mb-3">
                   <Avatar className="w-8 h-8">
-                    <AvatarImage src={post.author.avatar || undefined} />
-                    <AvatarFallback>{post.author.name[0]}</AvatarFallback>
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
+                      {post.author.name[0]}
+                    </AvatarFallback>
                   </Avatar>
                   <div>
                     <p className="font-medium text-sm">{post.author.name}</p>
@@ -283,7 +283,6 @@ export default function Channels({ user, onBack }: ChannelsProps) {
             <CardHeader>
               <div className="flex items-center gap-3">
                 <Avatar className="w-12 h-12">
-                  <AvatarImage src={channel.avatar_url || undefined} />
                   <AvatarFallback className="gradient-secondary text-white">
                     {channel.name[0].toUpperCase()}
                   </AvatarFallback>

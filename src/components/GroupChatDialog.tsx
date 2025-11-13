@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Users, Plus } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
@@ -119,8 +119,9 @@ export default function GroupChatDialog({ user, onGroupCreated }: GroupChatDialo
                   onCheckedChange={() => toggleUser(u.user_id)}
                 />
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={u.profile_pic || undefined} />
-                  <AvatarFallback>{u.name[0]}</AvatarFallback>
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white text-xs">
+                    {u.name[0]}
+                  </AvatarFallback>
                 </Avatar>
                 <span className="text-sm">{u.name}</span>
               </div>
