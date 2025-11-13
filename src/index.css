@@ -131,9 +131,191 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground overflow-hidden font-sans;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+/* Android-style page transitions */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-out-left {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-30%);
+    opacity: 0;
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-out-right {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scaleY(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+.screen-enter-forward {
+  animation: slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.screen-exit-forward {
+  animation: slide-out-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.screen-enter-back {
+  animation: slide-in-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.screen-exit-back {
+  animation: slide-out-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bottom-sheet-enter {
+  animation: slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.2s ease-out;
+}
+
+/* Ripple effect for Android-style touch */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(123, 104, 238, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+  pointer-events: none;
+}
+
+.ripple:active::after {
+  width: 300px;
+  height: 300px;
+}
+
+/* Android-style cards */
+.android-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  border-radius: 16px;
+}
+
+.android-card-elevated {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16);
+  border-radius: 20px;
+}
+
+/* Message bubble tails */
+.message-bubble-user {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+  padding: 12px 16px;
+  border-radius: 18px 18px 4px 18px;
+  position: relative;
+}
+
+.message-bubble-other {
+  background: hsl(var(--muted));
+  padding: 12px 16px;
+  border-radius: 18px 18px 18px 4px;
+  position: relative;
+}
+
+.message-bubble-telegram-other {
+  background: hsl(var(--card));
+  padding: 12px 16px;
+  border-radius: 18px 18px 18px 4px;
+  position: relative;
+  border: 1px solid hsl(var(--border));
+}
+
+/* Quiz option states */
+.quiz-option-default {
+  @apply border-border hover:border-primary/50 hover:bg-accent/50;
+}
+
+.quiz-option-selected {
+  @apply border-primary bg-primary/10;
+}
+
+.quiz-option-correct {
+  @apply border-green-500 bg-green-50 dark:bg-green-950;
+}
+
+.quiz-option-incorrect {
+  @apply border-red-500 bg-red-50 dark:bg-red-950;
+}
+
+/* Full-screen app layout */
+.app-screen {
+  @apply fixed inset-0 flex flex-col bg-background overflow-hidden;
+}
+
+.app-header {
+  @apply flex-shrink-0 h-14 border-b px-4 flex items-center bg-background z-10;
+}
+
+.app-content {
+  @apply flex-1 overflow-y-auto overscroll-contain;
+}
   
   /* Motivational text animations */
   .motivational-text {

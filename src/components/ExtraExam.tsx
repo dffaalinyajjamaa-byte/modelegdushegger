@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Clock, BookOpen, ArrowLeft, CheckCircle, Globe, Book, Beaker, Users, Shield, Calculator } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Clock, BookOpen, ArrowLeft, CheckCircle, XCircle, Globe, Book, Beaker, Users, Shield, Calculator } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ExtraExamProps {
@@ -183,14 +184,31 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
                 value={answers[question.id]?.toString()}
                 onValueChange={(value) => handleAnswer(question.id, parseInt(value))}
               >
-                {question.options.map((option, index) => (
-                  <div key={index} className="flex items-center space-x-2 p-3 rounded-lg border hover:bg-muted">
-                    <RadioGroupItem value={index.toString()} id={`option-${index}`} />
-                    <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
-                      {option}
-                    </Label>
-                  </div>
-                ))}
+                {question.options.map((option, optionIndex) => {
+                  const isSelected = answers[question.id] === optionIndex;
+                  const isCorrect = isSubmitted && question.correct_answer === optionIndex;
+                  const isWrong = isSubmitted && isSelected && question.correct_answer !== optionIndex;
+                  
+                  return (
+                    <div
+                      key={optionIndex}
+                      className={cn(
+                        'flex items-center space-x-3 p-4 rounded-xl border-2 transition-all duration-300',
+                        !isSubmitted && 'quiz-option-default',
+                        isSelected && !isSubmitted && 'quiz-option-selected',
+                        isCorrect && 'quiz-option-correct',
+                        isWrong && 'quiz-option-incorrect'
+                      )}
+                    >
+                      <RadioGroupItem value={optionIndex.toString()} id={`option-${optionIndex}`} />
+                      <Label htmlFor={`option-${optionIndex}`} className="flex-1 cursor-pointer">
+                        {option}
+                      </Label>
+                      {isSubmitted && isCorrect && <CheckCircle className="w-5 h-5 text-green-600" />}
+                      {isSubmitted && isWrong && <XCircle className="w-5 h-5 text-red-600" />}
+                    </div>
+                  );
+                })}
               </RadioGroup>
             </div>
 

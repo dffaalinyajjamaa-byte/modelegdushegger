@@ -50,7 +50,7 @@ const DigitalBooksLibrary = ({ user, onBack, onBookClick }: DigitalBooksLibraryP
 
     // Fetch progress
     const { data: progressData } = await supabase
-      .from('book_progress')
+      .from('book_progress' as any)
       .select('*')
       .eq('user_id', user.id);
 
@@ -60,7 +60,7 @@ const DigitalBooksLibrary = ({ user, onBack, onBookClick }: DigitalBooksLibraryP
 
     if (progressData) {
       const progressMap: Record<string, BookProgress> = {};
-      progressData.forEach(p => {
+      progressData.forEach((p: any) => {
         progressMap[p.book_id] = p;
       });
       setProgress(progressMap);
