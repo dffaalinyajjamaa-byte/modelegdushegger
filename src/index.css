@@ -500,7 +500,64 @@ All colors MUST be HSL.
     box-shadow: var(--shadow-md);
   }
 
-  .message-bubble-telegram-user::after {
+  /* App Screen Layout */
+  .app-screen {
+    @apply fixed inset-0 flex flex-col bg-background overflow-hidden;
+  }
+  
+  .app-header {
+    @apply flex-shrink-0 h-14 border-b px-4 flex items-center gap-3 bg-background/95 backdrop-blur-xl sticky top-0 z-20;
+  }
+  
+  .app-content {
+    @apply flex-1 overflow-y-auto overscroll-contain;
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Smooth scrolling */
+  * {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--primary) / 0.3); border-radius: 999px; }
+
+  @media (max-width: 768px) {
+    ::-webkit-scrollbar { display: none; }
+    * { -ms-overflow-style: none; scrollbar-width: none; }
+  }
+
+  body { overscroll-behavior-y: contain; }
+
+  /* Message bubbles */
+  .message-bubble-user {
+    @apply bg-primary text-white shadow-md rounded-tl-2xl rounded-bl-2xl rounded-br-md px-4 py-2;
+    position: relative;
+  }
+  
+  .message-bubble-user::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: -8px;
+    width: 0;
+    height: 0;
+    border-left: 8px solid hsl(var(--primary));
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid hsl(var(--primary));
+  }
+  
+  .message-bubble-other {
+    @apply bg-muted text-foreground shadow-md rounded-tr-2xl rounded-br-2xl rounded-bl-md px-4 py-2;
+    position: relative;
+  }
+  
+  .message-bubble-other::after {
     content: '';
     position: absolute;
     right: -8px;

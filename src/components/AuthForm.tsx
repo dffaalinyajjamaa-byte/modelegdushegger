@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff } from 'lucide-react';
 import logo from '@/assets/oro-logo.png';
+import { motion } from 'framer-motion';
 
 interface AuthFormProps {
   onAuthChange: () => void;
@@ -95,15 +96,32 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
     <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-glow border-0">
         <CardHeader className="text-center space-y-4">
-          <div className="flex justify-center">
-            <img src={logo} alt="Oro Digital School" className="w-20 h-20 rounded-full shadow-elegant" />
-          </div>
-          <CardTitle className="text-2xl font-bold gradient-primary bg-clip-text text-transparent">
-            Oro Digital School
-          </CardTitle>
-          <CardDescription className="text-lg">
-            {isLogin ? 'Welcome back to your learning journey' : 'Join the AI-powered educational platform'}
-          </CardDescription>
+          <motion.div 
+            className="flex justify-center"
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ duration: 0.8, type: "spring", stiffness: 200 }}
+          >
+            <img 
+              src={logo} 
+              alt="Oro Digital School" 
+              className="w-28 h-28 md:w-32 md:h-32 rounded-full shadow-2xl border-4 border-primary/20" 
+            />
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            <CardTitle className="text-3xl font-bold gradient-primary bg-clip-text text-transparent">
+              {isLogin ? 'Welcome Back' : 'Join Oro School'}
+            </CardTitle>
+            <CardDescription className="text-base mt-2">
+              {isLogin 
+                ? 'Sign in to continue your learning journey' 
+                : 'Start your digital education today'}
+            </CardDescription>
+          </motion.div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
