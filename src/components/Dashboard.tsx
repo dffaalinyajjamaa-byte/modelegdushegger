@@ -248,7 +248,8 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
       case 'pdf':
         return selectedContent ? (
           <PDFViewer 
-            content={selectedContent} 
+            content={selectedContent}
+            user={user}
             onBack={() => setActiveView('dashboard')}
             onLogActivity={logActivity}
             onMaterialRead={() => updateUserStats('materials_read')}

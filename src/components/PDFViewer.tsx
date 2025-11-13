@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
+import { User } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, FileText, ExternalLink, Download } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { ArrowLeft, FileText, ExternalLink, Download, Sparkles, Bookmark } from 'lucide-react';
 import { validateContentUrl } from '@/lib/content-utils';
+import { supabase } from '@/integrations/supabase/client';
+import BookAIChat from './BookAIChat';
 
 interface Content {
   id: string;
@@ -17,12 +21,13 @@ interface Content {
 
 interface PDFViewerProps {
   content: Content;
+  user: User;
   onBack: () => void;
   onLogActivity: (type: string, description: string, metadata?: any) => void;
   onMaterialRead?: () => void;
 }
 
-export default function PDFViewer({ content, onBack, onLogActivity, onMaterialRead }: PDFViewerProps) {
+export default function PDFViewer({ content, user, onBack, onLogActivity, onMaterialRead }: PDFViewerProps) {
   const [marked, setMarked] = useState(false);
 
   const handleMarkRead = () => {
