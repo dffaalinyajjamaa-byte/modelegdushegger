@@ -8,84 +8,77 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Oro Digital School Design System */
-    /* Glassmorphism with Navy, Cyan, Purple, Lime color scheme */
-    
-    --background: 220 50% 10%;
-    --foreground: 0 0% 100%;
+    /* Telegram-style Purple/Blue Theme - Light Mode */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
 
-    --card: 220 40% 12%;
-    --card-foreground: 0 0% 100%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
 
-    --popover: 220 40% 12%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    /* Primary - Orange (Vibrant Energy) */
-    --primary: 25 95% 53%;
+    /* Primary Purple - Main brand color */
+    --primary: 248 80% 67%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 25 95% 63%;
-    
-    /* Secondary - Red (Passionate Learning) */
-    --secondary: 0 84% 60%;
+    --primary-glow: 248 80% 77%;
+
+    /* Secondary Blue - Accent color */
+    --secondary: 217 100% 68%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-glow: 0 84% 70%;
-    
-    /* Accent - Blue (Trust & Focus) */
-    --accent: 217 91% 60%;
+    --secondary-glow: 217 100% 78%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 248 80% 67%;
     --accent-foreground: 0 0% 100%;
-    --accent-glow: 217 91% 70%;
+    --accent-glow: 248 80% 77%;
 
-    /* Deep navy base */
-    --navy: 220 64% 10%;
-    --navy-light: 220 50% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --muted: 220 30% 25%;
-    --muted-foreground: 216 12% 70%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 248 80% 67%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Chat-specific colors */
+    --chat-bubble-user: 248 80% 67%;
+    --chat-bubble-other: 0 0% 96%;
+    --chat-bg: 0 0% 98%;
+    --online-status: 142 71% 45%;
+    --unread-badge: 248 80% 67%;
 
-    --border: 220 40% 20%;
-    --input: 220 40% 15%;
-    --ring: 197 90% 61%;
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(248 80% 67%), hsl(217 100% 68%));
+    --gradient-secondary: linear-gradient(135deg, hsl(217 100% 68%), hsl(248 80% 67%));
+    --gradient-accent: linear-gradient(135deg, hsl(248 80% 67%), hsl(217 100% 68%));
+    --gradient-hero: linear-gradient(135deg, hsl(248 80% 67%), hsl(217 100% 68%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(0 0% 98%));
 
-    /* Glassmorphism gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(25 95% 53%), hsl(25 95% 63%));
-    --gradient-secondary: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 84% 70%));
-    --gradient-accent: linear-gradient(135deg, hsl(217 91% 60%), hsl(217 91% 70%));
-    --gradient-hero: linear-gradient(135deg, hsl(220 64% 10%) 0%, hsl(25 95% 53%) 35%, hsl(0 84% 60%) 70%, hsl(217 91% 60%) 100%);
-    --gradient-glass: linear-gradient(135deg, hsl(220 40% 15% / 0.8), hsl(220 40% 20% / 0.8));
-    
-    /* Modern Subtle Shadows */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -1px rgb(0 0 0 / 0.06);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -2px rgb(0 0 0 / 0.05);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04);
-    --shadow-primary: 0 10px 15px -3px hsl(25 95% 53% / 0.1);
-    --shadow-secondary: 0 10px 15px -3px hsl(0 84% 60% / 0.1);
-    --shadow-accent: 0 10px 15px -3px hsl(217 91% 60% / 0.1);
-    
+    /* Modern Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.16);
+    --shadow-primary: 0 4px 16px rgba(123, 104, 238, 0.2);
+    --shadow-secondary: 0 4px 16px rgba(91, 159, 255, 0.2);
+    --shadow-accent: 0 4px 16px rgba(123, 104, 238, 0.2);
+
     /* Smooth transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 248 80% 67%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 91%;
+    --sidebar-ring: 248 80% 67%;
   }
 
   .dark {
