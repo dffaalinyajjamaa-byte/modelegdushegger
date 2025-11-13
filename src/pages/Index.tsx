@@ -3,11 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import AuthForm from '@/components/AuthForm';
 import Dashboard from '@/components/Dashboard';
+import LandingPage from '@/components/LandingPage';
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showLanding, setShowLanding] = useState(true);
 
   useEffect(() => {
     // Set up auth state listener
@@ -38,6 +40,10 @@ const Index = () => {
     setSession(null);
   };
 
+  const handleGetStarted = () => {
+    setShowLanding(false);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen gradient-hero flex items-center justify-center">
@@ -47,6 +53,10 @@ const Index = () => {
         </div>
       </div>
     );
+  }
+
+  if (showLanding && !user) {
+    return <LandingPage onGetStarted={handleGetStarted} />;
   }
 
   if (!user || !session) {
