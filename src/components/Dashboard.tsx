@@ -85,10 +85,29 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-      setProfile(data);
+
+      if (!data) {
+        // Create profile if it doesn't exist
+        const { data: newProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || 'Student',
+            grade: 'Grade 8',
+            role: 'student'
+          })
+          .select()
+          .single();
+        
+        if (insertError) throw insertError;
+        setProfile(newProfile);
+      } else {
+        setProfile(data);
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
       toast({

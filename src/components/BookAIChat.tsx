@@ -41,7 +41,7 @@ const BookAIChat = ({ user, bookId, bookTitle, currentPage, onClose }: BookAICha
 
   const fetchChatHistory = async () => {
     const { data } = await supabase
-      .from('book_ai_chats')
+      .from('book_ai_chats' as any)
       .select('*')
       .eq('book_id', bookId)
       .order('created_at', { ascending: true })
@@ -49,7 +49,7 @@ const BookAIChat = ({ user, bookId, bookTitle, currentPage, onClose }: BookAICha
 
     if (data) {
       const formattedMessages: ChatMessage[] = [];
-      data.forEach(chat => {
+      data.forEach((chat: any) => {
         formattedMessages.push({
           role: 'user',
           content: chat.question,
@@ -89,7 +89,7 @@ const BookAIChat = ({ user, bookId, bookTitle, currentPage, onClose }: BookAICha
       setMessages(prev => [...prev, { role: 'assistant', content: assistantMessage, timestamp: new Date() }]);
 
       // Save to database
-      await supabase.from('book_ai_chats').insert({
+      await supabase.from('book_ai_chats' as any).insert({
         user_id: user.id,
         book_id: bookId,
         page_number: currentPage,
