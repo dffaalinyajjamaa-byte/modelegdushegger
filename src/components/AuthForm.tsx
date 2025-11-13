@@ -20,21 +20,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
   const [grade, setGrade] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const { toast } = useToast();
-
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,28 +55,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
         
         if (error) throw error;
 
-        // Upload avatar to storage
-        let avatarUrl = null;
-        if (avatarFile && authData.user) {
-          const fileExt = avatarFile.name.split('.').pop();
-          const fileName = `${authData.user.id}/avatar.${fileExt}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(fileName, avatarFile, {
-              cacheControl: '3600',
-              upsert: true
-            });
-          
-          if (!uploadError) {
-            const { data: { publicUrl } } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(fileName);
-            avatarUrl = publicUrl;
-          }
-        }
-
-        // Create profile with avatar
+        // Create profile
         if (authData.user) {
           const { error: profileError } = await supabase
             .from('profiles')
@@ -100,7 +65,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
               full_name: fullName,
               grade: grade,
               role: 'student',
-              avatar_url: avatarUrl
+              avatar_url: null
             });
           
           if (profileError) {
@@ -144,26 +109,6 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <>
-                <div className="flex flex-col items-center gap-2 mb-4">
-                  <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                    {avatarPreview ? (
-                      <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-2xl text-muted-foreground">📷</span>
-                    )}
-                  </div>
-                  <Label htmlFor="avatar" className="cursor-pointer text-primary hover:underline">
-                    Upload Photo
-                  </Label>
-                  <Input
-                    id="avatar"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleAvatarChange}
-                  />
-                </div>
-                
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input

@@ -4,9 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { User } from '@supabase/supabase-js';
-import { ArrowLeft, Camera, Save } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface SettingsProps {
@@ -43,57 +43,6 @@ export default function Settings({ user, onBack }: SettingsProps) {
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setLoading(true);
-      
-      // Upload to storage with upsert to replace existing
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}/avatar.${fileExt}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true // Replace existing file
-        });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-      // Update profile with timestamp to bust cache
-      const urlWithTimestamp = `${publicUrl}?t=${Date.now()}`;
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: urlWithTimestamp })
-        .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
-
-      setAvatarUrl(urlWithTimestamp);
-      
-      toast({
-        title: 'Success!',
-        description: 'Profile picture updated successfully.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to upload avatar',
-        variant: 'destructive',
-      });
     } finally {
       setLoading(false);
     }
@@ -144,42 +93,11 @@ export default function Settings({ user, onBack }: SettingsProps) {
         <CardContent className="space-y-6">
           {/* Avatar */}
           <div className="flex flex-col items-center gap-4">
-            <div className="relative">
-              <Avatar className="w-32 h-32 border-4 border-primary/30">
-                <AvatarImage 
-                  src={avatarUrl} 
-                  alt={fullName}
-                  onError={(e) => {
-                    console.error('Avatar failed to load:', avatarUrl);
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-                <AvatarFallback className="text-2xl bg-gradient-to-br from-primary to-secondary text-white">
-                  {fullName.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              {loading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-                  <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
-                </div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="avatar" className="cursor-pointer">
-                <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition neon-glow-orange">
-                  <Camera className="w-4 h-4" />
-                  {avatarUrl ? 'Change Photo' : 'Upload Photo'}
-                </div>
-              </Label>
-              <Input
-                id="avatar"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarUpload}
-                disabled={loading}
-              />
-            </div>
+            <Avatar className="w-32 h-32 border-4 border-primary/30">
+              <AvatarFallback className="text-2xl bg-gradient-to-br from-primary to-secondary text-white">
+                {fullName.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
           </div>
 
           {/* Full Name */}

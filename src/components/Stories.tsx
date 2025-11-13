@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus, X } from 'lucide-react';
@@ -148,7 +148,6 @@ export default function Stories({ user }: StoriesProps) {
         >
           <div className="relative">
             <Avatar className="w-16 h-16 ring-2 ring-border">
-              <AvatarImage src={user.user_metadata?.avatar_url} />
               <AvatarFallback className="gradient-primary text-white">
                 {user.email?.[0].toUpperCase()}
               </AvatarFallback>
@@ -167,7 +166,6 @@ export default function Stories({ user }: StoriesProps) {
             className="flex-shrink-0 flex flex-col items-center gap-2 group"
           >
             <Avatar className={`w-16 h-16 ring-4 ${story.viewed ? 'ring-border' : 'ring-primary'}`}>
-              <AvatarImage src={story.user.avatar_url || undefined} />
               <AvatarFallback className="gradient-accent text-white">
                 {story.user.name[0].toUpperCase()}
               </AvatarFallback>
@@ -186,8 +184,9 @@ export default function Stories({ user }: StoriesProps) {
               <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Avatar className="w-8 h-8">
-                    <AvatarImage src={selectedStory.user.avatar_url || undefined} />
-                    <AvatarFallback>{selectedStory.user.name[0]}</AvatarFallback>
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
+                      {selectedStory.user.name[0]}
+                    </AvatarFallback>
                   </Avatar>
                   <span className="text-white font-medium">{selectedStory.user.name}</span>
                 </div>
