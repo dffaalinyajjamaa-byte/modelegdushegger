@@ -2,6 +2,219 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============= FULL-SCREEN APP LAYOUTS ============= */
+.app-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: hsl(var(--background));
+  overflow: hidden;
+}
+
+.app-header {
+  flex-shrink: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  gap: 0.75rem;
+  background: hsl(var(--background));
+  z-index: 10;
+}
+
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.safe-bottom {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* ============= SPOTLIGHT ANIMATION ============= */
+@keyframes spotlight {
+  0% {
+    opacity: 0;
+    transform: translate(-72%, -62%) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%,-40%) scale(1);
+  }
+}
+
+.animate-spotlight {
+  animation: spotlight 2s ease .75s 1 forwards;
+}
+
+/* ============= LOADER ============= */
+.loader {
+  width: 48px;
+  height: 48px;
+  border: 4px solid hsl(var(--primary));
+  border-bottom-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  box-sizing: border-box;
+  animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ============= MESSAGE BUBBLES WITH TAILS ============= */
+.message-bubble-user {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
+  position: relative;
+}
+
+.message-bubble-user::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: -8px;
+  width: 0;
+  height: 0;
+  border-left: 10px solid hsl(var(--primary));
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid hsl(var(--primary));
+  filter: brightness(0.9);
+}
+
+.message-bubble-other {
+  background: hsl(var(--muted));
+  position: relative;
+}
+
+.message-bubble-other::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border-right: 10px solid hsl(var(--muted));
+  border-top: 10px solid transparent;
+  border-bottom: 10px solid hsl(var(--muted));
+}
+
+.dark .message-bubble-other {
+  background: hsl(var(--muted) / 0.5);
+}
+
+.dark .message-bubble-other::after {
+  border-right-color: hsl(var(--muted) / 0.5);
+}
+
+/* ============= QUIZ OPTION STATES ============= */
+.quiz-option-default {
+  border-color: hsl(var(--border));
+  background: hsl(var(--background));
+}
+
+.quiz-option-selected {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+}
+
+.quiz-option-correct {
+  background: rgb(240, 253, 244) !important;
+  border-color: rgb(34, 197, 94) !important;
+}
+
+.dark .quiz-option-correct {
+  background: rgb(20, 83, 45) !important;
+}
+
+.quiz-option-incorrect {
+  background: rgb(254, 242, 242) !important;
+  border-color: rgb(239, 68, 68) !important;
+}
+
+.dark .quiz-option-incorrect {
+  background: rgb(127, 29, 29) !important;
+}
+
+/* ============= WAVEFORM ANIMATION ============= */
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scaleY(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+/* ============= SLIDE UP ANIMATION ============= */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* ============= SMOOTH SCROLLING ============= */
+* {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* ============= CUSTOM SCROLLBAR ============= */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.3);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.5);
+}
+
+/* Hide scrollbar on mobile */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    display: none;
+  }
+  
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Bounce effect on scroll */
+body {
+  overscroll-behavior-y: contain;
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */

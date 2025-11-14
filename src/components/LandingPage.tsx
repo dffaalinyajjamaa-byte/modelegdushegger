@@ -1,64 +1,108 @@
 import { ContainerScroll } from '@/components/ui/container-scroll-animation';
 import { BackgroundPaths } from '@/components/ui/background-paths';
+import { SplineScene } from '@/components/ui/spline';
+import { Spotlight } from '@/components/ui/spotlight';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import logo from '@/assets/oro-logo.png';
 import { motion } from 'framer-motion';
 
 export default function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
   return (
-    <div className="relative">
-      {/* Hero section with animated background */}
-      <BackgroundPaths title="Oro Digital School" />
-      
-      {/* Scroll animation section */}
-      <div className="flex flex-col overflow-hidden">
-        <ContainerScroll
-          titleComponent={
-            <>
-              <motion.div 
-                className="flex justify-center mb-8"
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ duration: 0.8, type: "spring" }}
-              >
-                <img 
-                  src={logo} 
-                  alt="Oro Digital School" 
-                  className="w-32 h-32 md:w-40 md:h-40 rounded-full shadow-2xl"
-                />
-              </motion.div>
-              
-              <h1 className="text-4xl md:text-5xl font-semibold text-black dark:text-white">
-                Learn Smarter with <br />
-                <span className="text-4xl md:text-[6rem] font-bold mt-1 leading-none bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  Digital Education
-                </span>
-              </h1>
-              
-              <p className="text-lg md:text-xl text-muted-foreground mt-4 max-w-2xl mx-auto">
-                Access Grade 8 courses, take exams, chat with AI teachers, and connect with classmates
-              </p>
-              
-              <Button
-                onClick={onGetStarted}
-                size="lg"
-                className="mt-8 rounded-full px-12 py-6 text-lg"
-              >
-                Get Started
-              </Button>
-            </>
-          }
-        >
-          {/* App preview mockup */}
-          <div className="w-full h-full bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center">
-            <img 
-              src={logo} 
-              alt="App Preview" 
-              className="w-64 h-64 object-contain opacity-50"
-            />
+    <div className="relative min-h-screen overflow-auto">
+      <BackgroundPaths 
+        title="Oro Digital School" 
+        onButtonClick={onGetStarted}
+        showButton={true}
+      >
+        {/* 3D Spline Scene with Logo - Red/White/Black Theme */}
+        <div className="relative z-10 py-20">
+          <div className="container mx-auto px-4">
+            <div className="max-w-5xl mx-auto">
+              <Card className="overflow-hidden bg-black/95 border-red-500/50 rounded-3xl">
+                <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="red" />
+                
+                <div className="flex flex-col md:flex-row h-[500px]">
+                  {/* Left: Logo + Text */}
+                  <div className="flex-1 p-8 relative z-10 flex flex-col justify-center">
+                    <motion.img
+                      src={logo}
+                      alt="Oro Digital School"
+                      className="w-24 h-24 md:w-32 md:h-32 rounded-full shadow-2xl border-4 border-red-500 mb-6"
+                      initial={{ scale: 0, rotate: -180 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{ duration: 0.8, type: "spring" }}
+                    />
+                    
+                    <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                      <span className="text-red-500">Learn</span>
+                      <span className="text-white"> Smart</span>
+                      <span className="text-black dark:text-white"> Today</span>
+                    </h1>
+                    
+                    <p className="mt-4 text-gray-300 max-w-lg">
+                      Experience the future of education with AI-powered learning, 
+                      interactive 3D content, and personalized study paths.
+                    </p>
+                    
+                    <Button
+                      onClick={onGetStarted}
+                      size="lg"
+                      className="mt-6 bg-red-500 hover:bg-red-600 text-white rounded-full px-8 w-fit"
+                    >
+                      Start Learning
+                    </Button>
+                  </div>
+
+                  {/* Right: 3D Spline Scene */}
+                  <div className="flex-1 relative">
+                    <SplineScene 
+                      scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
+                      className="w-full h-full"
+                    />
+                  </div>
+                </div>
+              </Card>
+            </div>
           </div>
-        </ContainerScroll>
-      </div>
+        </div>
+      
+        {/* Scroll Animation Section */}
+        <div className="relative z-10 pb-20">
+          <ContainerScroll
+            titleComponent={
+              <>
+                <motion.div 
+                  className="flex justify-center mb-8"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.8 }}
+                >
+                  <img 
+                    src={logo} 
+                    alt="App Preview" 
+                    className="w-32 h-32 md:w-40 md:h-40 rounded-full shadow-2xl border-4 border-primary"
+                  />
+                </motion.div>
+                
+                <h2 className="text-3xl md:text-5xl font-bold mb-4">
+                  <span className="bg-gradient-to-r from-red-500 via-white to-black dark:to-white bg-clip-text text-transparent">
+                    Digital Education Platform
+                  </span>
+                </h2>
+                
+                <p className="text-lg text-muted-foreground mt-4">
+                  Grade 8 courses, AI teachers, and collaborative learning
+                </p>
+              </>
+            }
+          >
+            <div className="w-full h-full bg-gradient-to-br from-red-500/20 via-white/10 to-black/20 rounded-2xl flex items-center justify-center">
+              <img src={logo} alt="Preview" className="w-48 h-48 object-contain opacity-70" />
+            </div>
+          </ContainerScroll>
+        </div>
+      </BackgroundPaths>
     </div>
   );
 }
