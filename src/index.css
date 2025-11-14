@@ -2,14 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Global scroll fix */
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* ============= FULL-SCREEN APP LAYOUTS ============= */
 .app-screen {
-  position: fixed;
-  inset: 0;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: hsl(var(--background));
-  overflow: hidden;
+  position: relative;
+}
+
+/* Mobile viewport fixes */
+@supports (-webkit-touch-callout: none) {
+  .app-screen {
+    min-height: -webkit-fill-available;
+  }
 }
 
 .app-header {
@@ -29,6 +46,7 @@
   overflow-x: hidden;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
+  min-height: 0;
 }
 
 .safe-bottom {

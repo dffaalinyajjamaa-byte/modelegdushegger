@@ -219,46 +219,81 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto mobile-p space-y-4">
-      <Card className="glass-card shadow-glow border-primary/30">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 md:w-12 md:h-12 gradient-primary rounded-full flex items-center justify-center shadow-neon">
-                <Bot className="w-5 h-5 md:w-6 md:h-6 text-white" />
+    <div className="app-screen">
+      {/* Fixed Header - ChatGPT Style */}
+      <div className="app-header border-b bg-gradient-to-r from-primary/5 to-secondary/5 backdrop-blur-xl">
+        <div className="flex items-center gap-3 flex-1">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+            <Bot className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="font-bold text-base">AI Teacher</h2>
+            <p className="text-xs text-muted-foreground">Always here to help</p>
+          </div>
+        </div>
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={handleNewChat}
+          className="ripple"
+        >
+          <Plus className="w-5 h-5" />
+        </Button>
+      </div>
+
+      {/* Messages Area - ChatGPT Style */}
+      <ScrollArea className="flex-1 app-content" ref={scrollAreaRef}>
+        <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-6 animate-pulse">
+                <Sparkles className="w-10 h-10 text-white" />
               </div>
-              <div>
-                <CardTitle className="text-lg md:text-xl">Barsiisaa AI</CardTitle>
-                <p className="text-xs md:text-sm text-muted-foreground">Your AI Tutor</p>
+              <h3 className="text-2xl font-bold mb-2">How can I help you today?</h3>
+              <p className="text-muted-foreground text-center max-w-md mb-8">
+                Ask me anything about your lessons, homework, or any topic you'd like to learn!
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl">
+                {[
+                  "Explain photosynthesis",
+                  "Help with math homework",
+                  "History of Ethiopia",
+                  "Science experiment ideas"
+                ].map((prompt, idx) => (
+                  <Card 
+                    key={idx}
+                    className="p-4 cursor-pointer hover:bg-accent/50 transition-colors ripple"
+                    onClick={() => setMessage(prompt)}
+                  >
+                    <p className="text-sm font-medium">{prompt}</p>
+                  </Card>
+                ))}
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleNewChat}
-              className="glass-input hover:neon-glow-lime"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              New
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Chat Messages - Mobile Native Bubbles */}
-            <ScrollArea className="h-[60vh] md:h-96 pr-2" ref={scrollAreaRef}>
-              <div className="space-y-4">
-                {messages.length === 0 && (
-                  <div className="text-center py-12 px-4">
-                    <Sparkles className="w-16 h-16 mx-auto mb-4 text-primary animate-pulse" />
-                    <p className="text-base md:text-lg font-semibold mb-2">
-                      Start chatting with your AI Tutor!
-                    </p>
-                    <p className="text-xs md:text-sm text-muted-foreground">
-                      Ask anything about Math, Science, or any learning topic
-                    </p>
+          ) : (
+            messages.map((msg) => (
+              <div key={msg.id} className="space-y-4">
+                {/* User message */}
+                <div className="flex justify-end">
+                  <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-br-sm px-4 py-3">
+                    <p className="text-sm">{msg.message}</p>
                   </div>
-                )}
+                </div>
+
+                {/* AI response */}
+                <div className="flex justify-start gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="max-w-[80%] bg-muted rounded-2xl rounded-bl-sm px-4 py-3">
+                    <p className="text-sm whitespace-pre-wrap">{msg.response}</p>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
                 
                 {messages.map((msg) => (
                   <div key={msg.id} className="space-y-3 px-2">

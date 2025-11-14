@@ -1,4 +1,4 @@
-import { Home, Bot, Video, BookOpen, MessageCircle } from 'lucide-react';
+import { Home, Bot, Video, BookOpen, MessageCircle, LayoutDashboard } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useScreenSize } from '@/hooks/use-screen-size';
@@ -16,6 +16,7 @@ export default function BottomNav() {
     { icon: BookOpen, label: 'Books', path: '/', activeView: 'books' },
     { icon: Video, label: 'Videos', path: '/', activeView: 'videos' },
     { icon: Bot, label: 'AI', path: '/', activeView: 'ai-teacher' },
+    { icon: LayoutDashboard, label: 'Stats', path: '/', activeView: 'dashboard' },
     { icon: MessageCircle, label: 'Chat', path: '/', activeView: 'messenger' },
   ];
 
@@ -26,7 +27,7 @@ export default function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 mobile-p pb-safe backdrop-blur-xl">
       <div className="glass-card border-t border-border/40 rounded-t-3xl mx-2 mb-2 shadow-lg">
-        <div className="flex items-center justify-around h-16 px-2">
+        <div className="grid grid-cols-6 gap-1 h-16 px-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
