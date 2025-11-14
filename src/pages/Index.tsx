@@ -4,6 +4,7 @@ import { User, Session } from '@supabase/supabase-js';
 import AuthForm from '@/components/AuthForm';
 import Dashboard from '@/components/Dashboard';
 import LandingPage from '@/components/LandingPage';
+import GlobalBackground from '@/components/GlobalBackground';
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -60,10 +61,18 @@ const Index = () => {
   }
 
   if (!user || !session) {
-    return <AuthForm onAuthChange={handleAuthChange} />;
+    return (
+      <GlobalBackground>
+        <AuthForm onAuthChange={handleAuthChange} />
+      </GlobalBackground>
+    );
   }
 
-  return <Dashboard user={user} session={session} onSignOut={handleSignOut} />;
+  return (
+    <GlobalBackground>
+      <Dashboard user={user} session={session} onSignOut={handleSignOut} />
+    </GlobalBackground>
+  );
 };
 
 export default Index;

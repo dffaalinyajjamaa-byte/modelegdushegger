@@ -87,33 +87,49 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
 
       if (!data) {
-        // Create profile if it doesn't exist
+        console.log('Creating new profile for user:', user.id);
+        
         const { data: newProfile, error: insertError } = await supabase
           .from('profiles')
           .insert({
             user_id: user.id,
-            email: user.email,
-            full_name: user.user_metadata?.full_name || 'Student',
+            email: user.email || '',
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Student',
             grade: 'Grade 8',
             role: 'student'
           })
           .select()
           .single();
         
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('Error creating profile:', insertError);
+          toast({
+            title: "Profile Creation Error",
+            description: "Unable to create your profile. Please try refreshing the page.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
         setProfile(newProfile);
+        toast({
+          title: "Welcome!",
+          description: "Your profile has been created successfully.",
+        });
       } else {
         setProfile(data);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load profile data',
-        variant: 'destructive',
+        title: "Failed to Load Profile",
+        description: "Please refresh the page or contact support if the issue persists.",
+        variant: "destructive",
       });
     }
   };

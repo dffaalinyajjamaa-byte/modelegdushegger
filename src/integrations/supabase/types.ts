@@ -62,6 +62,94 @@ export type Database = {
         }
         Relationships: []
       }
+      book_ai_chats: {
+        Row: {
+          answer: string
+          book_id: string
+          created_at: string | null
+          id: string
+          page_number: number | null
+          question: string
+          user_id: string
+        }
+        Insert: {
+          answer: string
+          book_id: string
+          created_at?: string | null
+          id?: string
+          page_number?: number | null
+          question: string
+          user_id: string
+        }
+        Update: {
+          answer?: string
+          book_id?: string
+          created_at?: string | null
+          id?: string
+          page_number?: number | null
+          question?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_ai_chats_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_progress: {
+        Row: {
+          book_id: string
+          bookmarks: Json | null
+          completion_percentage: number | null
+          created_at: string | null
+          current_page: number | null
+          id: string
+          last_position: string | null
+          last_read_at: string | null
+          total_pages: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          bookmarks?: Json | null
+          completion_percentage?: number | null
+          created_at?: string | null
+          current_page?: number | null
+          id?: string
+          last_position?: string | null
+          last_read_at?: string | null
+          total_pages?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          bookmarks?: Json | null
+          completion_percentage?: number | null
+          created_at?: string | null
+          current_page?: number | null
+          id?: string
+          last_position?: string | null
+          last_read_at?: string | null
+          total_pages?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_progress_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       channel_posts: {
         Row: {
           author_id: string
@@ -213,36 +301,42 @@ export type Database = {
       }
       content: {
         Row: {
+          cover_image_url: string | null
           created_at: string
           created_by: string | null
           description: string | null
           grade_level: string | null
           id: string
           subject: string | null
+          thumbnail_url: string | null
           title: string
           type: string
           updated_at: string
           url: string
         }
         Insert: {
+          cover_image_url?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           grade_level?: string | null
           id?: string
           subject?: string | null
+          thumbnail_url?: string | null
           title: string
           type: string
           updated_at?: string
           url: string
         }
         Update: {
+          cover_image_url?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           grade_level?: string | null
           id?: string
           subject?: string | null
+          thumbnail_url?: string | null
           title?: string
           type?: string
           updated_at?: string

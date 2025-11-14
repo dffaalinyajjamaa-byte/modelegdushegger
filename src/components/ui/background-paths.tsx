@@ -51,17 +51,17 @@ function FloatingPaths({ position }: { position: number }) {
 }
 
 export function BackgroundPaths({
-    title = "Background Paths",
-    onButtonClick,
-    showButton = true,
-    children,
+  title = "",
+  onButtonClick,
+  showButton = false,
+  children,
 }: {
-    title?: string;
-    onButtonClick?: () => void;
-    showButton?: boolean;
-    children?: React.ReactNode;
+  title?: string;
+  onButtonClick?: () => void;
+  showButton?: boolean;
+  children?: React.ReactNode;
 }) {
-    const words = title.split(" ");
+  const words = title ? title.split(" ") : [];
 
     return (
         <div className="relative min-h-screen w-full flex flex-col overflow-auto bg-white dark:bg-neutral-950">
@@ -70,16 +70,18 @@ export function BackgroundPaths({
                 <FloatingPaths position={-1} />
             </div>
 
-            <div className="relative z-10 flex-1 overflow-auto">
-                <div className="container mx-auto px-4 md:px-6 text-center py-12">
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 2 }}
-                    className="max-w-4xl mx-auto"
-                >
-                    <h1 className="text-5xl sm:text-7xl md:text-8xl font-bold mb-8 tracking-tighter">
-                        {words.map((word, wordIndex) => (
+      {/* Content area */}
+      <div className="relative z-10 flex-1">
+        {title && words.length > 0 && (
+          <div className="container mx-auto px-4 md:px-6 text-center py-12">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 2 }}
+              className="max-w-4xl mx-auto"
+            >
+              <h1 className="text-5xl sm:text-7xl md:text-8xl font-bold mb-8 tracking-tighter">
+                {words.map((word, wordIndex) => (
                             <span
                                 key={wordIndex}
                                 className="inline-block mr-4 last:mr-0"

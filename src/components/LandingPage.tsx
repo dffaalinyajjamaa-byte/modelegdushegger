@@ -9,31 +9,40 @@ import { motion } from 'framer-motion';
 
 export default function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
   return (
-    <div className="relative min-h-screen overflow-auto">
+    <div className="min-h-screen w-full overflow-y-auto overflow-x-hidden">
       <BackgroundPaths 
         title="Oro Digital School" 
         onButtonClick={onGetStarted}
         showButton={true}
       >
-        {/* 3D Spline Scene with Logo - Red/White/Black Theme */}
+        {/* Logo with Afaan Oromo text and 3D Scene */}
         <div className="relative z-10 py-20">
           <div className="container mx-auto px-4">
-            <div className="max-w-5xl mx-auto">
+            {/* Logo and tagline */}
+            <motion.div 
+              className="flex flex-col items-center mb-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <img 
+                src={logo} 
+                alt="Oro Digital School"
+                className="w-32 h-32 md:w-40 md:h-40 rounded-full shadow-2xl border-4 border-red-500 mb-4"
+              />
+              <p className="text-xl md:text-2xl font-bold text-center bg-gradient-to-r from-red-500 via-white to-black dark:to-white bg-clip-text text-transparent px-4">
+                Lammiin Barate Gaaffii Mirgaa Gaafata
+              </p>
+            </motion.div>
+
+            {/* 3D Spline Scene */}
+            <div className="max-w-5xl mx-auto mb-12">
               <Card className="overflow-hidden bg-black/95 border-red-500/50 rounded-3xl">
                 <Spotlight className="-top-40 left-0 md:left-60 md:-top-20" fill="red" />
                 
                 <div className="flex flex-col md:flex-row h-[500px]">
-                  {/* Left: Logo + Text */}
+                  {/* Left: Text content */}
                   <div className="flex-1 p-8 relative z-10 flex flex-col justify-center">
-                    <motion.img
-                      src={logo}
-                      alt="Oro Digital School"
-                      className="w-24 h-24 md:w-32 md:h-32 rounded-full shadow-2xl border-4 border-red-500 mb-6"
-                      initial={{ scale: 0, rotate: -180 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ duration: 0.8, type: "spring" }}
-                    />
-                    
                     <h1 className="text-4xl md:text-5xl font-bold mb-4">
                       <span className="text-red-500">Learn</span>
                       <span className="text-white"> Smart</span>
@@ -69,7 +78,8 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
       
         {/* Scroll Animation Section */}
         <div className="relative z-10 pb-20">
-          <ContainerScroll
+          <div className="container mx-auto px-4">
+            <ContainerScroll
             titleComponent={
               <>
                 <motion.div 
