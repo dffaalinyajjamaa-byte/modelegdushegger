@@ -80,37 +80,38 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
         <div className="relative z-10 pb-20">
           <div className="container mx-auto px-4">
             <ContainerScroll
-            titleComponent={
-              <>
-                <motion.div 
-                  className="flex justify-center mb-8"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ duration: 0.8 }}
-                >
-                  <img 
-                    src={logo} 
-                    alt="App Preview" 
-                    className="w-32 h-32 md:w-40 md:h-40 rounded-full shadow-2xl border-4 border-primary"
-                  />
-                </motion.div>
-                
-                <h2 className="text-3xl md:text-5xl font-bold mb-4">
-                  <span className="bg-gradient-to-r from-red-500 via-white to-black dark:to-white bg-clip-text text-transparent">
-                    Digital Education Platform
-                  </span>
-                </h2>
-                
-                <p className="text-lg text-muted-foreground mt-4">
-                  Grade 8 courses, AI teachers, and collaborative learning
-                </p>
-              </>
-            }
-          >
-            <div className="w-full h-full bg-gradient-to-br from-red-500/20 via-white/10 to-black/20 rounded-2xl flex items-center justify-center">
-              <img src={logo} alt="Preview" className="w-48 h-48 object-contain opacity-70" />
-            </div>
-          </ContainerScroll>
+              titleComponent={
+                <>
+                  <motion.div 
+                    className="flex justify-center mb-8"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 0.8 }}
+                  >
+                    <img 
+                      src={logo} 
+                      alt="App Preview" 
+                      className="w-32 h-32 md:w-40 md:h-40 rounded-full shadow-2xl border-4 border-primary"
+                    />
+                  </motion.div>
+                  
+                  <h2 className="text-3xl md:text-5xl font-bold mb-4">
+                    <span className="bg-gradient-to-r from-red-500 via-white to-black dark:to-white bg-clip-text text-transparent">
+                      Digital Education Platform
+                    </span>
+                  </h2>
+                  
+                  <p className="text-lg text-muted-foreground mt-4">
+                    Grade 8 courses, AI teachers, and collaborative learning
+                  </p>
+                </>
+              }
+            >
+              <div className="w-full h-full bg-gradient-to-br from-red-500/20 via-white/10 to-black/20 rounded-2xl flex items-center justify-center">
+                <img src={logo} alt="Preview" className="w-48 h-48 object-contain opacity-70" />
+              </div>
+            </ContainerScroll>
+          </div>
         </div>
       </BackgroundPaths>
     </div>

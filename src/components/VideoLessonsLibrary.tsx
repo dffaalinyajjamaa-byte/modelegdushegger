@@ -5,6 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Play, FolderOpen, Video, ArrowLeft } from 'lucide-react';
 import { validateContentUrl } from '@/lib/content-utils';
+import { getYouTubeThumbnail } from '@/lib/youtube-utils';
+import { getYouTubeThumbnail } from '@/lib/youtube-utils';
 
 interface VideoLessonsLibraryProps {
   user: User;
