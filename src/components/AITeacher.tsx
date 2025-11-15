@@ -2,11 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { User } from '@supabase/supabase-js';
-import { Send, Bot, User as UserIcon, Sparkles, Plus, Image as ImageIcon, FileText } from 'lucide-react';
+import { Send, Bot, Sparkles, Plus } from 'lucide-react';
 
 interface AITeacherProps {
   user: User;
@@ -25,7 +24,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
-  const [language] = useState<'om'>('om'); // Only Afaan Oromo supported
+  const [language] = useState<'om'>('om');
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [uploadedPDF, setUploadedPDF] = useState<File | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -67,13 +66,11 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
     try {
       const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-teacher-oromo`;
       
-      // Build conversation history for context
       const conversationMessages = messages.map(msg => ([
         { role: 'user', content: msg.message },
         { role: 'assistant', content: msg.response }
       ])).flat();
       
-      // Add current message
       conversationMessages.push({ role: 'user', content: userMessage });
 
       const response = await fetch(CHAT_URL, {
@@ -99,7 +96,6 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         throw new Error('No response body');
       }
 
-      // Stream the response
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let textBuffer = '';
@@ -114,36 +110,33 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
 
         let newlineIndex: number;
         while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
+          const line = textBuffer.slice(0, newlineIndex);
           textBuffer = textBuffer.slice(newlineIndex + 1);
 
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (line.startsWith(':') || line.trim() === '') continue;
-          if (!line.startsWith('data: ')) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') {
-            streamDone = true;
-            break;
-          }
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (content) {
-              fullResponse += content;
+          if (line.startsWith('data: ')) {
+            const dataStr = line.slice(6);
+            
+            if (dataStr === '[DONE]') {
+              streamDone = true;
+              break;
             }
-          } catch {
-            textBuffer = line + '\n' + textBuffer;
-            break;
+
+            try {
+              const data = JSON.parse(dataStr);
+              if (data.response) {
+                fullResponse += data.response;
+              }
+            } catch (e) {
+              console.error('Error parsing line:', e);
+            }
           }
         }
       }
 
-      return fullResponse || 'Deebiin hin argamne. Maaloo irra deebi\'ii yaali.';
+      return fullResponse || "Deebii argachuu hin dandeenye.";
     } catch (error) {
-      console.error('Error getting AI response:', error);
-      return 'Dhiifama, dogongora tokkotu uumame. Maaloo irra deebi\'ii yaali.';
+      console.error('Error generating AI response:', error);
+      return "Dogongora tokko uumame. Maaloo yeroo muraasa booda yaali.";
     }
   };
 
@@ -156,47 +149,34 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
 
   const handleSendMessage = async () => {
     if (!message.trim() && !uploadedImage && !uploadedPDF) return;
-
-    setLoading(true);
-    const userMessage = message;
+    
+    const userMessage = message.trim();
     setMessage('');
+    setLoading(true);
 
     try {
-      let contextMessage = userMessage;
-      
-      // Add context for uploaded files
-      if (uploadedImage) {
-        contextMessage += ' [User uploaded an image]';
-      }
-      if (uploadedPDF) {
-        contextMessage += ' [User uploaded a PDF document]';
-      }
+      let aiResponse = await generateAIResponse(userMessage);
 
-      // Generate AI response
-      const aiResponse = await generateAIResponse(contextMessage);
-
-      // Save to database
       const { data, error } = await supabase
         .from('chat_messages')
         .insert({
           user_id: user.id,
           message: userMessage,
           response: aiResponse,
-          language: 'om'
+          language: language,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      // Update local state
-      setMessages(prev => [...prev, data]);
-      
-      // Clear uploaded files after sending
+      if (data) {
+        setMessages((prev) => [...prev, data]);
+      }
+
       setUploadedImage(null);
       setUploadedPDF(null);
 
-      // Log activity
       onLogActivity('ai_chat', `Barsiisaa AI gaafate: ${userMessage}`, {
         language: 'om',
         response_length: aiResponse.length,
@@ -220,7 +200,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
 
   return (
     <div className="app-screen">
-      {/* Fixed Header - ChatGPT Style */}
+      {/* Fixed Header */}
       <div className="app-header border-b bg-gradient-to-r from-primary/5 to-secondary/5 backdrop-blur-xl">
         <div className="flex items-center gap-3 flex-1">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
@@ -242,7 +222,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         </Button>
       </div>
 
-      {/* Messages Area - ChatGPT Style */}
+      {/* Messages Area */}
       <ScrollArea className="flex-1 app-content" ref={scrollAreaRef}>
         <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
           {messages.length === 0 ? (
@@ -252,7 +232,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
               </div>
               <h3 className="text-2xl font-bold mb-2">How can I help you today?</h3>
               <p className="text-muted-foreground text-center max-w-md mb-8">
-                Ask me anything about your lessons, homework, or any topic you'd like to learn!
+                Ask me anything about your lessons, homework, or any topic!
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl">
@@ -264,7 +244,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
                 ].map((prompt, idx) => (
                   <Card 
                     key={idx}
-                    className="p-4 cursor-pointer hover:bg-accent/50 transition-colors ripple"
+                    className="p-4 cursor-pointer hover:bg-accent/50 transition-colors"
                     onClick={() => setMessage(prompt)}
                   >
                     <p className="text-sm font-medium">{prompt}</p>
@@ -275,14 +255,12 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
           ) : (
             messages.map((msg) => (
               <div key={msg.id} className="space-y-4">
-                {/* User message */}
                 <div className="flex justify-end">
                   <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-br-sm px-4 py-3">
                     <p className="text-sm">{msg.message}</p>
                   </div>
                 </div>
 
-                {/* AI response */}
                 <div className="flex justify-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
                     <Bot className="w-5 h-5 text-white" />
@@ -294,123 +272,46 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
               </div>
             ))
           )}
-                
-                {messages.map((msg) => (
-                  <div key={msg.id} className="space-y-3 px-2">
-                    {/* User Message - Right Aligned */}
-                    <div className="flex items-end gap-2 justify-end">
-                      <div className="message-bubble-user text-white px-4 py-3 max-w-[80%] text-sm md:text-base">
-                        <p className="break-words">{msg.message}</p>
-                      </div>
-                      <div className="w-8 h-8 bg-gradient-to-br from-secondary to-accent rounded-full flex items-center justify-center flex-shrink-0 shadow-neon">
-                        <UserIcon className="w-4 h-4 text-white" />
-                      </div>
-                    </div>
-                    
-                    {/* AI Response - Left Aligned */}
-                    <div className="flex items-end gap-2">
-                      <div className="w-8 h-8 gradient-primary rounded-full flex items-center justify-center flex-shrink-0 shadow-neon">
-                        <Bot className="w-4 h-4 text-white" />
-                      </div>
-                      <div className="message-bubble-ai text-foreground px-4 py-3 max-w-[80%] text-sm md:text-base">
-                        <p className="break-words">{msg.response}</p>
-                        <Badge variant="outline" className="mt-2 text-xs border-primary/30">
-                          Afaan Oromoo
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                {loading && (
-                  <div className="flex items-end gap-2 px-2">
-                    <div className="w-8 h-8 gradient-primary rounded-full flex items-center justify-center flex-shrink-0 shadow-neon">
-                      <Bot className="w-4 h-4 text-white" />
-                    </div>
-                    <div className="message-bubble-ai px-4 py-3">
-                      <div className="flex gap-1">
-                        <div className="w-2 h-2 bg-primary rounded-full typing-dot"></div>
-                        <div className="w-2 h-2 bg-primary rounded-full typing-dot"></div>
-                        <div className="w-2 h-2 bg-primary rounded-full typing-dot"></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
+          
+          {loading && (
+            <div className="flex justify-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
+                <Bot className="w-5 h-5 text-white" />
               </div>
-            </ScrollArea>
-            
-            {/* File Upload Indicators */}
-            {(uploadedImage || uploadedPDF) && (
-              <div className="flex gap-2">
-                {uploadedImage && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    <ImageIcon className="w-3 h-3" />
-                    Suuraa maxxanfame
-                  </Badge>
-                )}
-                {uploadedPDF && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
-                    <FileText className="w-3 h-3" />
-                    PDF maxxanfame
-                  </Badge>
-                )}
+              <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3">
+                <div className="flex gap-1">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                </div>
               </div>
-            )}
-            
-            {/* Message Input - Glass Style */}
-            <div className="flex gap-2 p-2 glass-card rounded-2xl border-primary/20">
-              <div className="flex gap-1">
-                <label htmlFor="image-upload">
-                  <Button type="button" variant="ghost" size="icon" disabled={loading} asChild className="hover:neon-glow-cyan">
-                    <span className="cursor-pointer">
-                      <ImageIcon className="w-4 h-4 text-primary" />
-                    </span>
-                  </Button>
-                </label>
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => setUploadedImage(e.target.files?.[0] || null)}
-                />
-                
-                <label htmlFor="pdf-upload">
-                  <Button type="button" variant="ghost" size="icon" disabled={loading} asChild className="hover:neon-glow-cyan">
-                    <span className="cursor-pointer">
-                      <FileText className="w-4 h-4 text-primary" />
-                    </span>
-                  </Button>
-                </label>
-                <input
-                  id="pdf-upload"
-                  type="file"
-                  accept="application/pdf"
-                  className="hidden"
-                  onChange={(e) => setUploadedPDF(e.target.files?.[0] || null)}
-                />
-              </div>
-              
-              <Input
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask me anything..."
-                disabled={loading}
-                className="flex-1 glass-input border-0 focus-visible:ring-primary"
-              />
-              <Button 
-                onClick={handleSendMessage} 
-                disabled={loading || (!message.trim() && !uploadedImage && !uploadedPDF)}
-                className="gradient-primary shadow-neon hover:shadow-glow tap-scale"
-                size="icon"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          )}
+        </div>
+      </ScrollArea>
+
+      {/* Input Area */}
+      <div className="border-t bg-background/95 backdrop-blur-xl p-4">
+        <div className="max-w-3xl mx-auto flex gap-2">
+          <Input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={handleKeyPress}
+            placeholder="Ask me anything..."
+            className="rounded-full bg-muted border-0"
+            disabled={loading}
+          />
+          
+          <Button
+            onClick={handleSendMessage}
+            disabled={!message.trim() || loading}
+            size="icon"
+            className="rounded-full"
+          >
+            <Send className="w-5 h-5" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
