@@ -912,5 +912,50 @@ All colors MUST be HSL.
   
   .animate-fade-slide-up {
     animation: fade-slide-up 0.3s ease-out;
+}
+
+/* Video card styles */
+.video-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.video-card:hover {
+  transform: translateY(-4px);
+}
+
+.video-thumbnail-overlay {
+  transition: background-color 0.3s ease;
+}
+
+.play-button-overlay {
+  transition: transform 0.3s ease;
+}
+
+.video-card:hover .play-button-overlay {
+  transform: scale(1.1);
+}
+
+/* Responsive utilities */
+.aspect-video {
+  aspect-ratio: 16 / 9;
+}
+
+@media (max-width: 767px) {
+  .mobile-p {
+    padding: 0.75rem;
+  }
+  
+  .mobile-gap {
+    gap: 0.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .mobile-p {
+    padding: 1.5rem;
+  }
+  
+  .mobile-gap {
+    gap: 1rem;
   }
 }
