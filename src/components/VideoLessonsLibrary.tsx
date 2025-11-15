@@ -11,6 +11,7 @@ interface VideoLessonsLibraryProps {
   user: User;
   onBack: () => void;
   onVideoClick: (video: any) => void;
+  embedded?: boolean;
 }
 
 interface VideoLesson {
@@ -22,7 +23,7 @@ interface VideoLesson {
   url: string;
 }
 
-const VideoLessonsLibrary = ({ user, onBack, onVideoClick }: VideoLessonsLibraryProps) => {
+const VideoLessonsLibrary = ({ user, onBack, onVideoClick, embedded = false }: VideoLessonsLibraryProps) => {
   const [videos, setVideos] = useState<VideoLesson[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,13 +51,17 @@ const VideoLessonsLibrary = ({ user, onBack, onVideoClick }: VideoLessonsLibrary
     ? videos.filter(video => video.subject === selectedSubject)
     : videos;
 
+  const displayVideos = embedded && !selectedSubject ? filteredVideos.slice(0, 6) : filteredVideos;
+
   return (
-    <div className="min-h-screen mobile-p">
+    <div className={embedded ? "" : "min-h-screen mobile-p"}>
       <div className="max-w-7xl mx-auto">
-        <Button onClick={onBack} variant="outline" className="mb-4 glass-card hover:neon-glow-cyan tap-scale">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
+        {!embedded && (
+          <Button onClick={onBack} variant="outline" className="mb-4 glass-card hover:neon-glow-cyan tap-scale">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        )}
 
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2 flex items-center gap-3 motivational-text">
@@ -96,7 +101,7 @@ const VideoLessonsLibrary = ({ user, onBack, onVideoClick }: VideoLessonsLibrary
             </Button>
             <h2 className="text-xl md:text-2xl font-bold mb-4">{selectedSubject}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-              {filteredVideos.map((video) => {
+              {displayVideos.map((video) => {
                 // Validate and fix video URL
                 const videoUrl = validateContentUrl(video.url, 'video');
                 return (
@@ -125,6 +130,13 @@ const VideoLessonsLibrary = ({ user, onBack, onVideoClick }: VideoLessonsLibrary
                 );
               })}
             </div>
+            {embedded && !selectedSubject && videos.length > 6 && (
+              <div className="mt-6 text-center">
+                <Button onClick={() => setSelectedSubject(subjects[0] || null)} variant="outline">
+                  View All Videos
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>

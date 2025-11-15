@@ -960,5 +960,147 @@ All colors MUST be HSL.
   }
 }
 
-/* Close the @layer base block that started at line 359 */
+/* Animated Tagline - Color cycling animation */
+@keyframes text-gradient-animation {
+  0%, 100% { 
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+  25% { 
+    background-position: 50% 50%;
+    filter: hue-rotate(90deg);
+  }
+  50% { 
+    background-position: 100% 50%;
+    filter: hue-rotate(180deg);
+  }
+  75% { 
+    background-position: 50% 50%;
+    filter: hue-rotate(270deg);
+  }
+}
+
+.animated-tagline-container {
+  @apply w-full px-4;
+}
+
+.animated-tagline {
+  background: linear-gradient(90deg, #ef4444, #ffffff, #000000, #f97316, #ef4444);
+  background-size: 400% 400%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: text-gradient-animation 5s ease infinite;
+  font-weight: 700;
+  font-size: clamp(1rem, 4vw, 1.5rem);
+  text-align: center;
+  margin: 1rem 0;
+  line-height: 1.4;
+}
+
+/* Subject Progress Cards */
+.subject-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .subject-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .subject-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+.subject-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem 1.5rem 0.5rem 0.5rem;
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.5rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.subject-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 70%;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 255, 255, 0.1) 10px,
+    rgba(255, 255, 255, 0.1) 20px
+  );
+  border-radius: 1.5rem 1.5rem 0 0;
+  z-index: 0;
+}
+
+.subject-card-blue {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.7) 100%);
+  color: white;
+}
+
+.subject-card-pink {
+  background: linear-gradient(135deg, #fbbf24 0%, #fbcfe8 100%);
+  color: hsl(var(--foreground));
+}
+
+.subject-card-icon {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 0 auto 1rem;
+  z-index: 1;
+}
+
+.subject-card-icon svg {
+  color: hsl(var(--primary));
+}
+
+.subject-card-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.subject-card-title {
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.subject-card-time {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  font-weight: 500;
+}
+
+/* Recent Lessons Responsive */
+@media (max-width: 640px) {
+  .recent-lessons {
+    font-size: 0.75rem;
+  }
+}
+
+/* Close @layer base block */
 }

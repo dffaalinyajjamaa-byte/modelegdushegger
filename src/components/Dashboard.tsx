@@ -18,6 +18,12 @@ import AboutUs from './AboutUs';
 import BottomNav from './BottomNav';
 import ProgressCharts from './ProgressCharts';
 import Messenger from './Messenger';
+import AnimatedTagline from './AnimatedTagline';
+import ChargingPoints from './ChargingPoints';
+import SubjectProgressCards from './SubjectProgressCards';
+import RecentLessons from './RecentLessons';
+import DashboardTabs from './DashboardTabs';
+import { TabsContent } from '@/components/ui/tabs';
 import { useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import logo from '@/assets/oro-logo.png';
@@ -62,6 +68,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
   const [content, setContent] = useState<Content[]>([]);
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
+  const [activeTab, setActiveTab] = useState('all');
   const { toast } = useToast();
   const location = useLocation();
 
@@ -296,194 +303,113 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
   };
 
   const renderDashboard = () => (
-    <div className="space-y-8 animate-fade-slide-up">
-      {/* Hero Section with Oromo Greeting */}
-      <section className="hero-section relative overflow-hidden rounded-3xl">
-        <div className="absolute inset-0 hero-gradient" />
-        
-        <div className="relative z-10 glass-card rounded-3xl p-6 md:p-8 backdrop-blur-xl border-2 border-primary/20">
-          {/* Animated Logo */}
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <img 
-                src={logo} 
-                alt="Oro Digital School"
-                className="w-20 h-20 md:w-24 md:h-24 rounded-full animate-logo-pulse border-4 border-white/20"
-              />
-              <div className="absolute inset-0 rounded-full border-2 border-primary/30 animate-spin-slow" />
-              <div className="absolute inset-0 rounded-full border-2 border-secondary/30 animate-spin-reverse" />
-            </div>
+    <div className="space-y-6 sm:space-y-8">
+      {/* Hero Section with Logo and Animated Tagline */}
+      <div className="relative overflow-hidden gradient-hero rounded-2xl p-6 sm:p-8 shadow-glow">
+        <div className="relative z-10 text-center">
+          <div className="flex justify-center mb-4">
+            <img src={logo} alt="Oro Digital School" className="h-16 sm:h-20 w-auto" />
           </div>
-          
-          {/* Oromo Greeting */}
-          <h1 className="text-3xl md:text-4xl font-bold text-center mb-3 gradient-text">
-            Baga Nagaan Gara Oro Digital School Dhuftan
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 text-white">
+            Welcome back, {profile?.full_name?.split(' ')[0] || 'Student'}! 👋
           </h1>
-          
-          {/* English Translation */}
-          <p className="text-xl text-center text-foreground/80 mb-6">
-            Welcome to Oro Digital School, <span className="font-bold text-primary">{profile?.full_name}</span>!
-          </p>
-          
-          {/* Quick Stats Cards */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="glass-card rounded-2xl p-4 text-center border-2 border-primary/30 hover-scale">
-              <div className="text-3xl md:text-4xl font-bold text-primary neon-glow-orange">{userStats.tasks_completed}</div>
-              <div className="text-sm text-foreground/70 mt-1">Tasks Done</div>
-            </div>
-            <div className="glass-card rounded-2xl p-4 text-center border-2 border-secondary/30 hover-scale">
-              <div className="text-3xl md:text-4xl font-bold text-secondary neon-glow-red">{userStats.videos_watched}</div>
-              <div className="text-sm text-foreground/70 mt-1">Videos</div>
-            </div>
-            <div className="glass-card rounded-2xl p-4 text-center border-2 border-accent/30 hover-scale">
-              <div className="text-3xl md:text-4xl font-bold text-accent neon-glow-blue">{userStats.materials_read}</div>
-              <div className="text-sm text-foreground/70 mt-1">Books</div>
-            </div>
-          </div>
+          <AnimatedTagline />
         </div>
-      </section>
+      </div>
 
-      {/* Progress Charts */}
-      <ProgressCharts userId={user.id} stats={userStats} compact={true} />
+      {/* Tabs for navigation */}
+      <DashboardTabs activeTab={activeTab} onTabChange={setActiveTab}>
+        {/* All Tab - Overview */}
+        <TabsContent value="all" className="space-y-6">
+          <ChargingPoints userId={user.id} />
+          <SubjectProgressCards userId={user.id} />
+          <RecentLessons userId={user.id} />
+        </TabsContent>
 
-      {/* Navigation Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-        {/* AI Teacher */}
-        <Card
-          className={cn(
-            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-orange border-2 border-primary/20",
-            "flex flex-col items-center text-center gap-4"
-          )}
-          onClick={() => setActiveView('ai-teacher')}
-        >
-          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center neon-glow-orange">
-            <Bot className="w-8 h-8 text-white" />
+        {/* Lessons Tab - Embedded Videos and Books */}
+        <TabsContent value="lessons" className="space-y-6">
+          <div className="grid lg:grid-cols-2 gap-6">
+            <div>
+              <h2 className="text-xl font-bold mb-4">Video Lessons</h2>
+              <VideoLessonsLibrary 
+                user={user} 
+                onBack={() => {}} 
+                onVideoClick={handleContentClick}
+                embedded={true}
+              />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold mb-4">Digital Books</h2>
+              <DigitalBooksLibrary 
+                user={user} 
+                onBack={() => {}} 
+                onBookClick={handleContentClick}
+                embedded={true}
+              />
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-lg mb-1">AI Teacher</h3>
-            <p className="text-sm text-muted-foreground">Learn with AI</p>
+        </TabsContent>
+
+        {/* Score Tab - Charts and Achievements */}
+        <TabsContent value="score" className="space-y-6">
+          <ProgressCharts userId={user.id} stats={userStats} />
+        </TabsContent>
+
+        {/* Progress Tab - Detailed Analytics */}
+        <TabsContent value="progress" className="space-y-6">
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            <Card className="p-4 sm:p-6 text-center">
+              <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">
+                {userStats.videos_watched}
+              </div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Videos Watched</div>
+            </Card>
+            <Card className="p-4 sm:p-6 text-center">
+              <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">
+                {userStats.materials_read}
+              </div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Books Read</div>
+            </Card>
+            <Card className="p-4 sm:p-6 text-center">
+              <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">
+                {userStats.tasks_completed}
+              </div>
+              <div className="text-xs sm:text-sm text-muted-foreground">Tasks Done</div>
+            </Card>
+          </div>
+          <ProgressCharts userId={user.id} stats={userStats} />
+        </TabsContent>
+      </DashboardTabs>
+
+      {/* Quick Access Cards - Below tabs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="p-4 cursor-pointer hover:shadow-lg transition-all" onClick={() => setActiveView('ai-teacher')}>
+          <div className="text-center">
+            <Bot className="w-8 h-8 mx-auto mb-2 text-primary" />
+            <p className="font-semibold text-sm">AI Teacher</p>
           </div>
         </Card>
-
-        {/* Video Lessons */}
-        <Card
-          className={cn(
-            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-red border-2 border-secondary/20",
-            "flex flex-col items-center text-center gap-4"
-          )}
-          onClick={() => setActiveView('videos')}
-        >
-          <div className="w-16 h-16 rounded-2xl gradient-secondary flex items-center justify-center neon-glow-red">
-            <Video className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-lg mb-1">Video Lessons</h3>
-            <p className="text-sm text-muted-foreground">Watch & Learn</p>
+        <Card className="p-4 cursor-pointer hover:shadow-lg transition-all" onClick={() => setActiveView('tasks')}>
+          <div className="text-center">
+            <CheckSquare className="w-8 h-8 mx-auto mb-2 text-primary" />
+            <p className="font-semibold text-sm">Tasks</p>
           </div>
         </Card>
-
-        {/* Digital Books */}
-        <Card
-          className={cn(
-            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-blue border-2 border-accent/20",
-            "flex flex-col items-center text-center gap-4"
-          )}
-          onClick={() => setActiveView('books')}
-        >
-          <div className="w-16 h-16 rounded-2xl gradient-accent flex items-center justify-center neon-glow-blue">
-            <BookOpen className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-lg mb-1">Digital Books</h3>
-            <p className="text-sm text-muted-foreground">Read Materials</p>
+        <Card className="p-4 cursor-pointer hover:shadow-lg transition-all" onClick={() => setActiveView('messenger')}>
+          <div className="text-center">
+            <MessageCircle className="w-8 h-8 mx-auto mb-2 text-primary" />
+            <p className="font-semibold text-sm">Chat</p>
           </div>
         </Card>
-
-        {/* Task Manager */}
-        <Card
-          className={cn(
-            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-orange border-2 border-primary/20",
-            "flex flex-col items-center text-center gap-4"
-          )}
-          onClick={() => setActiveView('tasks')}
-        >
-          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center neon-glow-orange">
-            <CheckSquare className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-lg mb-1">Tasks</h3>
-            <p className="text-sm text-muted-foreground">Your Assignments</p>
-          </div>
-        </Card>
-
-        {/* Chat/Messenger */}
-        <Card
-          className={cn(
-            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-blue border-2 border-accent/20",
-            "flex flex-col items-center text-center gap-4"
-          )}
-          onClick={() => setActiveView('messenger')}
-        >
-          <div className="w-16 h-16 rounded-2xl gradient-accent flex items-center justify-center neon-glow-blue">
-            <MessageCircle className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-lg mb-1">Chat</h3>
-            <p className="text-sm text-muted-foreground">Connect</p>
-          </div>
-        </Card>
-
-        {/* Materials Upload */}
-        <Card
-          className={cn(
-            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-red border-2 border-secondary/20",
-            "flex flex-col items-center text-center gap-4"
-          )}
-          onClick={() => setActiveView('exam')}
-        >
-          <div className="w-16 h-16 rounded-2xl gradient-secondary flex items-center justify-center neon-glow-red">
-            <FileText className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-lg mb-1">Materials</h3>
-            <p className="text-sm text-muted-foreground">Upload Files</p>
-          </div>
-        </Card>
-
-        {/* Quizzes */}
-        <Card
-          className={cn(
-            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-orange border-2 border-primary/20",
-            "flex flex-col items-center text-center gap-4"
-          )}
-          onClick={() => setActiveView('exam')}
-        >
-          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center neon-glow-orange">
-            <Brain className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-lg mb-1">Quizzes</h3>
-            <p className="text-sm text-muted-foreground">Test Yourself</p>
-          </div>
-        </Card>
-
-        {/* Settings */}
-        <Card
-          className={cn(
-            "glass-card p-6 cursor-pointer transition-all duration-300 hover-scale hover:neon-glow-blue border-2 border-accent/20",
-            "flex flex-col items-center text-center gap-4"
-          )}
-          onClick={() => setActiveView('settings')}
-        >
-          <div className="w-16 h-16 rounded-2xl gradient-accent flex items-center justify-center neon-glow-blue">
-            <Settings className="w-8 h-8 text-white" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-lg mb-1">Settings</h3>
-            <p className="text-sm text-muted-foreground">Your Profile</p>
+        <Card className="p-4 cursor-pointer hover:shadow-lg transition-all" onClick={() => setActiveView('exam')}>
+          <div className="text-center">
+            <Brain className="w-8 h-8 mx-auto mb-2 text-primary" />
+            <p className="font-semibold text-sm">Exams</p>
           </div>
         </Card>
       </div>
+
+      {activeView === 'dashboard' && <AboutUs />}
     </div>
   );
 
