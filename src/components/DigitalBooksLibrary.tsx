@@ -11,6 +11,7 @@ interface DigitalBooksLibraryProps {
   user: User;
   onBack: () => void;
   onBookClick: (book: any) => void;
+  embedded?: boolean;
 }
 
 interface Book {
@@ -30,7 +31,7 @@ interface BookProgress {
   last_read_at: string;
 }
 
-const DigitalBooksLibrary = ({ user, onBack, onBookClick }: DigitalBooksLibraryProps) => {
+const DigitalBooksLibrary = ({ user, onBack, onBookClick, embedded = false }: DigitalBooksLibraryProps) => {
   const [books, setBooks] = useState<Book[]>([]);
   const [progress, setProgress] = useState<Record<string, BookProgress>>({});
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
@@ -107,13 +108,17 @@ const DigitalBooksLibrary = ({ user, onBack, onBookClick }: DigitalBooksLibraryP
     );
   };
 
+  const displayBooks = embedded && !selectedSubject ? filteredBooks.slice(0, 6) : filteredBooks;
+
   return (
-    <div className="min-h-screen p-4 pb-24">
+    <div className={embedded ? "" : "min-h-screen p-4 pb-24"}>
       <div className="max-w-7xl mx-auto space-y-6">
-        <Button onClick={onBack} variant="outline" className="rounded-full">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
-        </Button>
+        {!embedded && (
+          <Button onClick={onBack} variant="outline" className="rounded-full">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        )}
 
         <div>
           <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
@@ -172,7 +177,7 @@ const DigitalBooksLibrary = ({ user, onBack, onBookClick }: DigitalBooksLibraryP
         {/* All Books Section */}
         {!selectedSubject ? (
           <div>
-            <h2 className="text-xl font-semibold mb-4">Browse by Subject</h2>
+            {!embedded && <h2 className="text-xl font-semibold mb-4">Browse by Subject</h2>}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {subjects.map((subject) => (
                 <Card
@@ -203,9 +208,9 @@ const DigitalBooksLibrary = ({ user, onBack, onBookClick }: DigitalBooksLibraryP
               <ArrowLeft className="w-4 h-4 mr-2" />
               All Subjects
             </Button>
-            <h2 className="text-2xl font-bold mb-4">{selectedSubject}</h2>
+            {!embedded && <h2 className="text-2xl font-bold mb-4">{selectedSubject}</h2>}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {filteredBooks.map((book) => {
+              {displayBooks.map((book) => {
                 const bookUrl = validateContentUrl(book.url, 'pdf');
                 const bookProgress = progress[book.id];
                 
@@ -243,6 +248,13 @@ const DigitalBooksLibrary = ({ user, onBack, onBookClick }: DigitalBooksLibraryP
                 );
               })}
             </div>
+            {embedded && !selectedSubject && books.length > 6 && (
+              <div className="mt-6 text-center">
+                <Button onClick={() => setSelectedSubject(subjects[0] || null)} variant="outline">
+                  View All Books
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
