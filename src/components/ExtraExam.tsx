@@ -53,15 +53,30 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
   const [answers, setAnswers] = useState<{ [key: string]: number }>({});
   const [timeLeft, setTimeLeft] = useState(0);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [score, setScore] = useState(0);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [userRank, setUserRank] = useState(1);
+  const [profile, setProfile] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchExams();
+    fetchProfile();
   }, []);
 
+  const fetchProfile = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    if (data) setProfile(data);
+  };
+
   useEffect(() => {
-    if (selectedExam && timeLeft > 0) {
+    if (selectedExam && timeLeft > 0 && !isPaused) {
       const timer = setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
@@ -73,7 +88,67 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [selectedExam, timeLeft]);
+  }, [selectedExam, timeLeft, isPaused]);
+
+  // Auto-save session every 10 seconds
+  useEffect(() => {
+    if (selectedExam && !isSubmitted && !isPaused) {
+      const interval = setInterval(() => {
+        saveQuizSession();
+      }, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [selectedExam, answers, currentQuestion, timeLeft, isSubmitted, isPaused]);
+
+  const saveQuizSession = async () => {
+    if (!selectedExam) return;
+    
+    try {
+      await supabase.from('quiz_sessions').upsert({
+        id: sessionId || undefined,
+        user_id: user.id,
+        exam_id: selectedExam.id,
+        answers,
+        current_question: currentQuestion,
+        time_remaining: timeLeft,
+        paused_at: isPaused ? new Date().toISOString() : null
+      });
+    } catch (error) {
+      console.error('Error saving quiz session:', error);
+    }
+  };
+
+  const loadQuizSession = async (examId: string) => {
+    try {
+      const { data } = await supabase
+        .from('quiz_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('exam_id', examId)
+        .maybeSingle();
+
+      if (data) {
+        setSessionId(data.id);
+        setAnswers(data.answers as { [key: string]: number });
+        setCurrentQuestion(data.current_question);
+        setTimeLeft(data.time_remaining);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error loading quiz session:', error);
+      return false;
+    }
+  };
+
+  const handlePause = () => {
+    setIsPaused(true);
+    saveQuizSession();
+  };
+
+  const handleResume = () => {
+    setIsPaused(false);
+  };
 
   const fetchExams = async (subject?: string) => {
     let query = supabase
@@ -92,12 +167,25 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
     }
   };
 
-  const startExam = (exam: Exam) => {
-    setSelectedExam(exam);
-    setTimeLeft(exam.duration_minutes * 60);
-    setCurrentQuestion(0);
-    setAnswers({});
-    setIsSubmitted(false);
+  const startExam = async (exam: Exam) => {
+    // Try to load existing session
+    const hasSession = await loadQuizSession(exam.id);
+    
+    if (!hasSession) {
+      setSelectedExam(exam);
+      setTimeLeft(exam.duration_minutes * 60);
+      setCurrentQuestion(0);
+      setAnswers({});
+      setIsSubmitted(false);
+      setSessionId(null);
+    } else {
+      setSelectedExam(exam);
+      setIsSubmitted(false);
+      toast({
+        title: 'Session Restored',
+        description: 'Continuing from where you left off'
+      });
+    }
   };
 
   const handleAnswer = (questionId: string, answer: number) => {
