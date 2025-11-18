@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@supabase/supabase-js';
 import { ArrowLeft, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -94,9 +94,13 @@ export default function Settings({ user, onBack }: SettingsProps) {
           {/* Avatar */}
           <div className="flex flex-col items-center gap-4">
             <Avatar className="w-32 h-32 border-4 border-primary/30">
-              <AvatarFallback className="text-2xl bg-gradient-to-br from-primary to-secondary text-white">
-                {fullName.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-              </AvatarFallback>
+              {avatarUrl ? (
+                <AvatarImage src={avatarUrl} alt={fullName} className="object-cover" />
+              ) : (
+                <AvatarFallback className="text-2xl bg-gradient-to-br from-primary to-secondary text-white">
+                  {fullName.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                </AvatarFallback>
+              )}
             </Avatar>
           </div>
 

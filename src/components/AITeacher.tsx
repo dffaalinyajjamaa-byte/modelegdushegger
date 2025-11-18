@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { AutoExpandingTextarea } from '@/components/ui/auto-expanding-textarea';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { User } from '@supabase/supabase-js';
@@ -328,12 +328,17 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
       {/* Input Area */}
       <div className="border-t bg-background/95 backdrop-blur-xl p-4">
         <div className="max-w-3xl mx-auto flex gap-2">
-          <Input
+          <AutoExpandingTextarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Ask me anything..."
-            className="rounded-full bg-muted border-0"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+              }
+            }}
+            placeholder="Ask me anything... (Shift+Enter for new line)"
+            className="rounded-2xl bg-muted border-0"
             disabled={loading}
           />
           
@@ -341,7 +346,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
             onClick={handleSendMessage}
             disabled={!message.trim() || loading}
             size="icon"
-            className="rounded-full"
+            className="rounded-full h-11 w-11 flex-shrink-0"
           >
             <Send className="w-5 h-5" />
           </Button>
