@@ -139,17 +139,29 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
 
             try {
               const data = JSON.parse(dataStr);
-              if (data.response) {
-                fullResponse += data.response;
+              console.log('[AI Teacher] Parsed data:', data);
+              
+              // Lovable AI Gateway returns OpenAI-compatible format
+              if (data.choices && data.choices[0]?.delta?.content) {
+                const content = data.choices[0].delta.content;
+                fullResponse += content;
+                console.log('[AI Teacher] Received content chunk:', content.substring(0, 50));
               }
             } catch (e) {
-              console.error('Error parsing line:', e);
+              console.error('[AI Teacher] Error parsing line:', e, 'Line:', dataStr.substring(0, 100));
             }
           }
         }
       }
 
-      return fullResponse || "Deebii argachuu hin dandeenye.";
+      console.log('[AI Teacher] Stream complete. Full response length:', fullResponse.length);
+      
+      if (!fullResponse || fullResponse.trim().length === 0) {
+        console.error('[AI Teacher] Empty response received');
+        return "Gaaffii kee hubadhe, garuu deebii kennuu hin dandeenye. Maaloo gaaffii biraa gaafadhu.";
+      }
+      
+      return fullResponse;
     } catch (error) {
       console.error('Error generating AI response:', error);
       return "Dogongora tokko uumame. Maaloo yeroo muraasa booda yaali.";
@@ -264,18 +276,32 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
           ) : (
             messages.map((msg) => (
               <div key={msg.id} className="space-y-4">
+                {/* User Message */}
                 <div className="flex justify-end">
-                  <div className="max-w-[80%] bg-primary text-primary-foreground rounded-2xl rounded-br-sm px-4 py-3">
-                    <p className="text-sm">{msg.message}</p>
+                  <div className="w-full max-w-[85%] flex flex-col items-end">
+                    <p className="text-xs font-semibold mb-1 text-muted-foreground px-2">You</p>
+                    <div className="bg-primary text-primary-foreground rounded-2xl rounded-br-sm px-4 py-3 w-full">
+                      <p className="text-sm break-words">{msg.message}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 px-2">
+                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   </div>
                 </div>
 
+                {/* AI Message */}
                 <div className="flex justify-start gap-3">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
                     <Bot className="w-5 h-5 text-white" />
                   </div>
-                  <div className="max-w-[80%] bg-muted rounded-2xl rounded-bl-sm px-4 py-3">
-                    <p className="text-sm whitespace-pre-wrap">{msg.response}</p>
+                  <div className="w-full max-w-[85%] flex flex-col">
+                    <p className="text-xs font-semibold mb-1 text-muted-foreground px-2">AI Teacher</p>
+                    <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3 w-full">
+                      <p className="text-sm whitespace-pre-wrap break-words">{msg.response}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 px-2">
+                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   </div>
                 </div>
               </div>
