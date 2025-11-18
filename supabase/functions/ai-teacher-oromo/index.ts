@@ -19,7 +19,9 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log("AI Teacher request received");
+    console.log("AI Teacher Oromo request received");
+    console.log("Messages count:", messages?.length || 0);
+    console.log("Last message:", messages[messages.length - 1]?.content?.substring(0, 100));
 
     // System prompt for Afaan Oromo only responses
     const systemPrompt = `Ati barsiisaa AI kan Mana Barumsaa Dijitaalaa Oro kan Afaan Oromootiin qofa deebii kennitu. 
@@ -52,6 +54,9 @@ Deebii kee: "Herregni jechuun qoratama lakkoofsaa fi bocawwan isaa ti. Herregni 
       }),
     });
 
+    console.log("AI gateway response status:", response.status);
+    console.log("AI gateway response OK:", response.ok);
+    
     if (!response.ok) {
       if (response.status === 429) {
         console.error("Rate limit exceeded");
@@ -75,7 +80,7 @@ Deebii kee: "Herregni jechuun qoratama lakkoofsaa fi bocawwan isaa ti. Herregni 
       });
     }
 
-    console.log("Streaming response from AI gateway");
+    console.log("Streaming response from AI gateway - starting stream");
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });

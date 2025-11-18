@@ -422,24 +422,32 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                 <div className="space-y-3">
                   {messages.map((msg) => {
                     const isOwnMessage = msg.sender_id === user.id;
+                    const senderName = isOwnMessage ? 'You' : getChatName(selectedChat);
+                    
                     return (
                       <div
                         key={msg.id}
-                        className={`flex items-end gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                        className={`flex gap-2 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                       >
                         {/* Avatar for received messages */}
                         {!isOwnMessage && (
-                          <Avatar className="w-8 h-8 border-2 border-border/30 flex-shrink-0">
+                          <Avatar className="w-8 h-8 border-2 border-border/30 flex-shrink-0 self-end">
                             <AvatarFallback className="bg-gradient-to-br from-accent to-secondary text-white text-xs">
                               {getChatName(selectedChat)[0]}
                             </AvatarFallback>
                           </Avatar>
                         )}
 
-                        {/* Message Bubble - Telegram Style */}
-                        <div className={`max-w-[65%] md:max-w-[70%] flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                        {/* Message Container with Name */}
+                        <div className={`w-full max-w-[85%] flex flex-col ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                          {/* Sender Name */}
+                          <p className="text-xs font-semibold mb-1 text-muted-foreground px-2">
+                            {senderName}
+                          </p>
+                          
+                          {/* Message Bubble */}
                           <div
-                            className={`relative px-4 py-2 ${
+                            className={`relative px-4 py-2 w-full ${
                               isOwnMessage
                                 ? 'message-bubble-telegram-user text-white'
                                 : 'message-bubble-telegram-other text-foreground'
@@ -464,16 +472,16 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                                 <span className="text-sm">Voice message</span>
                               </div>
                             )}
-                            
-                            {/* Timestamp & Status */}
-                            <div className={`flex items-center gap-1 mt-1 text-[10px] ${isOwnMessage ? 'text-white/70' : 'text-muted-foreground'}`}>
-                              <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                              {isOwnMessage && (
-                                <span className={msg.status === 'seen' ? 'text-accent' : ''}>
-                                  {msg.status === 'seen' ? '✓✓' : '✓'}
-                                </span>
-                              )}
-                            </div>
+                          </div>
+                          
+                          {/* Timestamp below bubble */}
+                          <div className={`flex items-center gap-1 mt-1 text-[10px] text-muted-foreground px-2`}>
+                            <span>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            {isOwnMessage && (
+                              <span className={msg.status === 'seen' ? 'text-accent' : ''}>
+                                {msg.status === 'seen' ? '✓✓' : '✓'}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -485,37 +493,6 @@ export default function Messenger({ user, onBack }: MessengerProps) {
 
               {/* Input Area - Telegram Style */}
               <div className="flex gap-2 mt-4 p-3 glass-card rounded-2xl border-primary/20">
-                {/* Attach Button */}
-                <label htmlFor="image-upload">
-                  <Button type="button" variant="ghost" size="icon" disabled={loading} asChild className="hover:bg-primary/20">
-                    <span className="cursor-pointer">
-                      <ImageIcon className="w-4 h-4 text-primary" />
-                    </span>
-                  </Button>
-                </label>
-                <input
-                  id="image-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => handleFileUpload(e, 'image')}
-                />
-
-                <label htmlFor="pdf-upload">
-                  <Button type="button" variant="ghost" size="icon" disabled={loading} asChild className="hover:bg-primary/20">
-                    <span className="cursor-pointer">
-                      <FileText className="w-4 h-4 text-primary" />
-                    </span>
-                  </Button>
-                </label>
-                <input
-                  id="pdf-upload"
-                  type="file"
-                  accept="application/pdf"
-                  className="hidden"
-                  onChange={(e) => handleFileUpload(e, 'pdf')}
-                />
-
                 {/* Message Input */}
                 <Input
                   value={newMessage}
