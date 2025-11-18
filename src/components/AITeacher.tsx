@@ -24,9 +24,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
-  const [language] = useState<'om'>('om');
-  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
-  const [uploadedPDF, setUploadedPDF] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,8 +61,9 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
     }
   };
 
-  const generateAIResponse = async (userMessage: string): Promise<string> => {
+  const generateAIResponse = async (userMessage: string, retryCount = 0): Promise<string> => {
     try {
+      setError(null);
       const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-teacher-oromo`;
       
       const conversationMessages = messages.map(msg => ([
@@ -73,6 +73,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
       
       conversationMessages.push({ role: 'user', content: userMessage });
 
+      console.log('[AI Teacher] Sending request to:', CHAT_URL);
+      
       const response = await fetch(CHAT_URL, {
         method: 'POST',
         headers: {
@@ -82,14 +84,28 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         body: JSON.stringify({ messages: conversationMessages }),
       });
 
+      console.log('[AI Teacher] Response status:', response.status);
+
       if (!response.ok) {
         if (response.status === 429) {
+          setError("Fedhiin baay'ee guddaa jira. Maaloo daqiiqaa 1 booda yaali.");
           return "Maaloo yeroo muraasa booda yaali. Fedhiin baay'ee guddaa jira.";
         }
         if (response.status === 402) {
+          setError("Tajaajilli kun yeroo ammaa hin argamu.");
           return "Tajaajilli kun yeroo ammaa hin argamu. Maaloo booda yaali.";
         }
-        throw new Error('Failed to get AI response');
+        
+        // Retry logic for transient errors
+        if (retryCount < 2) {
+          console.log(`[AI Teacher] Retrying... Attempt ${retryCount + 1}`);
+          setRetrying(true);
+          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+          setRetrying(false);
+          return generateAIResponse(userMessage, retryCount + 1);
+        }
+        
+        throw new Error(`AI Teacher error: ${response.status}`);
       }
 
       if (!response.body) {
@@ -143,12 +159,10 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const handleNewChat = () => {
     setMessages([]);
     setMessage('');
-    setUploadedImage(null);
-    setUploadedPDF(null);
   };
 
   const handleSendMessage = async () => {
-    if (!message.trim() && !uploadedImage && !uploadedPDF) return;
+    if (!message.trim()) return;
     
     const userMessage = message.trim();
     setMessage('');
@@ -163,7 +177,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
           user_id: user.id,
           message: userMessage,
           response: aiResponse,
-          language: language,
+          language: 'om',
         })
         .select()
         .single();
@@ -174,14 +188,9 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         setMessages((prev) => [...prev, data]);
       }
 
-      setUploadedImage(null);
-      setUploadedPDF(null);
-
       onLogActivity('ai_chat', `Barsiisaa AI gaafate: ${userMessage}`, {
         language: 'om',
-        response_length: aiResponse.length,
-        has_image: !!uploadedImage,
-        has_pdf: !!uploadedPDF
+        response_length: aiResponse.length
       });
 
     } catch (error) {

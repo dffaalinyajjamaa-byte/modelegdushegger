@@ -591,6 +591,42 @@ export type Database = {
         }
         Relationships: []
       }
+      quiz_sessions: {
+        Row: {
+          answers: Json | null
+          created_at: string | null
+          current_question: number | null
+          exam_id: string
+          id: string
+          paused_at: string | null
+          time_remaining: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          answers?: Json | null
+          created_at?: string | null
+          current_question?: number | null
+          exam_id: string
+          id?: string
+          paused_at?: string | null
+          time_remaining?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          answers?: Json | null
+          created_at?: string | null
+          current_question?: number | null
+          exam_id?: string
+          id?: string
+          paused_at?: string | null
+          time_remaining?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       reported_messages: {
         Row: {
           created_at: string | null
@@ -760,6 +796,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_rankings: {
+        Row: {
+          created_at: string | null
+          current_streak: number | null
+          id: string
+          last_activity_date: string | null
+          longest_streak: number | null
+          rank: number | null
+          total_points: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_streak?: number | null
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          rank?: number | null
+          total_points?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_streak?: number | null
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number | null
+          rank?: number | null
+          total_points?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_stats: {
         Row: {
           created_at: string
@@ -790,15 +862,57 @@ export type Database = {
         }
         Relationships: []
       }
+      video_progress: {
+        Row: {
+          completed: boolean | null
+          content_id: string
+          created_at: string | null
+          id: string
+          last_watched_at: string | null
+          percentage_watched: number | null
+          playback_time: number | null
+          total_duration: number | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          content_id: string
+          created_at?: string | null
+          id?: string
+          last_watched_at?: string | null
+          percentage_watched?: number | null
+          playback_time?: number | null
+          total_duration?: number | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          content_id?: string
+          created_at?: string | null
+          id?: string
+          last_watched_at?: string | null
+          percentage_watched?: number | null
+          playback_time?: number | null
+          total_duration?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      award_points: {
+        Args: { p_activity_type: string; p_points: number; p_user_id: string }
+        Returns: undefined
+      }
       increment_daily_stat: {
         Args: { p_increment?: number; p_stat_type: string; p_user_id: string }
         Returns: undefined
       }
+      update_rankings: { Args: never; Returns: undefined }
+      update_user_streak: { Args: { p_user_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
