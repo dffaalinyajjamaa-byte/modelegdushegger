@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { User } from '@supabase/supabase-js';
@@ -48,9 +48,13 @@ export default function ProfileCard({
         onClick={onClick}
       >
         <Avatar className="w-10 h-10 md:w-12 md:h-12 border-2 border-primary/30">
-          <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-bold">
-            {initials}
-          </AvatarFallback>
+          {profile.avatar_url ? (
+            <AvatarImage src={profile.avatar_url} alt={profile.full_name} className="object-cover" />
+          ) : (
+            <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white font-bold">
+              {initials}
+            </AvatarFallback>
+          )}
         </Avatar>
         <div className="flex-1 min-w-0">
           <h3 className="text-sm md:text-base font-semibold text-foreground truncate">
@@ -76,9 +80,13 @@ export default function ProfileCard({
         <div className="flex flex-col items-center gap-4">
           {/* Avatar */}
           <Avatar className="w-20 h-20 md:w-24 md:h-24 border-4 border-primary/30">
-            <AvatarFallback className="bg-gradient-to-br from-primary via-secondary to-accent text-white text-2xl font-bold">
-              {initials}
-            </AvatarFallback>
+            {profile.avatar_url ? (
+              <AvatarImage src={profile.avatar_url} alt={profile.full_name} className="object-cover" />
+            ) : (
+              <AvatarFallback className="bg-gradient-to-br from-primary via-secondary to-accent text-white text-2xl font-bold">
+                {initials}
+              </AvatarFallback>
+            )}
           </Avatar>
 
           {/* User Info */}

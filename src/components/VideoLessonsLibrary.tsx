@@ -27,6 +27,7 @@ const VideoLessonsLibrary = ({ user, onBack, onVideoClick, embedded = false }: V
   const [videos, setVideos] = useState<VideoLesson[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [thumbnailErrors, setThumbnailErrors] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchVideos();
@@ -102,7 +103,6 @@ const VideoLessonsLibrary = ({ user, onBack, onVideoClick, embedded = false }: V
             <h2 className="text-xl md:text-2xl font-bold mb-4">{selectedSubject}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
               {displayVideos.map((video) => {
-                // Validate and fix video URL
                 const videoUrl = validateContentUrl(video.url, 'video');
                 return (
                   <Card
@@ -110,21 +110,55 @@ const VideoLessonsLibrary = ({ user, onBack, onVideoClick, embedded = false }: V
                     className="cursor-pointer hover-scale tap-scale glass-card hover:neon-glow-cyan border-primary/20"
                     onClick={() => onVideoClick({ ...video, url: videoUrl })}
                   >
-                    <CardContent className="p-4">
-                      <div className="relative mb-3 glass-card rounded-xl aspect-video flex items-center justify-center shadow-neon">
-                        <Play className="w-12 h-12 md:w-14 md:h-14 text-primary" />
+                    <CardContent className="p-0">
+                      <div className="relative w-full h-40 md:h-48 bg-black/10 overflow-hidden rounded-t-lg">
+                        {!thumbnailErrors.has(video.id) ? (
+                          <img 
+                            src={getYouTubeThumbnail(videoUrl, 'hq')}
+                            alt={video.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            crossOrigin="anonymous"
+                            onError={(e) => {
+                              const currentSrc = e.currentTarget.src;
+                              if (currentSrc.includes('hqdefault')) {
+                                e.currentTarget.src = getYouTubeThumbnail(videoUrl, 'mq');
+                              } else if (currentSrc.includes('mqdefault')) {
+                                e.currentTarget.src = getYouTubeThumbnail(videoUrl, 'default');
+                              } else {
+                                setThumbnailErrors(prev => new Set(prev).add(video.id));
+                              }
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
+                            <div className="text-center text-white">
+                              <Play className="w-12 h-12 mx-auto mb-2" />
+                              <p className="text-sm font-medium">Video Preview</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                          <div className="w-16 h-16 rounded-full bg-white/90 flex items-center justify-center">
+                            <Play className="w-8 h-8 text-red-600 ml-1" />
+                          </div>
+                        </div>
                       </div>
-                      <h3 className="text-sm md:text-base font-semibold mb-1 line-clamp-2">{video.title}</h3>
-                      {video.description && (
-                        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-                          {video.description}
-                        </p>
-                      )}
-                      {video.grade_level && (
-                        <p className="text-xs text-primary">
-                          {video.grade_level}
-                        </p>
-                      )}
+                      
+                      <div className="p-4">
+                        <h3 className="text-sm md:text-base font-semibold mb-1 line-clamp-2">{video.title}</h3>
+                        {video.description && (
+                          <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
+                            {video.description}
+                          </p>
+                        )}
+                        {video.grade_level && (
+                          <p className="text-xs text-primary">
+                            {video.grade_level}
+                          </p>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 );

@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Camera } from 'lucide-react';
 import logo from '@/assets/oro-logo.png';
 import { motion } from 'framer-motion';
 
@@ -21,7 +22,75 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
   const [grade, setGrade] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const { toast } = useToast();
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Avatar must be less than 5MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an image file",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadAvatar = async (userId: string): Promise<string | null> => {
+    if (!avatarFile) return null;
+
+    setUploadingAvatar(true);
+    try {
+      const fileExt = avatarFile.name.split('.').pop();
+      const fileName = `${userId}/avatar.${fileExt}`;
+
+      const { error } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, avatarFile, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      toast({
+        title: "Avatar upload failed",
+        description: "Continuing with default avatar",
+        variant: "destructive"
+      });
+      return null;
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +127,8 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
 
         // Create profile
         if (authData.user) {
+          const avatarUrl = await uploadAvatar(authData.user.id);
+
           const { error: profileError } = await supabase
             .from('profiles')
             .insert({
@@ -66,7 +137,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
               full_name: fullName,
               grade: grade,
               role: 'student',
-              avatar_url: null
+              avatar_url: avatarUrl
             });
           
           if (profileError) {
@@ -105,7 +176,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
             <img 
               src={logo} 
               alt="Oro Digital School" 
-              className="w-28 h-28 md:w-32 md:h-32 rounded-full shadow-2xl border-4 border-primary/20" 
+              className="w-28 h-28 md:w-32 md:h-32 object-cover rounded-full shadow-2xl border-4 border-primary/20" 
             />
           </motion.div>
           <motion.div
@@ -127,6 +198,35 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <>
+                <div className="flex flex-col items-center space-y-3 mb-4">
+                  <label htmlFor="avatar-upload" className="cursor-pointer group">
+                    <div className="relative">
+                      <Avatar className="w-24 h-24 border-4 border-primary/30 group-hover:border-primary/50 transition-all">
+                        {avatarPreview ? (
+                          <AvatarImage src={avatarPreview} className="object-cover" />
+                        ) : (
+                          <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-white">
+                            <Camera className="w-10 h-10" />
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Camera className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+                  </label>
+                  <input
+                    id="avatar-upload"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarChange}
+                  />
+                  <p className="text-xs text-muted-foreground text-center">
+                    Click to upload profile picture (optional)
+                  </p>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name</Label>
                   <Input
