@@ -508,6 +508,36 @@ export type Database = {
         }
         Relationships: []
       }
+      live_teacher_sessions: {
+        Row: {
+          created_at: string | null
+          id: string
+          language: string | null
+          messages: Json | null
+          session_name: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          language?: string | null
+          messages?: Json | null
+          session_name?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          language?: string | null
+          messages?: Json | null
+          session_name?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           chat_id: string
