@@ -5,7 +5,7 @@ import { AutoExpandingTextarea } from '@/components/ui/auto-expanding-textarea';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { User } from '@supabase/supabase-js';
-import { Send, Bot, Sparkles, Plus, MessageCircle, Mic } from 'lucide-react';
+import { Send, Bot, Sparkles, Plus, MessageSquare, Mic } from 'lucide-react';
 import LiveTeacher from './LiveTeacher';
 
 interface AITeacherProps {
@@ -221,6 +221,11 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
     }
   };
 
+  // If in live mode, render LiveTeacher component
+  if (mode === 'live') {
+    return <LiveTeacher user={user} onLogActivity={onLogActivity} />;
+  }
+
   return (
     <div className="app-screen">
       {/* Fixed Header */}
@@ -235,14 +240,38 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
           </div>
         </div>
         
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={handleNewChat}
-          className="ripple"
-        >
-          <Plus className="w-5 h-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Mode Toggle */}
+          <div className="flex gap-1 bg-muted rounded-lg p-1">
+            <Button
+              variant={mode === 'chat' ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setMode('chat')}
+              className="h-8 px-3"
+            >
+              <MessageSquare className="w-4 h-4 mr-1" />
+              <span className="text-xs">Chat</span>
+            </Button>
+            <Button
+              variant={mode === 'live' ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setMode('live')}
+              className="h-8 px-3"
+            >
+              <Mic className="w-4 h-4 mr-1" />
+              <span className="text-xs">Live</span>
+            </Button>
+          </div>
+
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleNewChat}
+            className="ripple"
+          >
+            <Plus className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
 
       {/* Messages Area */}
