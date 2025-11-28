@@ -1,35 +1,38 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import AITeacher from './AITeacher';
 import TaskManager from './TaskManager';
-import VideoLessonsLibrary from './VideoLessonsLibrary';
-import DigitalBooksLibrary from './DigitalBooksLibrary';
 import VideoViewer from './VideoViewer';
 import PDFViewer from './PDFViewer';
 import SettingsComponent from './Settings';
-import QuizFeature from './QuizFeature';
 import NationalExams from './NationalExams';
-import LiveTeacher from './LiveTeacher';
 import DailyChallenge from './DailyChallenge';
 import ProfileCard from './ProfileCard';
 import AboutUs from './AboutUs';
 import BottomNav from './BottomNav';
 import ProgressCharts from './ProgressCharts';
-import Messenger from './Messenger';
 import AnimatedTagline from './AnimatedTagline';
 import ChargingPoints from './ChargingPoints';
 import SubjectProgressCards from './SubjectProgressCards';
 import RecentLessons from './RecentLessons';
 import DashboardTabs from './DashboardTabs';
+import LoadingFallback from './LoadingFallback';
 import { TabsContent } from '@/components/ui/tabs';
 import { useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import logo from '@/assets/oro-logo.png';
+
+// Lazy load heavy components for better performance
+const AITeacher = lazy(() => import('./AITeacher'));
+const LiveTeacher = lazy(() => import('./LiveTeacher'));
+const VideoLessonsLibrary = lazy(() => import('./VideoLessonsLibrary'));
+const DigitalBooksLibrary = lazy(() => import('./DigitalBooksLibrary'));
+const Messenger = lazy(() => import('./Messenger'));
+const QuizFeature = lazy(() => import('./QuizFeature'));
 
 interface DashboardProps {
   user: User;
@@ -250,9 +253,17 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
   const renderActiveView = () => {
     switch (activeView) {
       case 'ai-teacher':
-        return <AITeacher user={user} onLogActivity={logActivity} />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <AITeacher user={user} onLogActivity={logActivity} />
+          </Suspense>
+        );
       case 'live-teacher':
-        return <LiveTeacher user={user} onLogActivity={logActivity} />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <LiveTeacher user={user} onLogActivity={logActivity} />
+          </Suspense>
+        );
       case 'tasks':
         return (
           <TaskManager 
@@ -264,9 +275,17 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
       case 'settings':
         return <SettingsComponent user={user} onBack={() => setActiveView('dashboard')} />;
       case 'messenger':
-        return <Messenger user={user} onBack={() => setActiveView('dashboard')} />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <Messenger user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
       case 'quiz':
-        return <QuizFeature user={user} onBack={() => setActiveView('dashboard')} />;
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <QuizFeature user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
       case 'national-exam':
         if (selectedContent) {
           return <PDFViewer content={selectedContent} onBack={() => setActiveView('dashboard')} user={user} onLogActivity={logActivity} />;
@@ -274,19 +293,23 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         return null;
       case 'books':
         return (
-          <DigitalBooksLibrary
-            user={user}
-            onBack={() => setActiveView('dashboard')}
-            onBookClick={handleContentClick}
-          />
+          <Suspense fallback={<LoadingFallback />}>
+            <DigitalBooksLibrary
+              user={user}
+              onBack={() => setActiveView('dashboard')}
+              onBookClick={handleContentClick}
+            />
+          </Suspense>
         );
       case 'videos':
         return (
-          <VideoLessonsLibrary
-            user={user}
-            onBack={() => setActiveView('dashboard')}
-            onVideoClick={handleContentClick}
-          />
+          <Suspense fallback={<LoadingFallback />}>
+            <VideoLessonsLibrary
+              user={user}
+              onBack={() => setActiveView('dashboard')}
+              onVideoClick={handleContentClick}
+            />
+          </Suspense>
         );
       case 'video':
         return selectedContent ? (
