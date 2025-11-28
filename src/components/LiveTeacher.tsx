@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { AutoExpandingTextarea } from '@/components/ui/auto-expanding-textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mic, MicOff, Send, VolumeX, ArrowLeft } from 'lucide-react';
+import { Mic, MicOff, Send, VolumeX, ArrowLeft, Download, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AudioWaveform from './AudioWaveform';
 import SiriOrb from './ui/siri-orb';
@@ -29,9 +30,11 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   
   const recognitionRef = useRef<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -137,35 +140,68 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
     }
   };
 
-  const speak = (text: string) => {
-    if ('speechSynthesis' in window) {
-      // Stop any ongoing speech
-      window.speechSynthesis.cancel();
+  const speak = async (text: string) => {
+    try {
+      setIsSpeaking(true);
       
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'om-ET'; // Oromo - may fallback to system default
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
+      // Stop any ongoing audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+
+      console.log('Generating speech with ElevenLabs...');
       
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      
-      window.speechSynthesis.speak(utterance);
-    } else {
+      // Call ElevenLabs TTS edge function
+      const { data, error } = await supabase.functions.invoke('elevenlabs-tts', {
+        body: { 
+          text,
+          voice: 'pNInz6obpgDQGcFmaJgB' // Adam voice (multilingual)
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.audioContent) {
+        // Create audio element from base64
+        const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`);
+        audioRef.current = audio;
+        
+        audio.onended = () => {
+          setIsSpeaking(false);
+          audioRef.current = null;
+        };
+        
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          audioRef.current = null;
+          toast({
+            title: 'Audio Playback Error',
+            description: 'Failed to play audio response',
+            variant: 'destructive',
+          });
+        };
+        
+        await audio.play();
+        console.log('Speech playback started');
+      }
+    } catch (error) {
+      console.error('Error generating speech:', error);
+      setIsSpeaking(false);
       toast({
-        title: 'Text-to-Speech Not Supported',
-        description: 'Your browser does not support text-to-speech',
+        title: 'Text-to-Speech Error',
+        description: 'Failed to generate speech. Please try again.',
         variant: 'destructive',
       });
     }
   };
 
   const stopSpeaking = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
     }
+    setIsSpeaking(false);
   };
 
   const sendMessage = async () => {
@@ -274,6 +310,9 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
         language: 'oromo',
         mode: 'live',
       });
+
+      // Auto-save session after each conversation
+      await saveSession();
     } catch (error) {
       console.error('Error sending message:', error);
       toast({
@@ -284,6 +323,83 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
     } finally {
       setLoading(false);
     }
+  };
+
+  const saveSession = async () => {
+    try {
+      if (messages.length === 0) return;
+
+      const sessionData = {
+        user_id: user.id,
+        session_name: `Session ${new Date().toLocaleDateString()}`,
+        messages: messages.map(msg => ({
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.timestamp.toISOString(),
+        })),
+        language: 'oromo',
+      };
+
+      if (currentSessionId) {
+        // Update existing session
+        const { error } = await supabase
+          .from('live_teacher_sessions')
+          .update(sessionData)
+          .eq('id', currentSessionId);
+        
+        if (error) throw error;
+      } else {
+        // Create new session
+        const { data, error } = await supabase
+          .from('live_teacher_sessions')
+          .insert(sessionData)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        if (data) setCurrentSessionId(data.id);
+      }
+    } catch (error) {
+      console.error('Error saving session:', error);
+    }
+  };
+
+  const exportSession = () => {
+    if (messages.length === 0) {
+      toast({
+        title: 'No Messages',
+        description: 'There are no messages to export',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const exportData = {
+      sessionName: `Live Teacher Session - ${new Date().toLocaleString()}`,
+      language: 'oromo',
+      messages: messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp.toLocaleString(),
+      })),
+      exportedAt: new Date().toISOString(),
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `live-teacher-session-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: 'Session Exported',
+      description: 'Conversation history downloaded successfully',
+    });
   };
 
   return (
@@ -320,6 +436,26 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
               >
                 <VolumeX className="w-4 h-4" />
               </Button>
+            )}
+            {messages.length > 0 && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={saveSession}
+                  title="Save session"
+                >
+                  <Save className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportSession}
+                  title="Export conversation"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </>
             )}
           </div>
         </div>
