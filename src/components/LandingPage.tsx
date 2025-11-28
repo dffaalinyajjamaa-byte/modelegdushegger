@@ -1,11 +1,11 @@
 import { ContainerScroll } from '@/components/ui/container-scroll-animation';
 import { BackgroundPaths } from '@/components/ui/background-paths';
-import { SplineScene } from '@/components/ui/spline';
 import { Spotlight } from '@/components/ui/spotlight';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import logo from '@/assets/oro-logo.png';
 import { motion } from 'framer-motion';
+import { BookOpen, GraduationCap, Brain } from 'lucide-react';
 
 export default function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
   return (
@@ -63,12 +63,33 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
                     </Button>
                   </div>
 
-                  {/* Right: 3D Spline Scene */}
-                  <div className="flex-1 relative">
-                    <SplineScene 
-                      scene="https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode"
-                      className="w-full h-full"
-                    />
+                  {/* Right: Visual with gradient and educational icons */}
+                  <div className="flex-1 relative bg-gradient-to-br from-red-500/20 via-black to-red-900/30 flex items-center justify-center">
+                    <div className="text-center">
+                      <motion.img 
+                        src={logo} 
+                        alt="Oro" 
+                        className="w-32 h-32 rounded-full shadow-2xl border-4 border-red-500/50 mx-auto"
+                        animate={{ 
+                          boxShadow: [
+                            "0 0 20px rgba(239, 68, 68, 0.5)",
+                            "0 0 40px rgba(239, 68, 68, 0.8)",
+                            "0 0 20px rgba(239, 68, 68, 0.5)"
+                          ]
+                        }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                      <motion.div 
+                        className="mt-6 flex gap-4 justify-center"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                      >
+                        <BookOpen className="w-10 h-10 text-red-400" />
+                        <GraduationCap className="w-10 h-10 text-white" />
+                        <Brain className="w-10 h-10 text-red-400" />
+                      </motion.div>
+                    </div>
                   </div>
                 </div>
               </Card>
