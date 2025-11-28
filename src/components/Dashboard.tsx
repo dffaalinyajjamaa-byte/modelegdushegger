@@ -291,7 +291,8 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
       case 'video':
         return selectedContent ? (
           <VideoViewer 
-            content={selectedContent} 
+            content={selectedContent}
+            user={user}
             onBack={() => setActiveView('dashboard')}
             onLogActivity={logActivity}
             onVideoWatched={() => updateUserStats('videos_watched')}
