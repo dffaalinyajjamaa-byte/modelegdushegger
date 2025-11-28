@@ -692,13 +692,12 @@ export default function Messenger({ user, onBack }: MessengerProps) {
       </Dialog>
 
       {/* Group Chat Dialog */}
-      {isGroupDialogOpen && (
-        <GroupChatDialog
-          user={user}
-          onClose={() => setIsGroupDialogOpen(false)}
-          onGroupCreated={fetchChats}
-        />
-      )}
+      <GroupChatDialog
+        user={user}
+        open={isGroupDialogOpen}
+        onOpenChange={setIsGroupDialogOpen}
+        onGroupCreated={fetchChats}
+      />
 
       {/* Voice Recording Modal */}
       <Dialog open={isRecordingModalOpen} onOpenChange={setIsRecordingModalOpen}>

@@ -17,11 +17,15 @@ interface MessagingUser {
 
 interface GroupChatDialogProps {
   user: User;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onGroupCreated: () => void;
 }
 
-export default function GroupChatDialog({ user, onGroupCreated }: GroupChatDialogProps) {
-  const [open, setOpen] = useState(false);
+export default function GroupChatDialog({ user, open: externalOpen, onOpenChange, onGroupCreated }: GroupChatDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
   const [users, setUsers] = useState<MessagingUser[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [groupName, setGroupName] = useState('');
