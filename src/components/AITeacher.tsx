@@ -5,8 +5,7 @@ import { AutoExpandingTextarea } from '@/components/ui/auto-expanding-textarea';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { User } from '@supabase/supabase-js';
-import { Send, Bot, Sparkles, Plus, MessageSquare, Mic } from 'lucide-react';
-import LiveTeacher from './LiveTeacher';
+import { Send, Bot, Sparkles, Plus } from 'lucide-react';
 
 interface AITeacherProps {
   user: User;
@@ -27,7 +26,6 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
-  const [mode, setMode] = useState<'chat' | 'live'>('chat');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -236,28 +234,6 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         </div>
         
         <div className="flex items-center gap-2">
-          {/* Mode Toggle */}
-          <div className="flex gap-1 bg-muted rounded-lg p-1">
-            <Button
-              variant={mode === "chat" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setMode("chat")}
-              className="h-8 px-3"
-            >
-              <MessageSquare className="w-4 h-4 mr-1" />
-              <span className="text-xs">Chat</span>
-            </Button>
-            <Button
-              variant={mode === "live" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setMode("live")}
-              className="h-8 px-3"
-            >
-              <Mic className="w-4 h-4 mr-1" />
-              <span className="text-xs">Live</span>
-            </Button>
-          </div>
-
           <Button 
             variant="ghost" 
             size="icon" 
@@ -269,13 +245,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         </div>
       </div>
 
-      {/* Conditional Content Based on Mode */}
-      {mode === "live" ? (
-        <LiveTeacher user={user} onLogActivity={onLogActivity} />
-      ) : (
-        <>
-          {/* Messages Area */}
-          <ScrollArea className="flex-1 app-content" ref={scrollAreaRef}>
+      {/* Messages Area */}
+      <ScrollArea className="flex-1 app-content" ref={scrollAreaRef}>
         <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
@@ -383,8 +354,6 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
           </Button>
         </div>
       </div>
-      </>
-      )}
     </div>
   );
 }
