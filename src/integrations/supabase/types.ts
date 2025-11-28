@@ -538,6 +538,42 @@ export type Database = {
         }
         Relationships: []
       }
+      live_teacher_settings: {
+        Row: {
+          auto_speak_responses: boolean | null
+          continuous_listening: boolean | null
+          created_at: string | null
+          id: string
+          language_preference: string | null
+          speech_speed: number | null
+          updated_at: string | null
+          user_id: string
+          voice_id: string | null
+        }
+        Insert: {
+          auto_speak_responses?: boolean | null
+          continuous_listening?: boolean | null
+          created_at?: string | null
+          id?: string
+          language_preference?: string | null
+          speech_speed?: number | null
+          updated_at?: string | null
+          user_id: string
+          voice_id?: string | null
+        }
+        Update: {
+          auto_speak_responses?: boolean | null
+          continuous_listening?: boolean | null
+          created_at?: string | null
+          id?: string
+          language_preference?: string | null
+          speech_speed?: number | null
+          updated_at?: string | null
+          user_id?: string
+          voice_id?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           chat_id: string
