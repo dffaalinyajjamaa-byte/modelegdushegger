@@ -4,12 +4,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { AutoExpandingTextarea } from '@/components/ui/auto-expanding-textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mic, MicOff, Send, VolumeX, ArrowLeft, Download, Save } from 'lucide-react';
+import { Mic, MicOff, Send, VolumeX, ArrowLeft, Download, Save, Settings, MoreVertical } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import AudioWaveform from './AudioWaveform';
-import SiriOrb from './ui/siri-orb';
-import { ChatBubble, ChatBubbleMessage, ChatBubbleAvatar } from './ui/chat-bubble';
-import { MessageLoading } from './ui/message-loading';
+import { SiriOrb } from '@/components/ui/siri-orb';
+import { ChatBubble, ChatBubbleMessage, ChatBubbleAvatar } from '@/components/ui/chat-bubble';
+import { LiveTeacherHome } from './live-teacher/LiveTeacherHome';
+import { LiveTeacherSettings } from './live-teacher/LiveTeacherSettings';
+import { LiveTeacherHistory } from './live-teacher/LiveTeacherHistory';
+import { LiveTeacherTranscript } from './live-teacher/LiveTeacherTranscript';
+import { ConnectionStatus } from './live-teacher/ConnectionStatus';
+import { VoiceActivityIndicator } from './live-teacher/VoiceActivityIndicator';
+import { TranscriptionDisplay } from './live-teacher/TranscriptionDisplay';
+import { QuickPrompts } from './live-teacher/QuickPrompts';
+import { useVoiceSettings } from '@/hooks/use-voice-settings';
+import { useContinuousListening } from '@/hooks/use-continuous-listening';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface LiveTeacherProps {
   user: User;
@@ -20,10 +29,13 @@ interface LiveTeacherProps {
 interface Message {
   role: 'user' | 'assistant';
   content: string;
-  timestamp: Date;
+  timestamp: string;
 }
 
+type Screen = 'home' | 'chat' | 'settings' | 'history' | 'transcript';
+
 export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacherProps) {
+  const [currentScreen, setCurrentScreen] = useState<Screen>('home');
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
@@ -31,11 +43,54 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
   const [loading, setLoading] = useState(false);
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<any[]>([]);
+  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
   
+  const { settings, updateSettings, loading: settingsLoading } = useVoiceSettings();
   const recognitionRef = useRef<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (currentScreen !== 'chat') return;
+
+      // Space to toggle recording (when input not focused)
+      if (e.code === 'Space' && document.activeElement?.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        isRecording ? stopRecording() : startRecording();
+      }
+
+      // Escape to interrupt AI
+      if (e.code === 'Escape') {
+        stopSpeaking();
+      }
+
+      // Ctrl+Enter to send
+      if (e.ctrlKey && e.code === 'Enter') {
+        sendMessage();
+      }
+
+      // Ctrl+N for new conversation
+      if (e.ctrlKey && e.code === 'KeyN') {
+        e.preventDefault();
+        handleNewConversation();
+      }
+
+      // Ctrl+S to save
+      if (e.ctrlKey && e.code === 'KeyS') {
+        e.preventDefault();
+        saveSession();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [currentScreen, isRecording, inputText]);
 
   useEffect(() => {
     // Initialize Web Speech API
@@ -45,20 +100,28 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = 'om-ET'; // Oromo (Ethiopia) - fallback to 'en-US' if not supported
+      recognition.lang = settings.language_preference === 'english' ? 'en-US' : 'om-ET';
       
       recognition.onresult = (event: any) => {
-        let finalTranscript = '';
+        let interim = '';
+        let final = '';
         
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += transcript;
+            final += transcript;
+          } else {
+            interim += transcript;
           }
         }
         
-        if (finalTranscript) {
-          setInputText(prev => prev + ' ' + finalTranscript);
+        if (interim) {
+          setInterimTranscript(interim);
+        }
+        
+        if (final) {
+          setInputText(prev => (prev + ' ' + final).trim());
+          setInterimTranscript('');
         }
       };
       
@@ -75,14 +138,12 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
       };
       
       recognition.onend = () => {
-        if (isRecording) {
+        if (isRecording && !settings.continuous_listening) {
           recognition.start();
         }
       };
       
       recognitionRef.current = recognition;
-    } else {
-      console.warn('Speech recognition not supported');
     }
 
     return () => {
@@ -91,17 +152,23 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
       }
       stopAudioStream();
     };
-  }, []);
+  }, [settings.language_preference, settings.continuous_listening]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    if (currentScreen === 'history') {
+      fetchSessions();
+    }
+  }, [currentScreen]);
+
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
-      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollElement) {
-        scrollElement.scrollTop = scrollElement.scrollHeight;
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
     }
   };
@@ -115,10 +182,12 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
       if (recognitionRef.current) {
         recognitionRef.current.start();
       }
+
+      toast({ title: 'Recording started' });
     } catch (error) {
       console.error('Error starting recording:', error);
       toast({
-        title: 'Error',
+        title: 'Recording failed',
         description: 'Could not access microphone',
         variant: 'destructive',
       });
@@ -126,11 +195,16 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
   };
 
   const stopRecording = () => {
-    setIsRecording(false);
+    if (audioStream) {
+      audioStream.getTracks().forEach(track => track.stop());
+      setAudioStream(null);
+    }
+    
     if (recognitionRef.current) {
       recognitionRef.current.stop();
     }
-    stopAudioStream();
+    
+    setIsRecording(false);
   };
 
   const stopAudioStream = () => {
@@ -140,57 +214,60 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
     }
   };
 
+  // Continuous listening hook - must come after startRecording and stopRecording are defined
+  const { isDetectingSpeech, audioLevel } = useContinuousListening({
+    enabled: settings.continuous_listening && currentScreen === 'chat',
+    isRecording,
+    onStartRecording: startRecording,
+    onStopRecording: stopRecording,
+    onSendMessage: () => {
+      if (inputText.trim()) {
+        sendMessage();
+      }
+    },
+  });
+
   const speak = async (text: string) => {
+    if (!settings.auto_speak_responses) return;
+
     try {
       setIsSpeaking(true);
       
-      // Stop any ongoing audio
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-
-      console.log('Generating speech with ElevenLabs...');
-      
-      // Call ElevenLabs TTS edge function
       const { data, error } = await supabase.functions.invoke('elevenlabs-tts', {
         body: { 
           text,
-          voice: 'pNInz6obpgDQGcFmaJgB' // Adam voice (multilingual)
+          voice: settings.voice_id,
         }
       });
 
       if (error) throw error;
 
-      if (data?.audioContent) {
-        // Create audio element from base64
-        const audio = new Audio(`data:audio/mpeg;base64,${data.audioContent}`);
-        audioRef.current = audio;
+      if (data.audioContent) {
+        const audioBlob = new Blob(
+          [Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))],
+          { type: 'audio/mpeg' }
+        );
+        const audioUrl = URL.createObjectURL(audioBlob);
         
-        audio.onended = () => {
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
+        
+        audioRef.current = new Audio(audioUrl);
+        audioRef.current.playbackRate = settings.speech_speed;
+        audioRef.current.onended = () => {
           setIsSpeaking(false);
-          audioRef.current = null;
+          URL.revokeObjectURL(audioUrl);
         };
         
-        audio.onerror = () => {
-          setIsSpeaking(false);
-          audioRef.current = null;
-          toast({
-            title: 'Audio Playback Error',
-            description: 'Failed to play audio response',
-            variant: 'destructive',
-          });
-        };
-        
-        await audio.play();
-        console.log('Speech playback started');
+        await audioRef.current.play();
       }
     } catch (error) {
-      console.error('Error generating speech:', error);
+      console.error('Error in text-to-speech:', error);
       setIsSpeaking(false);
       toast({
-        title: 'Text-to-Speech Error',
-        description: 'Failed to generate speech. Please try again.',
+        title: 'Speech Error',
+        description: 'Could not generate speech',
         variant: 'destructive',
       });
     }
@@ -199,9 +276,9 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
   const stopSpeaking = () => {
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current = null;
+      audioRef.current.currentTime = 0;
+      setIsSpeaking(false);
     }
-    setIsSpeaking(false);
   };
 
   const sendMessage = async () => {
@@ -210,114 +287,51 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
     const userMessage: Message = {
       role: 'user',
       content: inputText.trim(),
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputText('');
     setLoading(true);
+    setConnectionStatus('connecting');
 
     try {
-      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-teacher-oromo`;
-      
-      const conversationMessages = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content,
-      }));
-      
-      conversationMessages.push({ role: 'user', content: userMessage.content });
-
-      const response = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ messages: conversationMessages }),
+      const { data, error } = await supabase.functions.invoke('ai-teacher-oromo', {
+        body: {
+          message: userMessage.content,
+          conversationHistory: messages.map(m => ({
+            role: m.role,
+            content: m.content
+          })),
+          language: settings.language_preference
+        }
       });
 
-      if (!response.ok || !response.body) {
-        throw new Error('Failed to get AI response');
-      }
+      setConnectionStatus('connected');
 
-      // Handle streaming response
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = '';
-      let assistantContent = '';
-      let streamDone = false;
+      if (error) throw error;
 
-      // Add placeholder assistant message
       const assistantMessage: Message = {
         role: 'assistant',
-        content: '',
-        timestamp: new Date(),
+        content: data.response,
+        timestamp: new Date().toISOString(),
       };
+
       setMessages(prev => [...prev, assistantMessage]);
+      
+      await speak(data.response);
 
-      while (!streamDone) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (line.startsWith(':') || line.trim() === '') continue;
-          if (!line.startsWith('data: ')) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') {
-            streamDone = true;
-            break;
-          }
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (content) {
-              assistantContent += content;
-              // Update the last message with accumulated content
-              setMessages(prev => {
-                const newMessages = [...prev];
-                const lastIdx = newMessages.length - 1;
-                if (newMessages[lastIdx]?.role === 'assistant') {
-                  newMessages[lastIdx] = {
-                    ...newMessages[lastIdx],
-                    content: assistantContent,
-                  };
-                }
-                return newMessages;
-              });
-            }
-          } catch {
-            textBuffer = line + '\n' + textBuffer;
-            break;
-          }
-        }
-      }
-
-      // Speak the complete response
-      if (assistantContent) {
-        speak(assistantContent);
-      }
-
-      onLogActivity('ai', 'Live AI Teacher interaction', {
-        language: 'oromo',
-        mode: 'live',
+      onLogActivity('ai_interactions', 'AI Live Teacher interaction', {
+        message: userMessage.content,
+        response: data.response
       });
 
-      // Auto-save session after each conversation
-      await saveSession();
     } catch (error) {
       console.error('Error sending message:', error);
+      setConnectionStatus('disconnected');
       toast({
         title: 'Error',
-        description: 'Failed to get response from AI teacher',
+        description: 'Failed to get response. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -327,231 +341,326 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
 
   const saveSession = async () => {
     try {
-      if (messages.length === 0) return;
-
-      const sessionData = {
-        user_id: user.id,
-        session_name: `Session ${new Date().toLocaleDateString()}`,
-        messages: messages.map(msg => ({
-          role: msg.role,
-          content: msg.content,
-          timestamp: msg.timestamp.toISOString(),
-        })),
-        language: 'oromo',
-      };
-
+      const sessionName = `Session ${new Date().toLocaleDateString()}`;
+      
       if (currentSessionId) {
-        // Update existing session
         const { error } = await supabase
           .from('live_teacher_sessions')
-          .update(sessionData)
+          .update({
+            messages: messages as any,
+            session_name: sessionName,
+          })
           .eq('id', currentSessionId);
-        
+
         if (error) throw error;
       } else {
-        // Create new session
         const { data, error } = await supabase
           .from('live_teacher_sessions')
-          .insert(sessionData)
+          .insert([{
+            user_id: user.id,
+            messages: messages as any,
+            session_name: sessionName,
+            language: settings.language_preference,
+          }])
           .select()
           .single();
-        
+
         if (error) throw error;
-        if (data) setCurrentSessionId(data.id);
+        setCurrentSessionId(data.id);
       }
+
+      toast({ title: 'Session saved successfully' });
     } catch (error) {
       console.error('Error saving session:', error);
-    }
-  };
-
-  const exportSession = () => {
-    if (messages.length === 0) {
       toast({
-        title: 'No Messages',
-        description: 'There are no messages to export',
+        title: 'Save failed',
         variant: 'destructive',
       });
-      return;
     }
-
-    const exportData = {
-      sessionName: `Live Teacher Session - ${new Date().toLocaleString()}`,
-      language: 'oromo',
-      messages: messages.map(msg => ({
-        role: msg.role,
-        content: msg.content,
-        timestamp: msg.timestamp.toLocaleString(),
-      })),
-      exportedAt: new Date().toISOString(),
-    };
-
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `live-teacher-session-${Date.now()}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    toast({
-      title: 'Session Exported',
-      description: 'Conversation history downloaded successfully',
-    });
   };
 
+  const exportSession = (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    if (!session) return;
+
+    const transcript = (session.messages || [])
+      .map((msg: Message) => `${msg.role === 'user' ? 'You' : 'AI'}: ${msg.content}`)
+      .join('\n\n');
+    
+    const blob = new Blob([transcript], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${session.session_name || 'session'}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: 'Session exported' });
+  };
+
+  const fetchSessions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('live_teacher_sessions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSessions(data || []);
+    } catch (error) {
+      console.error('Error fetching sessions:', error);
+    }
+  };
+
+  const deleteSession = async (sessionId: string) => {
+    try {
+      const { error } = await supabase
+        .from('live_teacher_sessions')
+        .delete()
+        .eq('id', sessionId);
+
+      if (error) throw error;
+      
+      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      toast({ title: 'Session deleted' });
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      toast({
+        title: 'Delete failed',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleNewConversation = () => {
+    setMessages([]);
+    setCurrentSessionId(null);
+    setInputText('');
+    stopSpeaking();
+    toast({ title: 'New conversation started' });
+  };
+
+  const handleViewSession = (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId);
+    if (session) {
+      setSelectedSession(session);
+      setCurrentScreen('transcript');
+    }
+  };
+
+  const handleStartChat = () => {
+    setCurrentScreen('chat');
+    setConnectionStatus('connected');
+  };
+
+  const suggestedPrompts = messages.length === 0 ? [
+    "Explain photosynthesis",
+    "Help me with math",
+    "Tell me about history",
+    "Practice English with me",
+  ] : [];
+
+  // Render different screens
+  if (currentScreen === 'home') {
+    return (
+      <LiveTeacherHome
+        onStartChat={handleStartChat}
+        onViewHistory={() => setCurrentScreen('history')}
+        onOpenSettings={() => setCurrentScreen('settings')}
+        totalSessions={sessions.length}
+        totalMinutes={0}
+      />
+    );
+  }
+
+  if (currentScreen === 'settings') {
+    return (
+      <LiveTeacherSettings
+        settings={settings}
+        onUpdateSettings={updateSettings}
+        onBack={() => setCurrentScreen('home')}
+      />
+    );
+  }
+
+  if (currentScreen === 'history') {
+    return (
+      <LiveTeacherHistory
+        sessions={sessions}
+        onBack={() => setCurrentScreen('home')}
+        onViewSession={handleViewSession}
+        onDeleteSession={deleteSession}
+        onExportSession={exportSession}
+      />
+    );
+  }
+
+  if (currentScreen === 'transcript' && selectedSession) {
+    return (
+      <LiveTeacherTranscript
+        sessionName={selectedSession.session_name || 'Untitled Session'}
+        messages={selectedSession.messages || []}
+        createdAt={selectedSession.created_at}
+        onBack={() => {
+          setCurrentScreen('history');
+          setSelectedSession(null);
+        }}
+      />
+    );
+  }
+
+  // Chat screen
   return (
-    <div className="app-screen">
+    <div className="flex flex-col h-screen bg-background">
       {/* Header */}
-      <div className="glass-card border-b border-border/40 sticky top-0 z-10">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          {onBack && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onBack}
-              className="gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Back</span>
+      <div className="sticky top-0 bg-background/95 backdrop-blur-sm border-b z-10">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => setCurrentScreen('home')}>
+              <ArrowLeft className="h-5 w-5" />
             </Button>
-          )}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full gradient-hero flex items-center justify-center shadow-glow">
-              <Mic className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg font-bold">Live AI Teacher</h2>
-              <p className="text-xs text-muted-foreground">Voice & Text in Oromo</p>
-            </div>
+            <h1 className="text-xl font-semibold">Live Teacher</h1>
           </div>
-          <div className="flex gap-2">
-            {isSpeaking && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={stopSpeaking}
-              >
-                <VolumeX className="w-4 h-4" />
-              </Button>
-            )}
-            {messages.length > 0 && (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={saveSession}
-                  title="Save session"
-                >
-                  <Save className="w-4 h-4" />
+
+          <div className="flex items-center gap-4">
+            <ConnectionStatus status={connectionStatus} language={settings.language_preference} />
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-5 w-5" />
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={exportSession}
-                  title="Export conversation"
-                >
-                  <Download className="w-4 h-4" />
-                </Button>
-              </>
-            )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleNewConversation}>
+                  New Conversation
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={saveSession}>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Session
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setCurrentScreen('settings')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
 
-      {/* SiriOrb - Center Visual */}
-      {(loading || isSpeaking) && (
-        <div className="flex justify-center py-8">
-          <SiriOrb 
-            size="160px" 
-            isActive={loading || isSpeaking}
-            animationDuration={isSpeaking ? 15 : 20}
-          />
-        </div>
-      )}
-
-      {/* Chat Messages */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1 app-content">
-        <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
-          {messages.length === 0 && !loading && (
-            <div className="text-center py-12">
-              <div className="mb-6">
-                <SiriOrb size="120px" isActive={false} />
-              </div>
-              <p className="text-muted-foreground mb-2">
-                Start speaking or type your question
-              </p>
-              <p className="text-sm text-muted-foreground">
-                AI will respond in Oromo with voice
+      {/* Content */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6">
+        {messages.length === 0 ? (
+          <div className="text-center space-y-8">
+            <SiriOrb 
+              size="150px" 
+              isActive={loading || isSpeaking || isRecording}
+            />
+            <div className="space-y-2">
+              <h2 className="text-2xl font-semibold">Ready to learn</h2>
+              <p className="text-muted-foreground">
+                {settings.continuous_listening ? 'Speak anytime - I\'m listening' : 'Press the mic or type to start'}
               </p>
             </div>
-          )}
-          
-          {messages.map((msg, idx) => (
-            <ChatBubble key={idx} variant={msg.role === 'user' ? 'sent' : 'received'}>
-              {msg.role === 'assistant' && (
-                <ChatBubbleAvatar src="" fallback="AI" />
+            {suggestedPrompts.length > 0 && (
+              <QuickPrompts
+                prompts={suggestedPrompts}
+                onSelectPrompt={(prompt) => {
+                  setInputText(prompt);
+                  setTimeout(() => sendMessage(), 100);
+                }}
+              />
+            )}
+          </div>
+        ) : (
+          <ScrollArea ref={scrollAreaRef} className="flex-1 w-full max-w-4xl">
+            <div className="space-y-4 p-4">
+              {messages.map((message, index) => (
+                <ChatBubble key={index} variant={message.role === 'user' ? 'sent' : 'received'}>
+                  <ChatBubbleAvatar
+                    src={message.role === 'user' ? undefined : undefined}
+                    fallback={message.role === 'user' ? 'U' : 'AI'}
+                  />
+                  <ChatBubbleMessage variant={message.role === 'user' ? 'sent' : 'received'}>
+                    {message.content}
+                  </ChatBubbleMessage>
+                </ChatBubble>
+              ))}
+              {loading && (
+                <ChatBubble variant="received">
+                  <ChatBubbleAvatar fallback="AI" />
+                  <ChatBubbleMessage variant="received" isLoading />
+                </ChatBubble>
               )}
-              <ChatBubbleMessage variant={msg.role === 'user' ? 'sent' : 'received'}>
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                <p className="text-xs opacity-70 mt-2">
-                  {msg.timestamp.toLocaleTimeString()}
-                </p>
-              </ChatBubbleMessage>
-            </ChatBubble>
-          ))}
-          
-          {loading && messages[messages.length - 1]?.role === 'user' && (
-            <ChatBubble variant="received">
-              <ChatBubbleAvatar src="" fallback="AI" />
-              <ChatBubbleMessage variant="received" isLoading>
-                <MessageLoading />
-              </ChatBubbleMessage>
-            </ChatBubble>
-          )}
-        </div>
-      </ScrollArea>
-
-      {/* Waveform Visualization */}
-      {isRecording && (
-        <div className="px-4 py-2 border-t border-border/40">
-          <AudioWaveform isRecording={isRecording} audioStream={audioStream} />
-        </div>
-      )}
+            </div>
+          </ScrollArea>
+        )}
+      </div>
 
       {/* Input Area */}
-      <div className="border-t border-border/40 app-footer">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex gap-2">
-          <Button
-            variant={isRecording ? 'destructive' : 'outline'}
-            size="icon"
-            onClick={isRecording ? stopRecording : startRecording}
-          >
-            {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-          </Button>
-          
-          <AutoExpandingTextarea
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            placeholder="Type your question or use voice..."
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-              }
-            }}
-            className="flex-1"
-          />
-          
-          <Button
-            onClick={sendMessage}
-            disabled={!inputText.trim() || loading}
-            size="icon"
-          >
-            <Send className="w-5 h-5" />
-          </Button>
+      <div className="border-t bg-background p-4">
+        <div className="container mx-auto max-w-4xl space-y-4">
+          {/* Interim transcript */}
+          {interimTranscript && (
+            <TranscriptionDisplay text={interimTranscript} isFinal={false} />
+          )}
+
+          {/* Voice Activity Indicator */}
+          {settings.continuous_listening && (
+            <div className="flex items-center justify-center">
+              <VoiceActivityIndicator isActive={isDetectingSpeech} level={audioLevel * 100} />
+            </div>
+          )}
+
+          {/* Controls */}
+          <div className="flex items-end gap-2">
+            <Button
+              variant={isRecording ? 'destructive' : 'outline'}
+              size="icon"
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={loading || settings.continuous_listening}
+            >
+              {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            </Button>
+
+            <AutoExpandingTextarea
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+              placeholder={settings.continuous_listening ? "Speak or type..." : "Type your message..."}
+              className="flex-1"
+              disabled={loading}
+            />
+
+            <Button
+              size="icon"
+              onClick={sendMessage}
+              disabled={!inputText.trim() || loading}
+            >
+              <Send className="h-5 w-5" />
+            </Button>
+
+            {isSpeaking && (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={stopSpeaking}
+              >
+                <VolumeX className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
+
+          {/* Keyboard shortcuts hint */}
+          <div className="text-xs text-muted-foreground text-center">
+            Space: Record • Esc: Stop AI • Ctrl+Enter: Send • Ctrl+S: Save
+          </div>
         </div>
       </div>
     </div>
