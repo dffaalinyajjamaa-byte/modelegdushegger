@@ -5,7 +5,8 @@ import { AutoExpandingTextarea } from '@/components/ui/auto-expanding-textarea';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { User } from '@supabase/supabase-js';
-import { Send, Bot, Sparkles, Plus } from 'lucide-react';
+import { Send, Bot, Sparkles, Plus, MessageCircle, Mic } from 'lucide-react';
+import LiveTeacher from './LiveTeacher';
 
 interface AITeacherProps {
   user: User;
@@ -26,6 +27,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
+  const [mode, setMode] = useState<'chat' | 'live'>('chat');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

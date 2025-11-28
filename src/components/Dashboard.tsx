@@ -3,7 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle } from 'lucide-react';
+import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle, Mic } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AITeacher from './AITeacher';
 import TaskManager from './TaskManager';
@@ -12,7 +12,10 @@ import DigitalBooksLibrary from './DigitalBooksLibrary';
 import VideoViewer from './VideoViewer';
 import PDFViewer from './PDFViewer';
 import SettingsComponent from './Settings';
-import ExtraExam from './ExtraExam';
+import QuizFeature from './QuizFeature';
+import NationalExams from './NationalExams';
+import LiveTeacher from './LiveTeacher';
+import DailyChallenge from './DailyChallenge';
 import ProfileCard from './ProfileCard';
 import AboutUs from './AboutUs';
 import BottomNav from './BottomNav';
@@ -60,7 +63,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'exam';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'live-teacher' | 'tasks' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exam';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -248,6 +251,8 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
     switch (activeView) {
       case 'ai-teacher':
         return <AITeacher user={user} onLogActivity={logActivity} />;
+      case 'live-teacher':
+        return <LiveTeacher user={user} onLogActivity={logActivity} />;
       case 'tasks':
         return (
           <TaskManager 
@@ -260,8 +265,13 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         return <SettingsComponent user={user} onBack={() => setActiveView('dashboard')} />;
       case 'messenger':
         return <Messenger user={user} onBack={() => setActiveView('dashboard')} />;
-      case 'exam':
-        return <ExtraExam user={user} onBack={() => setActiveView('dashboard')} />;
+      case 'quiz':
+        return <QuizFeature user={user} onBack={() => setActiveView('dashboard')} />;
+      case 'national-exam':
+        if (selectedContent) {
+          return <PDFViewer content={selectedContent} onBack={() => setActiveView('dashboard')} user={user} onLogActivity={logActivity} />;
+        }
+        return null;
       case 'books':
         return (
           <DigitalBooksLibrary
@@ -401,13 +411,36 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
             <p className="font-semibold text-sm">Chat</p>
           </div>
         </Card>
-        <Card className="p-4 cursor-pointer hover:shadow-lg transition-all" onClick={() => setActiveView('exam')}>
+        <Card className="p-4 cursor-pointer hover:shadow-lg transition-all" onClick={() => setActiveView('quiz')}>
           <div className="text-center">
             <Brain className="w-8 h-8 mx-auto mb-2 text-primary" />
-            <p className="font-semibold text-sm">Exams</p>
+            <p className="font-semibold text-sm">Quiz</p>
           </div>
         </Card>
       </div>
+
+      {/* National Exams Section */}
+      <div className="mt-6">
+        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <FileText className="w-6 h-6 text-primary" />
+          National Exams
+        </h2>
+        <NationalExams user={user} onExamClick={(exam) => {
+          setSelectedContent({
+            id: exam.id,
+            title: exam.title,
+            description: exam.description || '',
+            type: 'pdf',
+            url: exam.pdf_url,
+            grade_level: 'Grade 8',
+            subject: exam.subject
+          });
+          setActiveView('national-exam');
+        }} />
+      </div>
+
+      {/* Daily Challenge Widget */}
+      <DailyChallenge user={user} />
 
       {activeView === 'dashboard' && <AboutUs />}
     </div>

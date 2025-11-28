@@ -11,12 +11,12 @@ import { cn } from '@/lib/utils';
 import { Clock, BookOpen, ArrowLeft, CheckCircle, XCircle, Globe, Book, Beaker, Users, Shield, Calculator } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-interface ExtraExamProps {
+interface QuizFeatureProps {
   user: User;
   onBack: () => void;
 }
 
-interface Exam {
+interface Quiz {
   id: string;
   title: string;
   description: string;
@@ -45,10 +45,10 @@ const GRADE_8_SUBJECTS = [
   { id: 'Herreega', name: 'Herreega', icon: Calculator, color: 'primary' },
 ];
 
-export default function ExtraExam({ user, onBack }: ExtraExamProps) {
-  const [exams, setExams] = useState<Exam[]>([]);
+export default function QuizFeature({ user, onBack }: QuizFeatureProps) {
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
+  const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<{ [key: string]: number }>({});
   const [timeLeft, setTimeLeft] = useState(0);
@@ -61,7 +61,7 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchExams();
+    fetchQuizzes();
     fetchProfile();
   }, []);
 
@@ -76,7 +76,7 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
   };
 
   useEffect(() => {
-    if (selectedExam && timeLeft > 0 && !isPaused) {
+    if (selectedQuiz && timeLeft > 0 && !isPaused) {
       const timer = setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
@@ -88,26 +88,26 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
       }, 1000);
       return () => clearInterval(timer);
     }
-  }, [selectedExam, timeLeft, isPaused]);
+  }, [selectedQuiz, timeLeft, isPaused]);
 
   // Auto-save session every 10 seconds
   useEffect(() => {
-    if (selectedExam && !isSubmitted && !isPaused) {
+    if (selectedQuiz && !isSubmitted && !isPaused) {
       const interval = setInterval(() => {
         saveQuizSession();
       }, 10000);
       return () => clearInterval(interval);
     }
-  }, [selectedExam, answers, currentQuestion, timeLeft, isSubmitted, isPaused]);
+  }, [selectedQuiz, answers, currentQuestion, timeLeft, isSubmitted, isPaused]);
 
   const saveQuizSession = async () => {
-    if (!selectedExam) return;
+    if (!selectedQuiz) return;
     
     try {
       await supabase.from('quiz_sessions').upsert({
         id: sessionId || undefined,
         user_id: user.id,
-        exam_id: selectedExam.id,
+        exam_id: selectedQuiz.id,
         answers,
         current_question: currentQuestion,
         time_remaining: timeLeft,
@@ -118,13 +118,13 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
     }
   };
 
-  const loadQuizSession = async (examId: string) => {
+  const loadQuizSession = async (quizId: string) => {
     try {
       const { data } = await supabase
         .from('quiz_sessions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('exam_id', examId)
+        .eq('exam_id', quizId)
         .maybeSingle();
 
       if (data) {
@@ -150,7 +150,7 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
     setIsPaused(false);
   };
 
-  const fetchExams = async (subject?: string) => {
+  const fetchQuizzes = async (subject?: string) => {
     let query = supabase
       .from('exams')
       .select('*')
@@ -163,23 +163,23 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
     const { data } = await query.order('created_at', { ascending: false });
 
     if (data) {
-      setExams(data as unknown as Exam[]);
+      setQuizzes(data as unknown as Quiz[]);
     }
   };
 
-  const startExam = async (exam: Exam) => {
+  const startQuiz = async (quiz: Quiz) => {
     // Try to load existing session
-    const hasSession = await loadQuizSession(exam.id);
+    const hasSession = await loadQuizSession(quiz.id);
     
     if (!hasSession) {
-      setSelectedExam(exam);
-      setTimeLeft(exam.duration_minutes * 60);
+      setSelectedQuiz(quiz);
+      setTimeLeft(quiz.duration_minutes * 60);
       setCurrentQuestion(0);
       setAnswers({});
       setIsSubmitted(false);
       setSessionId(null);
     } else {
-      setSelectedExam(exam);
+      setSelectedQuiz(quiz);
       setIsSubmitted(false);
       toast({
         title: 'Session Restored',
@@ -193,10 +193,10 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
   };
 
   const handleSubmit = async () => {
-    if (!selectedExam) return;
+    if (!selectedQuiz) return;
 
     let totalScore = 0;
-    selectedExam.questions.forEach((q) => {
+    selectedQuiz.questions.forEach((q) => {
       if (answers[q.id] === q.correct_answer) {
         totalScore += q.marks;
       }
@@ -205,18 +205,18 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
     setScore(totalScore);
     setIsSubmitted(true);
 
-    const questionsCorrect = selectedExam.questions.filter(q => answers[q.id] === q.correct_answer).length;
-    const questionsWrong = selectedExam.questions.length - questionsCorrect;
+    const questionsCorrect = selectedQuiz.questions.filter(q => answers[q.id] === q.correct_answer).length;
+    const questionsWrong = selectedQuiz.questions.length - questionsCorrect;
 
     await supabase.from('exam_submissions').insert({
-      exam_id: selectedExam.id,
+      exam_id: selectedQuiz.id,
       user_id: user.id,
       answers: answers,
       score: totalScore,
-      total_marks: selectedExam.total_marks,
+      total_marks: selectedQuiz.total_marks,
       questions_correct: questionsCorrect,
       questions_wrong: questionsWrong,
-      time_taken: (selectedExam.duration_minutes * 60) - timeLeft
+      time_taken: (selectedQuiz.duration_minutes * 60) - timeLeft
     });
 
     // Update daily stats
@@ -227,8 +227,8 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
     });
 
     toast({
-      title: 'Exam Submitted!',
-      description: `You scored ${totalScore}/${selectedExam.total_marks}`,
+      title: 'Quiz Submitted!',
+      description: `You scored ${totalScore}/${selectedQuiz.total_marks}`,
     });
   };
 
@@ -238,16 +238,16 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  if (selectedExam && !isSubmitted) {
-    const question = selectedExam.questions[currentQuestion];
-    const progress = ((currentQuestion + 1) / selectedExam.questions.length) * 100;
+  if (selectedQuiz && !isSubmitted) {
+    const question = selectedQuiz.questions[currentQuestion];
+    const progress = ((currentQuestion + 1) / selectedQuiz.questions.length) * 100;
 
     return (
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={onBack}>
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Exit Exam
+            Exit Quiz
           </Button>
           <div className="flex items-center gap-4">
             <Badge variant="secondary" className="flex items-center gap-2">
@@ -255,14 +255,14 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
               {formatTime(timeLeft)}
             </Badge>
             <Badge>
-              Question {currentQuestion + 1}/{selectedExam.questions.length}
+              Question {currentQuestion + 1}/{selectedQuiz.questions.length}
             </Badge>
           </div>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>{selectedExam.title}</CardTitle>
+            <CardTitle>{selectedQuiz.title}</CardTitle>
             <Progress value={progress} className="mt-2" />
           </CardHeader>
           <CardContent className="space-y-6">
@@ -308,13 +308,13 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
               >
                 Previous
               </Button>
-              {currentQuestion === selectedExam.questions.length - 1 ? (
+              {currentQuestion === selectedQuiz.questions.length - 1 ? (
                 <Button onClick={handleSubmit}>
-                  Submit Exam
+                  Submit Quiz
                 </Button>
               ) : (
                 <Button
-                  onClick={() => setCurrentQuestion(prev => Math.min(selectedExam.questions.length - 1, prev + 1))}
+                  onClick={() => setCurrentQuestion(prev => Math.min(selectedQuiz.questions.length - 1, prev + 1))}
                 >
                   Next
                 </Button>
@@ -326,31 +326,31 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
     );
   }
 
-  if (isSubmitted && selectedExam) {
+  if (isSubmitted && selectedQuiz) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="w-6 h-6 text-green-500" />
-              Exam Completed!
+              Quiz Completed!
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="text-center py-8">
               <div className="text-6xl font-bold gradient-primary bg-clip-text text-transparent mb-4">
-                {score}/{selectedExam.total_marks}
+                {score}/{selectedQuiz.total_marks}
               </div>
               <p className="text-lg text-muted-foreground">
-                You scored {((score / selectedExam.total_marks) * 100).toFixed(1)}%
+                You scored {((score / selectedQuiz.total_marks) * 100).toFixed(1)}%
               </p>
             </div>
             <div className="flex gap-4">
-              <Button variant="outline" onClick={() => setSelectedExam(null)} className="flex-1">
-                Back to Exams
+              <Button variant="outline" onClick={() => setSelectedQuiz(null)} className="flex-1">
+                Back to Quizzes
               </Button>
-              <Button onClick={() => startExam(selectedExam)} className="flex-1">
-                Retake Exam
+              <Button onClick={() => startQuiz(selectedQuiz)} className="flex-1">
+                Retake Quiz
               </Button>
             </div>
           </CardContent>
@@ -367,7 +367,7 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <BookOpen className="w-8 h-8 text-primary" />
-              Grade 8 Exams
+              Grade 8 Quizzes
             </h1>
             <p className="text-muted-foreground mt-2">Choose your subject</p>
           </div>
@@ -380,14 +380,14 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {GRADE_8_SUBJECTS.map((subject) => {
             const Icon = subject.icon;
-            const subjectExams = exams.filter(e => e.subject === subject.id);
+            const subjectQuizzes = quizzes.filter(e => e.subject === subject.id);
             return (
               <Card
                 key={subject.id}
                 className="glass-card hover-scale cursor-pointer border-2 border-primary/30 transition-all hover:border-primary"
                 onClick={() => {
                   setSelectedSubject(subject.id);
-                  fetchExams(subject.id);
+                  fetchQuizzes(subject.id);
                 }}
               >
                 <CardContent className="pt-6 text-center">
@@ -395,7 +395,7 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
                     <Icon className="w-8 h-8 text-white" />
                   </div>
                   <h3 className="font-bold text-lg mb-2">{subject.name}</h3>
-                  <Badge variant="secondary">{subjectExams.length} exam{subjectExams.length !== 1 ? 's' : ''}</Badge>
+                  <Badge variant="secondary">{subjectQuizzes.length} quiz{subjectQuizzes.length !== 1 ? 'zes' : ''}</Badge>
                 </CardContent>
               </Card>
             );
@@ -405,14 +405,14 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
     );
   }
 
-  // Exam List Screen
+  // Quiz List Screen
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
             <BookOpen className="w-8 h-8 text-primary" />
-            {selectedSubject} Exams
+            {selectedSubject} Quizzes
           </h1>
           <Badge className="mt-2">Grade 8</Badge>
         </div>
@@ -423,35 +423,35 @@ export default function ExtraExam({ user, onBack }: ExtraExamProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {exams.map((exam) => (
-          <Card key={exam.id} className="hover-scale cursor-pointer glass-card border-primary/30">
+        {quizzes.map((quiz) => (
+          <Card key={quiz.id} className="hover-scale cursor-pointer glass-card border-primary/30">
             <CardHeader>
-              <CardTitle>{exam.title}</CardTitle>
-              <p className="text-sm text-muted-foreground">{exam.description}</p>
+              <CardTitle>{quiz.title}</CardTitle>
+              <p className="text-sm text-muted-foreground">{quiz.description}</p>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary">
                   <Clock className="w-3 h-3 mr-1" />
-                  {exam.duration_minutes} min
+                  {quiz.duration_minutes} min
                 </Badge>
-                <Badge variant="outline">{exam.total_marks} marks</Badge>
+                <Badge variant="outline">{quiz.total_marks} marks</Badge>
               </div>
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{exam.questions?.length || 0} questions</span>
+                <span>{quiz.questions?.length || 0} questions</span>
               </div>
-              <Button onClick={() => startExam(exam)} className="w-full gradient-primary">
-                Start Exam
+              <Button onClick={() => startQuiz(quiz)} className="w-full gradient-primary">
+                Start Quiz
               </Button>
             </CardContent>
           </Card>
         ))}
 
-        {exams.length === 0 && (
+        {quizzes.length === 0 && (
           <Card className="col-span-full glass-card">
             <CardContent className="py-12 text-center text-muted-foreground">
               <BookOpen className="w-16 h-16 mx-auto mb-4 opacity-20" />
-              <p>No {selectedSubject} exams available yet. Check back later!</p>
+              <p>No {selectedSubject} quizzes available yet. Check back later!</p>
             </CardContent>
           </Card>
         )}

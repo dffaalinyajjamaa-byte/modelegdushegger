@@ -344,6 +344,42 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_challenges: {
+        Row: {
+          active_date: string
+          challenge_type: string
+          content_data: Json | null
+          created_at: string | null
+          description: string | null
+          id: string
+          points: number | null
+          subject: string
+          title: string
+        }
+        Insert: {
+          active_date: string
+          challenge_type: string
+          content_data?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          points?: number | null
+          subject: string
+          title: string
+        }
+        Update: {
+          active_date?: string
+          challenge_type?: string
+          content_data?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          points?: number | null
+          subject?: string
+          title?: string
+        }
+        Relationships: []
+      }
       daily_stats: {
         Row: {
           ai_interactions: number | null
@@ -552,6 +588,39 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      national_exams: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          pdf_url: string
+          subject: string
+          title: string
+          year: number
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          pdf_url: string
+          subject: string
+          title: string
+          year: number
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          pdf_url?: string
+          subject?: string
+          title?: string
+          year?: number
         }
         Relationships: []
       }
@@ -801,6 +870,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_challenge_progress: {
+        Row: {
+          challenge_id: string
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          points_earned: number | null
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          points_earned?: number | null
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          points_earned?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_challenge_progress_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "daily_challenges"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_rankings: {
         Row: {
