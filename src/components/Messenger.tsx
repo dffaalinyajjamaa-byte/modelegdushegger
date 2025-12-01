@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Send, Search, Plus, Image as ImageIcon, Paperclip, Mic,
   MoreVertical, Check, CheckCheck, Users, UserPlus, AlertCircle, 
-  Ban, Pin, X, ArrowLeft
+  Ban, Pin, X, ArrowLeft, Reply, MessageSquare
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ChatBubble, ChatBubbleAvatar, ChatBubbleMessage } from '@/components/ui/chat-bubble';
@@ -18,6 +19,7 @@ import AudioWaveform from './AudioWaveform';
 import FileUploadProgress from './FileUploadProgress';
 import GroupChatDialog from './GroupChatDialog';
 import UserProfileDialog from './UserProfileDialog';
+import MessageThread from './MessageThread';
 
 interface MessengerProps {
   user: User;
@@ -56,6 +58,7 @@ interface Message {
   status: string | null;
   timestamp: string | null;
   seen_by: string[] | null;
+  reply_to: string | null;
 }
 
 export default function Messenger({ user, onBack }: MessengerProps) {
@@ -74,6 +77,9 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [audioStream, setAudioStream] = useState<MediaStream | null>(null);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [threadMessage, setThreadMessage] = useState<Message | null>(null);
+  const [isThreadOpen, setIsThreadOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recordingIntervalRef = useRef<number>();
@@ -227,10 +233,12 @@ export default function Messenger({ user, onBack }: MessengerProps) {
         sender_id: user.id,
         type: 'text',
         content: newMessage,
-        status: 'sent'
+        status: 'sent',
+        reply_to: replyingTo?.id || null,
       });
 
       setNewMessage('');
+      setReplyingTo(null);
     } catch (error) {
       toast({
         title: "Error sending message",
@@ -238,6 +246,37 @@ export default function Messenger({ user, onBack }: MessengerProps) {
         variant: "destructive"
       });
     }
+  };
+
+  const handleReply = (message: Message) => {
+    setReplyingTo(message);
+  };
+
+  const handleViewThread = (message: Message) => {
+    setThreadMessage(message);
+    setIsThreadOpen(true);
+  };
+
+  const handleSendReply = async (content: string, replyToId: string) => {
+    if (!selectedChat) return;
+
+    await supabase.from('messages').insert({
+      chat_id: selectedChat.chat_id,
+      sender_id: user.id,
+      type: 'text',
+      content: content,
+      status: 'sent',
+      reply_to: replyToId,
+    });
+  };
+
+  const getReplyCount = (messageId: string) => {
+    return messages.filter(m => m.reply_to === messageId).length;
+  };
+
+  const getRepliedMessage = (replyToId: string | null) => {
+    if (!replyToId) return null;
+    return messages.find(m => m.id === replyToId);
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -511,6 +550,8 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                 messages.map((message) => {
                   const isOwnMessage = message.sender_id === user?.id;
                   const sender = users.find(u => u.user_id === message.sender_id);
+                  const repliedMessage = getRepliedMessage(message.reply_to);
+                  const replyCount = getReplyCount(message.id);
                   
                   return (
                     <ChatBubble key={message.id} variant={isOwnMessage ? "sent" : "received"}>
@@ -523,7 +564,33 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                       
                       <div className="flex flex-col gap-1 max-w-[70%]">
                         <ChatBubbleMessage variant={isOwnMessage ? "sent" : "received"}>
-                          {message.type === 'text' && <p className="text-sm">{message.content}</p>}
+                          {/* Replied Message Preview */}
+                          {repliedMessage && (
+                            <div className="mb-2 pb-2 border-l-2 border-primary/50 pl-2 bg-muted/30 rounded text-xs">
+                              <div className="font-semibold opacity-70">
+                                Replying to {users.find(u => u.user_id === repliedMessage.sender_id)?.name}
+                              </div>
+                              <div className="opacity-70 truncate">
+                                {repliedMessage.content}
+                              </div>
+                            </div>
+                          )}
+                          {message.type === 'text' && (
+                            <div>
+                              <p className="text-sm">{message.content}</p>
+                              {replyCount > 0 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="mt-1 h-6 text-xs"
+                                  onClick={() => handleViewThread(message)}
+                                >
+                                  <MessageSquare className="w-3 h-3 mr-1" />
+                                  {replyCount} {replyCount === 1 ? 'reply' : 'replies'}
+                                </Button>
+                              )}
+                            </div>
+                          )}
                           
                           {message.type === 'image' && (
                             <div>
@@ -565,8 +632,17 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                           </div>
                         </ChatBubbleMessage>
                         
-                        {!isOwnMessage && (
-                          <div className="flex gap-1">
+                        <div className="flex gap-1">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6"
+                            onClick={() => handleReply(message)}
+                            title="Reply to this message"
+                          >
+                            <Reply className="w-3 h-3" />
+                          </Button>
+                          {!isOwnMessage && (
                             <Button
                               size="icon"
                               variant="ghost"
@@ -575,8 +651,8 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                             >
                               <AlertCircle className="w-3 h-3" />
                             </Button>
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </div>
 
                       {isOwnMessage && (
@@ -594,6 +670,31 @@ export default function Messenger({ user, onBack }: MessengerProps) {
 
             {/* Input Area */}
             <div className="p-4 border-t border-border/50">
+              {/* Reply Preview */}
+              {replyingTo && (
+                <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <Reply className="w-4 h-4 text-primary flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold">
+                        Replying to {users.find(u => u.user_id === replyingTo.sender_id)?.name}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {replyingTo.content}
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 flex-shrink-0"
+                    onClick={() => setReplyingTo(null)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+
               <div className="flex gap-2">
                 <Button size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()}>
                   <Paperclip className="w-5 h-5" />
@@ -605,7 +706,7 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Type a message..."
+                  placeholder={replyingTo ? "Reply to message..." : "Type a message..."}
                   className="flex-1"
                 />
                 <Button onClick={handleSendMessage} disabled={!newMessage.trim()}>
@@ -692,6 +793,18 @@ export default function Messenger({ user, onBack }: MessengerProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Message Thread Dialog */}
+      {threadMessage && (
+        <MessageThread
+          open={isThreadOpen}
+          onOpenChange={setIsThreadOpen}
+          rootMessage={threadMessage}
+          currentUser={user}
+          users={users}
+          onSendReply={handleSendReply}
+        />
+      )}
 
       <input
         ref={fileInputRef}

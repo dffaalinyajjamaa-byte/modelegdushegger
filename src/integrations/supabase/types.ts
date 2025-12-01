@@ -582,6 +582,7 @@ export type Database = {
           file_size: number | null
           file_url: string | null
           id: string
+          reply_to: string | null
           seen_by: string[] | null
           sender_id: string
           status: string | null
@@ -595,6 +596,7 @@ export type Database = {
           file_size?: number | null
           file_url?: string | null
           id?: string
+          reply_to?: string | null
           seen_by?: string[] | null
           sender_id: string
           status?: string | null
@@ -608,6 +610,7 @@ export type Database = {
           file_size?: number | null
           file_url?: string | null
           id?: string
+          reply_to?: string | null
           seen_by?: string[] | null
           sender_id?: string
           status?: string | null
@@ -621,6 +624,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "chats"
             referencedColumns: ["chat_id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1085,6 +1095,24 @@ export type Database = {
       award_points: {
         Args: { p_activity_type: string; p_points: number; p_user_id: string }
         Returns: undefined
+      }
+      get_message_thread: {
+        Args: { message_id: string }
+        Returns: {
+          msg_chat_id: string
+          msg_content: string
+          msg_file_name: string
+          msg_file_size: number
+          msg_file_url: string
+          msg_id: string
+          msg_reply_to: string
+          msg_seen_by: string[]
+          msg_sender_id: string
+          msg_status: string
+          msg_timestamp: string
+          msg_type: string
+          thread_level: number
+        }[]
       }
       increment_daily_stat: {
         Args: { p_increment?: number; p_stat_type: string; p_user_id: string }
