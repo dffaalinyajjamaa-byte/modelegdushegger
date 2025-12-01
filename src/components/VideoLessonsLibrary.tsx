@@ -9,6 +9,7 @@ import { Play, FolderOpen, Video, ArrowLeft, Award, Clock } from 'lucide-react';
 import { validateContentUrl } from '@/lib/content-utils';
 import { getYouTubeThumbnail } from '@/lib/youtube-utils';
 import { useAllVideoProgress } from '@/hooks/use-video-progress';
+import { useContentPoints } from '@/hooks/use-content-points';
 
 interface VideoLessonsLibraryProps {
   user: User;
@@ -32,6 +33,7 @@ const VideoLessonsLibrary = ({ user, onBack, onVideoClick, embedded = false }: V
   const [loading, setLoading] = useState(true);
   const [thumbnailErrors, setThumbnailErrors] = useState<Set<string>>(new Set());
   const { progressMap, loading: progressLoading } = useAllVideoProgress(user.id);
+  const { awardPointsForContent } = useContentPoints();
 
   useEffect(() => {
     fetchVideos();
@@ -141,7 +143,10 @@ const VideoLessonsLibrary = ({ user, onBack, onVideoClick, embedded = false }: V
                       <Card
                         key={video.id}
                         className="cursor-pointer hover-scale tap-scale glass-card hover:neon-glow-cyan border-primary/20"
-                        onClick={() => onVideoClick({ ...video, url: videoUrl })}
+                        onClick={() => {
+                          awardPointsForContent(user.id, 'video', video.id);
+                          onVideoClick({ ...video, url: videoUrl });
+                        }}
                       >
                         <CardContent className="p-0">
                           <div className="relative w-full h-40 md:h-48 bg-black/10 overflow-hidden rounded-t-lg">
@@ -240,7 +245,10 @@ const VideoLessonsLibrary = ({ user, onBack, onVideoClick, embedded = false }: V
                   <Card
                     key={video.id}
                     className="cursor-pointer hover-scale tap-scale glass-card hover:neon-glow-cyan border-primary/20"
-                    onClick={() => onVideoClick({ ...video, url: videoUrl })}
+                    onClick={() => {
+                      awardPointsForContent(user.id, 'video', video.id);
+                      onVideoClick({ ...video, url: videoUrl });
+                    }}
                   >
                     <CardContent className="p-0">
                       <div className="relative w-full h-40 md:h-48 bg-black/10 overflow-hidden rounded-t-lg">

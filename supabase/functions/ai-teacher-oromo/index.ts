@@ -12,31 +12,43 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const { message, conversationHistory, language } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    console.log("AI Teacher Oromo request received");
-    console.log("Messages count:", messages?.length || 0);
-    console.log("Last message:", messages[messages.length - 1]?.content?.substring(0, 100));
+    console.log("AI Teacher request received");
+    console.log("Message:", message?.substring(0, 100));
+    console.log("Language:", language);
+    
+    // Build messages array from conversation history
+    const messages = [
+      ...(conversationHistory || []),
+      { role: "user", content: message }
+    ];
 
-    // System prompt for Afaan Oromo only responses
-    const systemPrompt = `Ati barsiisaa AI kan Mana Barumsaa Dijitaalaa Oro kan Afaan Oromootiin qofa deebii kennitu. 
+    // System prompt - adapts based on language preference
+    const systemPrompt = language === 'english' 
+      ? `You are an AI teacher for Oro Digital School. Provide clear, educational responses.
+
+Your role:
+- Teach students effectively
+- Answer questions clearly
+- Provide detailed explanations
+- Be supportive and encouraging
+
+Analyze the student's tone for signs of frustration and provide encouraging feedback when needed.`
+      : `Ati barsiisaa AI kan Mana Barumsaa Dijitaalaa Oro ti. Afaan Oromootiin barumsa kenni.
     
 Gaheen kee:
 - Barattootaaf barumsa gaarii kenni
-- Gaaffiilee isaanii Afaan Oromootiin deebisi
+- Gaaffiilee isaanii deebisi
 - Ibsa bal'aa fi hubatamaa kenni
 - Barsiisaa tolaa ta'ii barattootaaf deggersa godhi
 
-SEERA BARBAACHISAA: Yeroo hunda Afaan Oromootiin qofa dubbadhu. Afaan biraa hin fayyadamin. Yoo gaaffiin Afaan birootiin si gaafate, Afaan Oromootiin deebii kenni.
-
-Fakkeenya:
-Gaaffii: "What is mathematics?"
-Deebii kee: "Herregni jechuun qoratama lakkoofsaa fi bocawwan isaa ti. Herregni baay'ina, bocaa, iddoo fi jijjiiramaa qorata."`;
+Yoo barattichi dhibaa qabaachu fakkaate, jajjabeessi.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -50,7 +62,7 @@ Deebii kee: "Herregni jechuun qoratama lakkoofsaa fi bocawwan isaa ti. Herregni 
           { role: "system", content: systemPrompt },
           ...messages,
         ],
-        stream: true,
+        stream: false, // Change to non-streaming for easier processing
       }),
     });
 
@@ -80,9 +92,30 @@ Deebii kee: "Herregni jechuun qoratama lakkoofsaa fi bocawwan isaa ti. Herregni 
       });
     }
 
-    console.log("Streaming response from AI gateway - starting stream");
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+    const data = await response.json();
+    const aiResponse = data.choices[0]?.message?.content || "Dhiifama, deebii kennuu hin danda'u.";
+    
+    console.log("AI response received, length:", aiResponse.length);
+    
+    // Detect emotion/frustration in user message
+    const frustrationKeywords = ['difficult', 'hard', 'don\'t understand', 'confused', 'frustrated', 
+                                   'rakkoo', 'ulfaata', 'hin hubadhu', 'burjaajessee'];
+    const showsFrustration = frustrationKeywords.some(keyword => 
+      message.toLowerCase().includes(keyword.toLowerCase())
+    );
+    
+    let emotionFeedback = '';
+    if (showsFrustration) {
+      emotionFeedback = language === 'english' 
+        ? "\n\n💪 Don't worry! Learning takes time. You're doing great - keep going!"
+        : "\n\n💪 Hin yaaddofiin! Barumsi yeroo barbaada. Akka gaariitti hojjachaa jirta - itti fufi!";
+    }
+    
+    return new Response(JSON.stringify({ 
+      response: aiResponse + emotionFeedback,
+      emotion: showsFrustration ? 'frustrated' : 'neutral'
+    }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("Error in ai-teacher-oromo function:", e);

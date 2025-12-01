@@ -2,3 +2,16 @@ project_id = "asqxdhqcqexoxodrnjal"
 
 [functions.elevenlabs-tts]
 verify_jwt = false
+
+[functions.ai-teacher-oromo]
+verify_jwt = false
+
+[functions.translate-conversation]
+verify_jwt = false
+
+[functions.generate-study-plan]
+verify_jwt = true
+
+[functions.live-teacher-settings]
+verify_jwt = true
+
