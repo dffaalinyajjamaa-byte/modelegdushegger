@@ -361,16 +361,11 @@ export default function Messenger({ user, onBack }: MessengerProps) {
       <div className="w-full md:w-96 border-r border-border/50 flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-border/50">
-          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-foreground">Messages</h2>
-            <div className="flex gap-2">
-              <Button size="icon" variant="ghost" onClick={() => setIsFindUserDialogOpen(true)}>
-                <UserPlus className="w-5 h-5" />
-              </Button>
-              <Button size="icon" variant="ghost" onClick={() => setIsGroupDialogOpen(true)}>
-                <Users className="w-5 h-5" />
-              </Button>
-            </div>
+            <Button size="icon" variant="ghost" onClick={() => setIsFindUserDialogOpen(true)}>
+              <UserPlus className="w-5 h-5" />
+            </Button>
           </div>
 
           <div className="relative">
@@ -384,72 +379,17 @@ export default function Messenger({ user, onBack }: MessengerProps) {
           </div>
         </div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="chats" className="w-full flex-1 flex flex-col">
-          <TabsList className="w-full justify-start rounded-none border-b bg-background">
-            <TabsTrigger value="chats" className="flex-1 data-[state=active]:bg-primary/10">
-              Chats
-            </TabsTrigger>
-            <TabsTrigger value="channels" className="flex-1 data-[state=active]:bg-primary/10">
-              Channels
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="chats" className="flex-1 m-0 overflow-hidden">
-            <ScrollArea className="h-full">
-              {/* Pinned Chats */}
-              {pinnedChatsList.length > 0 && (
-                <div className="border-b border-border/50 bg-muted/20">
-                  <div className="px-4 py-2 text-xs font-semibold text-muted-foreground flex items-center gap-2">
-                    <Pin className="w-3 h-3" />
-                    Pinned
-                  </div>
-                  {pinnedChatsList.map((chat) => {
-                    const otherUser = getChatUser(chat);
-                    return (
-                      <Card
-                        key={chat.id}
-                        className={`cursor-pointer m-2 hover:bg-accent/50 transition-colors ${
-                          selectedChat?.id === chat.id ? 'bg-accent' : ''
-                        }`}
-                        onClick={() => setSelectedChat(chat)}
-                      >
-                        <CardContent className="p-3 flex items-center gap-3 relative">
-                          <Pin className="w-3 h-3 text-primary absolute top-2 right-2" />
-                          <ChatBubbleAvatar
-                            src={chat.is_group ? chat.group_avatar_url || '' : otherUser?.profile_pic || ''}
-                            fallback={chat.is_group ? (chat.group_name?.charAt(0) || 'G') : (otherUser?.name.charAt(0) || 'U')}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-sm truncate">
-                              {chat.is_group ? chat.group_name : otherUser?.name}
-                            </h3>
-                          </div>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-6 w-6"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              togglePinChat(chat.chat_id);
-                            }}
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+        {/* Chat List (Groups/Channels removed) */}
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            {/* Pinned Chats */}
+            {pinnedChatsList.length > 0 && (
+              <div className="border-b border-border/50 bg-muted/20">
+                <div className="px-4 py-2 text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                  <Pin className="w-3 h-3" />
+                  Pinned
                 </div>
-              )}
-
-              {/* Regular Chats */}
-              {unpinnedChatsList.length === 0 && pinnedChatsList.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8 px-4">
-                  <p>No chats yet. Start a conversation!</p>
-                </div>
-              ) : (
-                unpinnedChatsList.map((chat) => {
+                {pinnedChatsList.filter(chat => !chat.is_group).map((chat) => {
                   const otherUser = getChatUser(chat);
                   return (
                     <Card
@@ -459,14 +399,15 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                       }`}
                       onClick={() => setSelectedChat(chat)}
                     >
-                      <CardContent className="p-3 flex items-center gap-3">
+                      <CardContent className="p-3 flex items-center gap-3 relative">
+                        <Pin className="w-3 h-3 text-primary absolute top-2 right-2" />
                         <ChatBubbleAvatar
-                          src={chat.is_group ? chat.group_avatar_url || '' : otherUser?.profile_pic || ''}
-                          fallback={chat.is_group ? (chat.group_name?.charAt(0) || 'G') : (otherUser?.name.charAt(0) || 'U')}
+                          src={otherUser?.profile_pic || ''}
+                          fallback={otherUser?.name.charAt(0) || 'U'}
                         />
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-sm truncate">
-                            {chat.is_group ? chat.group_name : otherUser?.name}
+                            {otherUser?.name}
                           </h3>
                         </div>
                         <Button
@@ -478,22 +419,59 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                             togglePinChat(chat.chat_id);
                           }}
                         >
-                          <Pin className="w-3 h-3" />
+                          <X className="w-3 h-3" />
                         </Button>
                       </CardContent>
                     </Card>
                   );
-                })
-              )}
-            </ScrollArea>
-          </TabsContent>
+                })}
+              </div>
+            )}
 
-          <TabsContent value="channels" className="flex-1 m-0">
-            <div className="text-center text-muted-foreground py-8">
-              <p>Channels feature coming soon</p>
-            </div>
-          </TabsContent>
-        </Tabs>
+            {/* Regular Chats (No Groups) */}
+            {unpinnedChatsList.filter(chat => !chat.is_group).length === 0 && pinnedChatsList.filter(chat => !chat.is_group).length === 0 ? (
+              <div className="text-center text-muted-foreground py-8 px-4">
+                <p>No chats yet. Start a conversation!</p>
+              </div>
+            ) : (
+              unpinnedChatsList.filter(chat => !chat.is_group).map((chat) => {
+                const otherUser = getChatUser(chat);
+                return (
+                  <Card
+                    key={chat.id}
+                    className={`cursor-pointer m-2 hover:bg-accent/50 transition-colors ${
+                      selectedChat?.id === chat.id ? 'bg-accent' : ''
+                    }`}
+                    onClick={() => setSelectedChat(chat)}
+                  >
+                    <CardContent className="p-3 flex items-center gap-3">
+                      <ChatBubbleAvatar
+                        src={otherUser?.profile_pic || ''}
+                        fallback={otherUser?.name.charAt(0) || 'U'}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-sm truncate">
+                          {otherUser?.name}
+                        </h3>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          togglePinChat(chat.chat_id);
+                        }}
+                      >
+                        <Pin className="w-3 h-3" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </ScrollArea>
+        </div>
       </div>
 
       {/* Right Side - Chat Area */}
@@ -513,11 +491,9 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                 />
                 <div>
                   <h3 className="font-semibold">
-                    {selectedChat.is_group ? selectedChat.group_name : getChatUser(selectedChat)?.name}
+                    {getChatUser(selectedChat)?.name}
                   </h3>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedChat.is_group ? `${selectedChat.members.length} members` : 'Online'}
-                  </p>
+                  <p className="text-xs text-muted-foreground">Online</p>
                 </div>
               </div>
               <Button size="icon" variant="ghost">
@@ -546,10 +522,6 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                       )}
                       
                       <div className="flex flex-col gap-1 max-w-[70%]">
-                        {!isOwnMessage && selectedChat?.is_group && (
-                          <span className="text-xs text-muted-foreground px-2">{sender?.name}</span>
-                        )}
-                        
                         <ChatBubbleMessage variant={isOwnMessage ? "sent" : "received"}>
                           {message.type === 'text' && <p className="text-sm">{message.content}</p>}
                           
@@ -691,13 +663,6 @@ export default function Messenger({ user, onBack }: MessengerProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Group Chat Dialog */}
-      <GroupChatDialog
-        user={user}
-        open={isGroupDialogOpen}
-        onOpenChange={setIsGroupDialogOpen}
-        onGroupCreated={fetchChats}
-      />
 
       {/* Voice Recording Modal */}
       <Dialog open={isRecordingModalOpen} onOpenChange={setIsRecordingModalOpen}>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { BookOpen, ArrowLeft, PlayCircle } from 'lucide-react';
 import { validateContentUrl } from '@/lib/content-utils';
+import { useContentPoints } from '@/hooks/use-content-points';
 
 interface DigitalBooksLibraryProps {
   user: User;
@@ -36,6 +37,7 @@ const DigitalBooksLibrary = ({ user, onBack, onBookClick, embedded = false }: Di
   const [progress, setProgress] = useState<Record<string, BookProgress>>({});
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const { awardPointsForContent } = useContentPoints();
 
   useEffect(() => {
     fetchBooksAndProgress();
@@ -144,7 +146,10 @@ const DigitalBooksLibrary = ({ user, onBack, onBookClick, embedded = false }: Di
                   <Card
                     key={book.id}
                     className="cursor-pointer hover:shadow-lg transition-all duration-200 overflow-hidden"
-                    onClick={() => onBookClick({ ...book, url: bookUrl })}
+                    onClick={() => {
+                      awardPointsForContent(user.id, 'book', book.id);
+                      onBookClick({ ...book, url: bookUrl });
+                    }}
                   >
                     <div className="relative aspect-[3/4] overflow-hidden">
                       {typeof getBookCover(book) === 'string' ? (
@@ -218,7 +223,10 @@ const DigitalBooksLibrary = ({ user, onBack, onBookClick, embedded = false }: Di
                   <Card
                     key={book.id}
                     className="cursor-pointer hover:shadow-lg transition-all duration-200 overflow-hidden"
-                    onClick={() => onBookClick({ ...book, url: bookUrl })}
+                    onClick={() => {
+                      awardPointsForContent(user.id, 'book', book.id);
+                      onBookClick({ ...book, url: bookUrl });
+                    }}
                   >
                     <div className="relative aspect-[3/4] overflow-hidden">
                       {typeof getBookCover(book) === 'string' ? (

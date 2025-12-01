@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { FileText, Calendar, BookOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useContentPoints } from '@/hooks/use-content-points';
 
 interface NationalExamsProps {
   user: User;
@@ -42,6 +43,7 @@ export default function NationalExams({ user, onExamClick }: NationalExamsProps)
   const [selectedYear, setSelectedYear] = useState<number>(2017);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { awardPointsForContent } = useContentPoints();
 
   useEffect(() => {
     fetchNationalExams();
@@ -119,7 +121,10 @@ export default function NationalExams({ user, onExamClick }: NationalExamsProps)
               <Card
                 key={exam.id}
                 className="glass-card hover-scale cursor-pointer overflow-hidden group"
-                onClick={() => onExamClick(exam)}
+                onClick={() => {
+                  awardPointsForContent(user.id, 'exam', exam.id);
+                  onExamClick(exam);
+                }}
               >
                 {/* PDF Preview/Cover */}
                 <div className={`relative h-48 bg-gradient-to-br ${gradientClass} flex items-center justify-center overflow-hidden`}>

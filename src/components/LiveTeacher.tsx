@@ -309,7 +309,14 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
 
       setConnectionStatus('connected');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Function invocation error:', error);
+        throw error;
+      }
+
+      if (!data || !data.response) {
+        throw new Error('No response from AI');
+      }
 
       const assistantMessage: Message = {
         role: 'assistant',
@@ -319,11 +326,39 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
 
       setMessages(prev => [...prev, assistantMessage]);
       
+      // Speak the response
       await speak(data.response);
+
+      // Translate if bilingual mode
+      if (settings.language_preference === 'oromo' || settings.language_preference === 'english') {
+        try {
+          const targetLang = settings.language_preference === 'oromo' ? 'english' : 'oromo';
+          const { data: translationData } = await supabase.functions.invoke('translate-conversation', {
+            body: {
+              text: data.response,
+              from: settings.language_preference,
+              to: targetLang
+            }
+          });
+          
+          if (translationData?.translation) {
+            // Store translation for side-by-side display
+            const translatedMessage: Message = {
+              role: 'assistant',
+              content: `[${targetLang.toUpperCase()}]: ${translationData.translation}`,
+              timestamp: new Date().toISOString(),
+            };
+            setMessages(prev => [...prev, translatedMessage]);
+          }
+        } catch (err) {
+          console.error('Translation error:', err);
+        }
+      }
 
       onLogActivity('ai_interactions', 'AI Live Teacher interaction', {
         message: userMessage.content,
-        response: data.response
+        response: data.response,
+        emotion: data.emotion
       });
 
     } catch (error) {
@@ -331,7 +366,7 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
       setConnectionStatus('disconnected');
       toast({
         title: 'Error',
-        description: 'Failed to get response. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to get response. Please try again.',
         variant: 'destructive',
       });
     } finally {
