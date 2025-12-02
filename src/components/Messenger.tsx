@@ -8,10 +8,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useScreenSize } from '@/hooks/use-screen-size';
 import { 
   Send, Search, Plus, Image as ImageIcon, Paperclip, Mic,
   MoreVertical, Check, CheckCheck, Users, UserPlus, AlertCircle, 
-  Ban, Pin, X, ArrowLeft, Reply, MessageSquare
+  Ban, Pin, X, ArrowLeft, Reply, MessageSquare, SmilePlus
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ChatBubble, ChatBubbleAvatar, ChatBubbleMessage } from '@/components/ui/chat-bubble';
@@ -80,10 +81,12 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
   const [isThreadOpen, setIsThreadOpen] = useState(false);
+  const [messageReactions, setMessageReactions] = useState<Record<string, Array<{emoji: string; count: number; reacted: boolean}>>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recordingIntervalRef = useRef<number>();
   const { toast } = useToast();
+  const { isMobile } = useScreenSize();
 
   useEffect(() => {
     initializeMessaging();
@@ -391,13 +394,41 @@ export default function Messenger({ user, onBack }: MessengerProps) {
     return messages.find(m => m.chat_id === chatId);
   };
 
+  const handleReaction = (messageId: string, emoji: string) => {
+    setMessageReactions((prev) => {
+      const existingReactions = prev[messageId] || [];
+      const existingReaction = existingReactions.find((r) => r.emoji === emoji);
+
+      if (existingReaction) {
+        return {
+          ...prev,
+          [messageId]: existingReactions.map((r) =>
+            r.emoji === emoji
+              ? { ...r, count: r.reacted ? r.count - 1 : r.count + 1, reacted: !r.reacted }
+              : r
+          ).filter(r => r.count > 0)
+        };
+      } else {
+        return {
+          ...prev,
+          [messageId]: [...existingReactions, { emoji, count: 1, reacted: true }]
+        };
+      }
+    });
+  };
+
   const pinnedChatsList = chats.filter(chat => pinnedChats.includes(chat.chat_id));
   const unpinnedChatsList = chats.filter(chat => !pinnedChats.includes(chat.chat_id));
 
+  // Show chat list or chat screen on mobile, both on desktop
+  const showChatList = !isMobile || !selectedChat;
+  const showChatScreen = !isMobile || selectedChat;
+
   return (
-    <div className="h-full flex glass-card overflow-hidden">
-      {/* Left Sidebar */}
-      <div className="w-full md:w-96 border-r border-border/50 flex flex-col">
+    <div className="h-full flex overflow-hidden bg-background">
+      {/* Left Sidebar - Chat List */}
+      {showChatList && (
+        <div className={`${isMobile ? 'w-full' : 'w-96'} border-r border-border/50 flex flex-col bg-background`}>
         {/* Header */}
         <div className="p-4 border-b border-border/50">
             <div className="flex items-center justify-between mb-4">
@@ -511,25 +542,32 @@ export default function Messenger({ user, onBack }: MessengerProps) {
             )}
           </ScrollArea>
         </div>
-      </div>
+        </div>
+      )}
 
       {/* Right Side - Chat Area */}
-      <div className="flex-1 flex flex-col">
-        {selectedChat ? (
+      {showChatScreen && (
+        <div className={`${isMobile ? 'w-full' : 'flex-1'} flex flex-col bg-background`}>
+          {selectedChat ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b border-border/50 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button size="icon" variant="ghost" className="md:hidden" onClick={() => setSelectedChat(null)}>
-                  <ArrowLeft className="w-5 h-5" />
-                </Button>
-                <ChatBubbleAvatar
-                  src={selectedChat.is_group ? selectedChat.group_avatar_url || '' : getChatUser(selectedChat)?.profile_pic || ''}
-                  fallback={selectedChat.is_group ? (selectedChat.group_name?.charAt(0) || 'G') : (getChatUser(selectedChat)?.name.charAt(0) || 'U')}
-                  className="h-10 w-10"
-                />
-                <div>
-                  <h3 className="font-semibold">
+            <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between bg-background/95 backdrop-blur-sm sticky top-0 z-10">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                {isMobile && (
+                  <Button size="icon" variant="ghost" onClick={() => setSelectedChat(null)}>
+                    <ArrowLeft className="w-5 h-5" />
+                  </Button>
+                )}
+                <div className="relative">
+                  <ChatBubbleAvatar
+                    src={selectedChat.is_group ? selectedChat.group_avatar_url || '' : getChatUser(selectedChat)?.profile_pic || ''}
+                    fallback={selectedChat.is_group ? (selectedChat.group_name?.charAt(0) || 'G') : (getChatUser(selectedChat)?.name.charAt(0) || 'U')}
+                    className="h-10 w-10"
+                  />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 ring-2 ring-background" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground truncate">
                     {getChatUser(selectedChat)?.name}
                   </h3>
                   <p className="text-xs text-muted-foreground">Online</p>
@@ -541,138 +579,158 @@ export default function Messenger({ user, onBack }: MessengerProps) {
             </div>
 
             {/* Messages */}
-            <ScrollArea className="flex-1 p-4">
+            <ScrollArea className="flex-1 p-4 bg-background">
               {messages.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
                   <p>No messages yet. Start the conversation!</p>
                 </div>
               ) : (
-                messages.map((message) => {
-                  const isOwnMessage = message.sender_id === user?.id;
-                  const sender = users.find(u => u.user_id === message.sender_id);
-                  const repliedMessage = getRepliedMessage(message.reply_to);
-                  const replyCount = getReplyCount(message.id);
-                  
-                  return (
-                    <ChatBubble key={message.id} variant={isOwnMessage ? "sent" : "received"}>
-                      {!isOwnMessage && (
-                        <ChatBubbleAvatar 
-                          src={sender?.profile_pic || ''} 
+                <div className="space-y-4">
+                  {messages.map((message) => {
+                    const isOwnMessage = message.sender_id === user?.id;
+                    const sender = users.find(u => u.user_id === message.sender_id);
+                    const repliedMessage = getRepliedMessage(message.reply_to);
+                    const replyCount = getReplyCount(message.id);
+                    const reactions = messageReactions[message.id] || [];
+                    
+                    return (
+                      <div key={message.id} className={`flex items-start gap-2 ${isOwnMessage ? 'flex-row-reverse' : ''}`}>
+                        <ChatBubbleAvatar
+                          src={sender?.profile_pic || ''}
                           fallback={sender?.name.charAt(0).toUpperCase() || 'U'}
+                          className="h-8 w-8"
                         />
-                      )}
-                      
-                      <div className="flex flex-col gap-1 max-w-[70%]">
-                        <ChatBubbleMessage variant={isOwnMessage ? "sent" : "received"}>
-                          {/* Replied Message Preview */}
-                          {repliedMessage && (
-                            <div className="mb-2 pb-2 border-l-2 border-primary/50 pl-2 bg-muted/30 rounded text-xs">
-                              <div className="font-semibold opacity-70">
-                                Replying to {users.find(u => u.user_id === repliedMessage.sender_id)?.name}
+                        
+                        <div className={`flex flex-col gap-1 max-w-[75%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                          <div className={`rounded-2xl px-4 py-2 ${
+                            isOwnMessage 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-muted text-foreground'
+                          }`}>
+                            {/* Replied Message Preview */}
+                            {repliedMessage && (
+                              <div className={`mb-2 pb-2 border-l-2 pl-2 rounded text-xs ${
+                                isOwnMessage ? 'border-primary-foreground/30 bg-primary-foreground/10' : 'border-primary/30 bg-muted-foreground/10'
+                              }`}>
+                                <div className="font-semibold opacity-70">
+                                  Replying to {users.find(u => u.user_id === repliedMessage.sender_id)?.name}
+                                </div>
+                                <div className="opacity-70 truncate">
+                                  {repliedMessage.content}
+                                </div>
                               </div>
-                              <div className="opacity-70 truncate">
-                                {repliedMessage.content}
+                            )}
+                            
+                            {message.type === 'text' && (
+                              <p className="text-sm break-words">{message.content}</p>
+                            )}
+                            
+                            {message.type === 'image' && (
+                              <div>
+                                <img
+                                  src={message.file_url || ''}
+                                  alt="Shared image"
+                                  className="max-w-full rounded-lg mb-1"
+                                />
+                                {message.content && <p className="text-sm">{message.content}</p>}
                               </div>
-                            </div>
-                          )}
-                          {message.type === 'text' && (
-                            <div>
-                              <p className="text-sm">{message.content}</p>
-                              {replyCount > 0 && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="mt-1 h-6 text-xs"
-                                  onClick={() => handleViewThread(message)}
-                                >
-                                  <MessageSquare className="w-3 h-3 mr-1" />
-                                  {replyCount} {replyCount === 1 ? 'reply' : 'replies'}
-                                </Button>
+                            )}
+                            
+                            {message.type === 'file' && (
+                              <div className="flex items-center gap-2">
+                                <Paperclip className="w-4 h-4" />
+                                <div>
+                                  <p className="text-sm font-medium">{message.file_name}</p>
+                                  <p className="text-xs opacity-70">
+                                    {message.file_size ? `${(message.file_size / 1024).toFixed(1)} KB` : ''}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                            
+                            <div className="flex items-center justify-end gap-1 mt-1">
+                              <span className={`text-xs ${isOwnMessage ? 'opacity-80' : 'opacity-60'}`}>
+                                {new Date(message.timestamp || '').toLocaleTimeString('en-US', { 
+                                  hour: 'numeric', 
+                                  minute: '2-digit' 
+                                })}
+                              </span>
+                              {isOwnMessage && (
+                                <>
+                                  {message.status === 'sent' && <Check className="w-3 h-3 opacity-80" />}
+                                  {message.status === 'delivered' && <CheckCheck className="w-3 h-3 opacity-80" />}
+                                  {message.status === 'read' && <CheckCheck className="w-3 h-3 text-blue-400" />}
+                                </>
                               )}
                             </div>
-                          )}
-                          
-                          {message.type === 'image' && (
-                            <div>
-                              <img
-                                src={message.file_url || ''}
-                                alt="Shared image"
-                                className="max-w-full rounded-lg mb-1"
-                              />
-                              {message.content && <p className="text-sm">{message.content}</p>}
-                            </div>
-                          )}
-                          
-                          {message.type === 'file' && (
-                            <div className="flex items-center gap-2">
-                              <Paperclip className="w-4 h-4" />
-                              <div>
-                                <p className="text-sm font-medium">{message.file_name}</p>
-                                <p className="text-xs opacity-70">
-                                  {message.file_size ? `${(message.file_size / 1024).toFixed(1)} KB` : ''}
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                          
-                          <div className="flex items-center justify-end gap-1 mt-1">
-                            <span className="text-xs opacity-70">
-                              {new Date(message.timestamp || '').toLocaleTimeString('en-US', { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                              })}
-                            </span>
-                            {isOwnMessage && (
-                              <>
-                                {message.status === 'sent' && <Check className="w-3 h-3" />}
-                                {message.status === 'delivered' && <CheckCheck className="w-3 h-3" />}
-                                {message.status === 'read' && <CheckCheck className="w-3 h-3 text-blue-500" />}
-                              </>
-                            )}
                           </div>
-                        </ChatBubbleMessage>
-                        
-                        <div className="flex gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-6 w-6"
-                            onClick={() => handleReply(message)}
-                            title="Reply to this message"
-                          >
-                            <Reply className="w-3 h-3" />
-                          </Button>
-                          {!isOwnMessage && (
+                          
+                          {/* Reactions */}
+                          {reactions.length > 0 && (
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {reactions.map((reaction) => (
+                                <button
+                                  key={reaction.emoji}
+                                  onClick={() => handleReaction(message.id, reaction.emoji)}
+                                  className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition-colors ${
+                                    reaction.reacted
+                                      ? 'bg-primary/20 text-primary'
+                                      : 'bg-muted hover:bg-muted-foreground/10'
+                                  }`}
+                                >
+                                  <span>{reaction.emoji}</span>
+                                  <span>{reaction.count}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          
+                          {/* Action Buttons */}
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button
                               size="icon"
                               variant="ghost"
                               className="h-6 w-6"
-                              onClick={() => handleReportMessage(message.id)}
+                              onClick={() => handleReaction(message.id, '👍')}
+                              title="React with 👍"
                             >
-                              <AlertCircle className="w-3 h-3" />
+                              <SmilePlus className="w-3 h-3" />
                             </Button>
-                          )}
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-6 w-6"
+                              onClick={() => handleReply(message)}
+                              title="Reply to this message"
+                            >
+                              <Reply className="w-3 h-3" />
+                            </Button>
+                            {replyCount > 0 && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 text-xs px-2"
+                                onClick={() => handleViewThread(message)}
+                              >
+                                <MessageSquare className="w-3 h-3 mr-1" />
+                                {replyCount}
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </div>
-
-                      {isOwnMessage && (
-                        <ChatBubbleAvatar 
-                          src={sender?.profile_pic || ''} 
-                          fallback={sender?.name.charAt(0).toUpperCase() || 'U'}
-                        />
-                      )}
-                    </ChatBubble>
-                  );
-                })
+                    );
+                  })}
+                </div>
               )}
               <div ref={messagesEndRef} />
             </ScrollArea>
 
             {/* Input Area */}
-            <div className="p-4 border-t border-border/50">
+            <div className="p-4 border-t border-border/50 bg-background/95 backdrop-blur-sm">
               {/* Reply Preview */}
               {replyingTo && (
-                <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between">
+                <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between animate-slide-up">
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <Reply className="w-4 h-4 text-primary flex-shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -695,34 +753,52 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                 </div>
               )}
 
-              <div className="flex gap-2">
-                <Button size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()}>
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex-shrink-0"
+                >
                   <Paperclip className="w-5 h-5" />
                 </Button>
-                <Button size="icon" variant="ghost" onClick={startVoiceRecording}>
-                  <Mic className="w-5 h-5" />
-                </Button>
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder={replyingTo ? "Reply to message..." : "Type a message..."}
-                  className="flex-1"
-                />
-                <Button onClick={handleSendMessage} disabled={!newMessage.trim()}>
-                  <Send className="w-5 h-5" />
+                <div className="relative flex-1">
+                  <Input
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                    placeholder={replyingTo ? "Reply to message..." : "Write a message..."}
+                    className="pr-10 rounded-full bg-muted border-none focus-visible:ring-1"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                    onClick={() => handleReaction(messages[messages.length - 1]?.id || '', '👍')}
+                  >
+                    <SmilePlus className="w-4 h-4" />
+                  </Button>
+                </div>
+                <Button 
+                  onClick={handleSendMessage} 
+                  disabled={!newMessage.trim()}
+                  size="icon"
+                  className="flex-shrink-0 rounded-full"
+                >
+                  <Send className="w-4 h-4" />
                 </Button>
               </div>
             </div>
           </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <p>Select a chat to start messaging</p>
+          ) : (
+            <div className="flex-1 flex items-center justify-center bg-background">
+              <div className="text-center text-muted-foreground">
+                <p>Select a chat to start messaging</p>
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Find User Dialog */}
       <Dialog open={isFindUserDialogOpen} onOpenChange={setIsFindUserDialogOpen}>
