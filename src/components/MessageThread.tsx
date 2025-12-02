@@ -5,9 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChatBubble, ChatBubbleAvatar, ChatBubbleMessage } from '@/components/ui/chat-bubble';
+import { ChatBubbleAvatar } from '@/components/ui/chat-bubble';
 import { Send, X, ArrowLeft, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useScreenSize } from '@/hooks/use-screen-size';
 
 interface MessageThreadProps {
   open: boolean;
@@ -47,6 +48,7 @@ export default function MessageThread({
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const { isMobile } = useScreenSize();
 
   useEffect(() => {
     if (open && rootMessage) {
@@ -143,9 +145,14 @@ export default function MessageThread({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl h-[80vh] flex flex-col">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
+      <DialogContent className={`${isMobile ? 'max-w-full h-full' : 'max-w-2xl h-[80vh]'} flex flex-col p-0`}>
+        <DialogHeader className="px-4 py-3 border-b border-border/50 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            {isMobile && (
+              <Button size="icon" variant="ghost" onClick={() => onOpenChange(false)}>
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            )}
             <DialogTitle className="flex items-center gap-2">
               <MessageSquare className="w-5 h-5" />
               Thread
@@ -159,8 +166,8 @@ export default function MessageThread({
         </DialogHeader>
 
         {/* Thread Messages */}
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-4">
+        <ScrollArea className="flex-1 px-4 bg-background">
+          <div className="space-y-4 py-4">
             {threadMessages.map((message, index) => {
               const isOwnMessage = message.sender_id === currentUser?.id;
               const sender = users.find(u => u.user_id === message.sender_id);
@@ -169,51 +176,40 @@ export default function MessageThread({
               return (
                 <div
                   key={message.id}
-                  className={`${message.thread_level > 0 ? 'ml-8 border-l-2 border-primary/20 pl-4' : ''}`}
+                  className={`flex items-start gap-2 ${isOwnMessage ? 'flex-row-reverse' : ''} ${
+                    message.thread_level > 0 ? 'ml-8 border-l-2 border-primary/20 pl-4' : ''
+                  } ${isRootMessage ? 'bg-accent/10 rounded-lg p-3 -mx-1' : ''}`}
                 >
-                  <ChatBubble variant={isOwnMessage ? "sent" : "received"}>
-                    {!isOwnMessage && (
-                      <ChatBubbleAvatar 
-                        src={sender?.profile_pic || ''} 
-                        fallback={sender?.name.charAt(0).toUpperCase() || 'U'}
-                      />
+                  <ChatBubbleAvatar
+                    src={sender?.profile_pic || ''}
+                    fallback={sender?.name.charAt(0).toUpperCase() || 'U'}
+                    className="h-8 w-8"
+                  />
+                  
+                  <div className={`flex flex-col gap-1 max-w-[75%] ${isOwnMessage ? 'items-end' : 'items-start'}`}>
+                    {isRootMessage && (
+                      <span className="text-xs text-primary font-semibold">
+                        Original Message
+                      </span>
                     )}
                     
-                    <div className="flex flex-col gap-1 max-w-[70%]">
-                      {!isOwnMessage && (
-                        <span className="text-xs text-muted-foreground px-2">
-                          {sender?.name}
-                        </span>
-                      )}
+                    <div className={`rounded-2xl px-4 py-2 ${
+                      isOwnMessage 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'bg-muted text-foreground'
+                    } ${isRootMessage ? 'ring-2 ring-primary/30' : ''}`}>
+                      <p className="text-sm break-words">{message.content}</p>
                       
-                      <ChatBubbleMessage 
-                        variant={isOwnMessage ? "sent" : "received"}
-                        className={isRootMessage ? 'ring-2 ring-primary/50' : ''}
-                      >
-                        {isRootMessage && (
-                          <div className="text-xs font-semibold mb-1 opacity-70">
-                            Original Message
-                          </div>
-                        )}
-                        <p className="text-sm">{message.content}</p>
-                        <div className="flex items-center justify-end gap-1 mt-1">
-                          <span className="text-xs opacity-70">
-                            {new Date(message.timestamp || '').toLocaleTimeString('en-US', { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}
-                          </span>
-                        </div>
-                      </ChatBubbleMessage>
+                      <div className="flex items-center justify-end gap-1 mt-1">
+                        <span className={`text-xs ${isOwnMessage ? 'opacity-80' : 'opacity-60'}`}>
+                          {new Date(message.timestamp || '').toLocaleTimeString('en-US', { 
+                            hour: 'numeric', 
+                            minute: '2-digit' 
+                          })}
+                        </span>
+                      </div>
                     </div>
-
-                    {isOwnMessage && (
-                      <ChatBubbleAvatar 
-                        src={sender?.profile_pic || ''} 
-                        fallback={sender?.name.charAt(0).toUpperCase() || 'U'}
-                      />
-                    )}
-                  </ChatBubble>
+                  </div>
                 </div>
               );
             })}
@@ -222,21 +218,25 @@ export default function MessageThread({
         </ScrollArea>
 
         {/* Reply Input */}
-        <div className="border-t pt-4">
-          <div className="flex gap-2">
-            <Input
-              value={newReply}
-              onChange={(e) => setNewReply(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendReply()}
-              placeholder="Reply to this thread..."
-              className="flex-1"
-              disabled={loading}
-            />
+        <div className="p-4 border-t border-border/50 bg-background/95 backdrop-blur-sm flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Input
+                value={newReply}
+                onChange={(e) => setNewReply(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendReply()}
+                placeholder="Reply to thread..."
+                className="rounded-full bg-muted border-none focus-visible:ring-1"
+                disabled={loading}
+              />
+            </div>
             <Button 
               onClick={handleSendReply} 
               disabled={!newReply.trim() || loading}
+              size="icon"
+              className="flex-shrink-0 rounded-full"
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4" />
             </Button>
           </div>
         </div>
