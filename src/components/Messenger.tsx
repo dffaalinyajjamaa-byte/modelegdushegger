@@ -86,7 +86,7 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recordingIntervalRef = useRef<number>();
   const { toast } = useToast();
-  const { isMobile } = useScreenSize();
+  const { isMobile, isLandscape } = useScreenSize();
 
   useEffect(() => {
     initializeMessaging();
@@ -425,12 +425,12 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   const showChatScreen = !isMobile || selectedChat;
 
   return (
-    <div className="h-full flex overflow-hidden bg-background">
+    <div className="fixed inset-0 flex overflow-hidden bg-background" style={{ height: '100dvh' }}>
       {/* Left Sidebar - Chat List */}
       {showChatList && (
-        <div className={`${isMobile ? 'w-full' : 'w-96'} border-r border-border/50 flex flex-col bg-background`}>
+        <div className={`${isMobile ? 'w-full h-full' : 'w-96 h-full'} border-r border-border/50 flex flex-col bg-background`}>
         {/* Header */}
-        <div className="p-4 border-b border-border/50">
+        <div className="p-4 border-b border-border/50 flex-shrink-0">
             <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-foreground">Messages</h2>
             <Button size="icon" variant="ghost" onClick={() => setIsFindUserDialogOpen(true)}>
@@ -547,7 +547,7 @@ export default function Messenger({ user, onBack }: MessengerProps) {
 
       {/* Right Side - Chat Area */}
       {showChatScreen && (
-        <div className={`${isMobile ? 'w-full' : 'flex-1'} flex flex-col bg-background`}>
+        <div className={`${isMobile ? 'fixed inset-0 z-50' : 'flex-1'} flex flex-col bg-background`} style={isMobile ? { height: '100dvh' } : {}}>
           {selectedChat ? (
           <>
             {/* Chat Header */}

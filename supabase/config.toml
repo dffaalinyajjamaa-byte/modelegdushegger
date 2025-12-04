@@ -1,6 +1,6 @@
 project_id = "asqxdhqcqexoxodrnjal"
 
-[functions.elevenlabs-tts]
+[functions.gemini-tts]
 verify_jwt = false
 
 [functions.ai-teacher-oromo]
@@ -15,3 +15,11 @@ verify_jwt = true
 [functions.live-teacher-settings]
 verify_jwt = true
 
+[functions.ai-chat]
+verify_jwt = false
+
+[functions.ai-book-helper]
+verify_jwt = false
+
+[functions.seed-daily-challenges]
+verify_jwt = false

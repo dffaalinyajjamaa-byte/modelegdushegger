@@ -13,61 +13,81 @@ serve(async (req) => {
 
   try {
     const { message, conversationHistory, language } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not configured");
     }
 
     console.log("AI Teacher request received");
     console.log("Message:", message?.substring(0, 100));
     console.log("Language:", language);
     
-    // Build messages array from conversation history
-    const messages = [
-      ...(conversationHistory || []),
-      { role: "user", content: message }
-    ];
-
-    // System prompt - adapts based on language preference
-    const systemPrompt = language === 'english' 
-      ? `You are an AI teacher for Oro Digital School. Provide clear, educational responses.
-
-Your role:
-- Teach students effectively
-- Answer questions clearly
-- Provide detailed explanations
-- Be supportive and encouraging
-
-Analyze the student's tone for signs of frustration and provide encouraging feedback when needed.`
-      : `Ati barsiisaa AI kan Mana Barumsaa Dijitaalaa Oro ti. Afaan Oromootiin barumsa kenni.
+    // Build conversation contents for Gemini
+    const contents = [];
     
-Gaheen kee:
-- Barattootaaf barumsa gaarii kenni
-- Gaaffiilee isaanii deebisi
-- Ibsa bal'aa fi hubatamaa kenni
-- Barsiisaa tolaa ta'ii barattootaaf deggersa godhi
-
-Yoo barattichi dhibaa qabaachu fakkaate, jajjabeessi.`;
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        stream: false, // Change to non-streaming for easier processing
-      }),
+    // Add conversation history
+    if (conversationHistory && conversationHistory.length > 0) {
+      for (const msg of conversationHistory) {
+        contents.push({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.content }]
+        });
+      }
+    }
+    
+    // Add current message
+    contents.push({
+      role: 'user',
+      parts: [{ text: message }]
     });
 
-    console.log("AI gateway response status:", response.status);
-    console.log("AI gateway response OK:", response.ok);
+    // System instruction - accepts all languages, outputs only Oromo or English
+    const systemInstruction = language === 'english' 
+      ? `You are an AI teacher for Oro Digital School. You understand ALL languages but ONLY respond in English.
+
+Your role:
+- Understand questions in ANY language (Oromo, Amharic, Arabic, etc.)
+- ALWAYS respond in English only
+- Teach students effectively with clear explanations
+- Be supportive and encouraging
+- Provide detailed, educational responses
+
+If the student writes in another language, understand it and respond in English.
+Analyze the student's tone for signs of frustration and provide encouraging feedback when needed.`
+      : `Ati barsiisaa AI kan Mana Barumsaa Dijitaalaa Oro ti. Afaan hundaan hubatta garuu Afaan Oromootiin qofa deebista.
+
+Gaheen kee:
+- Gaaffii afaan kamiin (Ingiliffaa, Amaariffaa, Arabiffaa, fi kkf) hubachuu
+- YEROO HUNDAA Afaan Oromootiin qofa deebisuu
+- Barattootaaf barumsa gaarii fi ibsa ifa ta'e kennuu
+- Barsiisaa tolaa ta'ii deggersa gochuu
+- Deebii bal'aa fi barnootaa kennuu
+
+Yoo barattichi afaan biraatiin barreesse, hubadhuutii Afaan Oromootiin deebisi.
+Yoo barattichi dhibaa qabaachu fakkaate, jajjabeessi.`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: systemInstruction }]
+          },
+          contents: contents,
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 2048,
+          }
+        }),
+      }
+    );
+
+    console.log("Gemini response status:", response.status);
     
     if (!response.ok) {
       if (response.status === 429) {
@@ -77,15 +97,8 @@ Yoo barattichi dhibaa qabaachu fakkaate, jajjabeessi.`;
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        console.error("Payment required");
-        return new Response(JSON.stringify({ error: "Tajaajilli kun yeroo ammaa hin argamu. (Payment required)" }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("Gemini API error:", response.status, errorText);
       return new Response(JSON.stringify({ error: "Dogoggorri uumame. Maaloo irra deebi'ii yaali." }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -93,13 +106,13 @@ Yoo barattichi dhibaa qabaachu fakkaate, jajjabeessi.`;
     }
 
     const data = await response.json();
-    const aiResponse = data.choices[0]?.message?.content || "Dhiifama, deebii kennuu hin danda'u.";
+    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "Dhiifama, deebii kennuu hin danda'u.";
     
     console.log("AI response received, length:", aiResponse.length);
     
     // Detect emotion/frustration in user message
     const frustrationKeywords = ['difficult', 'hard', 'don\'t understand', 'confused', 'frustrated', 
-                                   'rakkoo', 'ulfaata', 'hin hubadhu', 'burjaajessee'];
+                                   'rakkoo', 'ulfaata', 'hin hubadhu', 'burjaajessee', 'صعب', 'ከባድ'];
     const showsFrustration = frustrationKeywords.some(keyword => 
       message.toLowerCase().includes(keyword.toLowerCase())
     );
