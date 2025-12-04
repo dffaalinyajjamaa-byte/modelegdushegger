@@ -233,34 +233,38 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
     try {
       setIsSpeaking(true);
       
-      const { data, error } = await supabase.functions.invoke('elevenlabs-tts', {
+      // Use Gemini TTS to process text for the target language
+      const { data, error } = await supabase.functions.invoke('gemini-tts', {
         body: { 
           text,
           voice: settings.voice_id,
+          outputLanguage: settings.language_preference,
         }
       });
 
       if (error) throw error;
 
-      if (data.audioContent) {
-        const audioBlob = new Blob(
-          [Uint8Array.from(atob(data.audioContent), c => c.charCodeAt(0))],
-          { type: 'audio/mpeg' }
-        );
-        const audioUrl = URL.createObjectURL(audioBlob);
+      // Use Web Speech API for TTS with the processed text
+      if (data?.text && 'speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(data.text);
+        utterance.rate = settings.speech_speed;
         
-        if (audioRef.current) {
-          audioRef.current.pause();
-        }
+        // Set language based on output preference
+        utterance.lang = settings.language_preference === 'english' ? 'en-US' : 'om-ET';
         
-        audioRef.current = new Audio(audioUrl);
-        audioRef.current.playbackRate = settings.speech_speed;
-        audioRef.current.onended = () => {
+        utterance.onend = () => {
           setIsSpeaking(false);
-          URL.revokeObjectURL(audioUrl);
         };
         
-        await audioRef.current.play();
+        utterance.onerror = () => {
+          setIsSpeaking(false);
+        };
+        
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setIsSpeaking(false);
       }
     } catch (error) {
       console.error('Error in text-to-speech:', error);
@@ -274,11 +278,14 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
   };
 
   const stopSpeaking = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
-      setIsSpeaking(false);
     }
+    setIsSpeaking(false);
   };
 
   const sendMessage = async () => {

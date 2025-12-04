@@ -10,8 +10,17 @@ interface VoiceSettings {
   auto_speak_responses: boolean;
 }
 
+// Gemini voice options
+export const GEMINI_VOICES = [
+  { id: 'Puck', name: 'Puck - Professional Male' },
+  { id: 'Zephyr', name: 'Zephyr - Warm Female' },
+  { id: 'Kore', name: 'Kore - Neutral' },
+  { id: 'Charon', name: 'Charon - Deep Male' },
+  { id: 'Fenrir', name: 'Fenrir - Energetic' },
+];
+
 const DEFAULT_SETTINGS: VoiceSettings = {
-  voice_id: 'pNInz6obpgDQGcFmaJgB',
+  voice_id: 'Puck',
   speech_speed: 1.0,
   language_preference: 'oromo',
   continuous_listening: false,
@@ -44,11 +53,11 @@ export const useVoiceSettings = () => {
 
       if (data) {
         setSettings({
-          voice_id: data.voice_id,
-          speech_speed: Number(data.speech_speed),
-          language_preference: data.language_preference,
-          continuous_listening: data.continuous_listening,
-          auto_speak_responses: data.auto_speak_responses,
+          voice_id: data.voice_id || DEFAULT_SETTINGS.voice_id,
+          speech_speed: Number(data.speech_speed) || DEFAULT_SETTINGS.speech_speed,
+          language_preference: data.language_preference || DEFAULT_SETTINGS.language_preference,
+          continuous_listening: data.continuous_listening ?? DEFAULT_SETTINGS.continuous_listening,
+          auto_speak_responses: data.auto_speak_responses ?? DEFAULT_SETTINGS.auto_speak_responses,
         });
       }
     } catch (error) {

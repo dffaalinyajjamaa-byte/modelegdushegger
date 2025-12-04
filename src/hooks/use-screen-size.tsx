@@ -9,6 +9,8 @@ interface ScreenSizeInfo {
   isMobile: boolean;
   isTablet: boolean;
   isDesktop: boolean;
+  isLandscape: boolean;
+  isPortrait: boolean;
 }
 
 export function useScreenSize(): ScreenSizeInfo {
@@ -30,6 +32,8 @@ export function useScreenSize(): ScreenSizeInfo {
       isMobile: size === 'mobile',
       isTablet: size === 'tablet',
       isDesktop: size === 'desktop',
+      isLandscape: width > height,
+      isPortrait: height >= width,
     };
   });
 
@@ -52,11 +56,17 @@ export function useScreenSize(): ScreenSizeInfo {
         isMobile: size === 'mobile',
         isTablet: size === 'tablet',
         isDesktop: size === 'desktop',
+        isLandscape: width > height,
+        isPortrait: height >= width,
       });
     }
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
   }, []);
 
   return screenInfo;

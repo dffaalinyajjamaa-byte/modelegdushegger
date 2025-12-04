@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { ArrowLeft, Volume2 } from 'lucide-react';
+import { ArrowLeft, Volume2, Globe } from 'lucide-react';
+import { GEMINI_VOICES } from '@/hooks/use-voice-settings';
 
 interface VoiceSettings {
   voice_id: string;
@@ -21,14 +22,6 @@ interface LiveTeacherSettingsProps {
   onUpdateSettings: (settings: Partial<VoiceSettings>) => void;
   onBack: () => void;
 }
-
-const AVAILABLE_VOICES = [
-  { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam - Professional Male' },
-  { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel - Professional Female' },
-  { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni - Warm Male' },
-  { id: 'AZnzlk1XvdvUeBnXmlld', name: 'Domi - Energetic Female' },
-  { id: 'MF3mGyEYCl7XYWbV9V6O', name: 'Elli - Young Female' },
-];
 
 export const LiveTeacherSettings: React.FC<LiveTeacherSettingsProps> = ({
   settings,
@@ -52,13 +45,14 @@ export const LiveTeacherSettings: React.FC<LiveTeacherSettingsProps> = ({
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
         >
           {/* Voice Selection */}
           <Card className="p-6 space-y-4">
             <div className="space-y-2">
               <Label className="text-base font-semibold flex items-center gap-2">
                 <Volume2 className="h-5 w-5 text-primary" />
-                Voice Selection
+                Voice Selection (Gemini)
               </Label>
               <Select
                 value={settings.voice_id}
@@ -68,7 +62,7 @@ export const LiveTeacherSettings: React.FC<LiveTeacherSettingsProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {AVAILABLE_VOICES.map((voice) => (
+                  {GEMINI_VOICES.map((voice) => (
                     <SelectItem key={voice.id} value={voice.id}>
                       {voice.name}
                     </SelectItem>
@@ -94,10 +88,16 @@ export const LiveTeacherSettings: React.FC<LiveTeacherSettingsProps> = ({
             </div>
           </Card>
 
-          {/* Language Preference */}
+          {/* Output Language Preference */}
           <Card className="p-6 space-y-4">
             <div className="space-y-2">
-              <Label className="text-base font-semibold">Language Preference</Label>
+              <Label className="text-base font-semibold flex items-center gap-2">
+                <Globe className="h-5 w-5 text-primary" />
+                Output Language
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                AI accepts input in any language but responds only in your selected language
+              </p>
               <Select
                 value={settings.language_preference}
                 onValueChange={(value) => onUpdateSettings({ language_preference: value })}
@@ -106,9 +106,8 @@ export const LiveTeacherSettings: React.FC<LiveTeacherSettingsProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="oromo">Oromo Only</SelectItem>
+                  <SelectItem value="oromo">Afaan Oromoo (Oromo Only)</SelectItem>
                   <SelectItem value="english">English Only</SelectItem>
-                  <SelectItem value="mixed">Mixed (Oromo & English)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -143,6 +142,14 @@ export const LiveTeacherSettings: React.FC<LiveTeacherSettingsProps> = ({
                 onCheckedChange={(checked) => onUpdateSettings({ auto_speak_responses: checked })}
               />
             </div>
+          </Card>
+
+          {/* Info Card */}
+          <Card className="p-4 bg-primary/5 border-primary/20">
+            <p className="text-sm text-muted-foreground">
+              <strong>Multilingual Input:</strong> You can speak or type in any language (Oromo, English, Amharic, Arabic, etc.). 
+              The AI will understand and respond in your selected output language.
+            </p>
           </Card>
         </motion.div>
       </div>
