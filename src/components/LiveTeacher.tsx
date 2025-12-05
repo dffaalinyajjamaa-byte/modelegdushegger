@@ -61,8 +61,17 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
   const { settings, updateSettings, loading: settingsLoading } = useVoiceSettings();
   const recognitionRef = useRef<any>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<{ stop?: () => void } | null>(null);
+  const previewVideoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+
+  // Fix webcam black screen - set srcObject after video element renders
+  useEffect(() => {
+    if (previewVideoRef.current && webcamStream && isWebcamEnabled) {
+      previewVideoRef.current.srcObject = webcamStream;
+      previewVideoRef.current.play().catch(console.error);
+    }
+  }, [webcamStream, isWebcamEnabled]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -237,39 +246,97 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
     },
   });
 
+  // Helper function to play PCM audio from Gemini native audio
+  const playPCMAudio = async (base64Data: string, mimeType: string = 'audio/pcm;rate=24000'): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      try {
+        // Decode base64 to binary
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        // Parse sample rate from mimeType (e.g., "audio/pcm;rate=24000")
+        const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+        const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1]) : 24000;
+
+        // Create AudioContext
+        const audioContext = new AudioContext({ sampleRate });
+        
+        // Convert PCM Int16 to Float32
+        const int16Data = new Int16Array(bytes.buffer);
+        const float32Data = new Float32Array(int16Data.length);
+        for (let i = 0; i < int16Data.length; i++) {
+          float32Data[i] = int16Data[i] / 32768.0;
+        }
+
+        // Create audio buffer
+        const audioBuffer = audioContext.createBuffer(1, float32Data.length, sampleRate);
+        audioBuffer.getChannelData(0).set(float32Data);
+
+        // Play audio
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.onended = () => {
+          audioContext.close();
+          resolve();
+        };
+        source.start();
+        
+        // Store reference for stopping
+        audioRef.current = { 
+          stop: () => {
+            try {
+              source.stop();
+              audioContext.close();
+            } catch (e) {
+              // Already stopped
+            }
+            resolve();
+          }
+        };
+      } catch (error) {
+        console.error('Error playing PCM audio:', error);
+        reject(error);
+      }
+    });
+  };
+
   const speak = async (text: string) => {
     if (!settings.auto_speak_responses) return;
 
     try {
       setIsSpeaking(true);
       
-      // Use Gemini TTS to process text for Oromo
+      // Use Gemini TTS with native audio for proper Oromo pronunciation
       const { data, error } = await supabase.functions.invoke('gemini-tts', {
         body: { 
           text,
-          voice: settings.voice_id,
+          voice: settings.voice_id || 'Puck',
         }
       });
 
       if (error) throw error;
 
-      // Use Web Speech API for TTS with the processed Oromo text
+      // Check if we got native audio data from Gemini
+      if (data?.audioData) {
+        console.log('Playing native Gemini audio for Oromo');
+        await playPCMAudio(data.audioData, data.mimeType || 'audio/pcm;rate=24000');
+        setIsSpeaking(false);
+        return;
+      }
+
+      // Fallback to Web Speech API if no native audio
       if (data?.text && 'speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(data.text);
         utterance.rate = settings.speech_speed;
-        
-        // Always Oromo for Live Teacher
         utterance.lang = 'om-ET';
         
-        utterance.onend = () => {
-          setIsSpeaking(false);
-        };
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
         
-        utterance.onerror = () => {
-          setIsSpeaking(false);
-        };
-        
-        // Cancel any ongoing speech
         window.speechSynthesis.cancel();
         window.speechSynthesis.speak(utterance);
       } else {
@@ -287,13 +354,15 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
   };
 
   const stopSpeaking = () => {
+    // Stop Web Speech API
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
+    // Stop native audio playback
+    if (audioRef.current?.stop) {
+      audioRef.current.stop();
     }
+    audioRef.current = null;
     setIsSpeaking(false);
   };
 
@@ -380,22 +449,23 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
       const resolution = quality === 'low' ? 512 : quality === 'high' ? 1024 : 720;
       
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: resolution, height: resolution }
+        video: { 
+          width: { ideal: resolution }, 
+          height: { ideal: resolution },
+          facingMode: 'user'
+        }
       });
       
       setWebcamStream(stream);
       setIsWebcamEnabled(true);
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
+      // Note: srcObject will be set by useEffect after video element renders
       
       toast({ title: 'Webcam enabled', description: 'AI can now see your video' });
     } catch (error) {
       console.error('Webcam error:', error);
       toast({
         title: 'Camera Error',
-        description: 'Could not access camera',
+        description: 'Could not access camera. Please check permissions.',
         variant: 'destructive',
       });
     }
@@ -713,16 +783,20 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
         )}
       </div>
 
+      {/* Hidden video element for frame capture */}
+      <video ref={videoRef} className="hidden" autoPlay muted playsInline />
+      <canvas ref={canvasRef} className="hidden" />
+      
       {/* Webcam Preview */}
-      {isWebcamEnabled && (
+      {isWebcamEnabled && webcamStream && (
         <div className="absolute top-20 right-4 z-20">
-          <div className="w-32 h-32 rounded-lg overflow-hidden border-2 border-primary shadow-lg bg-black">
+          <div className="w-32 h-32 rounded-lg overflow-hidden border-2 border-primary shadow-lg bg-black relative">
             <video 
-              ref={videoRef}
+              ref={previewVideoRef}
               autoPlay 
               muted 
               playsInline
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover scale-x-[-1]"
             />
             <Button
               size="icon"
@@ -733,7 +807,6 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
               <X className="w-3 h-3" />
             </Button>
           </div>
-          <canvas ref={canvasRef} className="hidden" />
         </div>
       )}
 
