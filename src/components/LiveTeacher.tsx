@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { AutoExpandingTextarea } from '@/components/ui/auto-expanding-textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mic, MicOff, Send, VolumeX, ArrowLeft, Download, Save, Settings, MoreVertical, Camera, X } from 'lucide-react';
+import { Mic, MicOff, Send, VolumeX, ArrowLeft, Download, Save, Settings, MoreVertical, Camera, X, SwitchCamera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SiriOrb } from '@/components/ui/siri-orb';
 import { ChatBubble, ChatBubbleMessage, ChatBubbleAvatar } from '@/components/ui/chat-bubble';
@@ -54,6 +54,7 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
   // Webcam state
   const [isWebcamEnabled, setIsWebcamEnabled] = useState(false);
   const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null);
+  const [cameraFacing, setCameraFacing] = useState<'user' | 'environment'>('user');
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const webcamIntervalRef = useRef<number | null>(null);
@@ -443,8 +444,13 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
   };
 
   // Webcam functions
-  const startWebcam = async () => {
+  const startWebcam = async (facing: 'user' | 'environment' = cameraFacing) => {
     try {
+      // Stop existing stream first
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+      }
+      
       const quality = settings.video_quality || 'medium';
       const resolution = quality === 'low' ? 512 : quality === 'high' ? 1024 : 720;
       
@@ -452,15 +458,16 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
         video: { 
           width: { ideal: resolution }, 
           height: { ideal: resolution },
-          facingMode: 'user'
+          facingMode: facing
         }
       });
       
       setWebcamStream(stream);
       setIsWebcamEnabled(true);
+      setCameraFacing(facing);
       // Note: srcObject will be set by useEffect after video element renders
       
-      toast({ title: 'Webcam enabled', description: 'AI can now see your video' });
+      toast({ title: 'Webcam enabled', description: facing === 'user' ? 'Front camera' : 'Back camera' });
     } catch (error) {
       console.error('Webcam error:', error);
       toast({
@@ -469,6 +476,11 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
         variant: 'destructive',
       });
     }
+  };
+
+  const switchCamera = async () => {
+    const newFacing = cameraFacing === 'user' ? 'environment' : 'user';
+    await startWebcam(newFacing);
   };
 
   const stopWebcam = () => {
@@ -796,16 +808,27 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
               autoPlay 
               muted 
               playsInline
-              className="w-full h-full object-cover scale-x-[-1]"
+              className={`w-full h-full object-cover ${cameraFacing === 'user' ? 'scale-x-[-1]' : ''}`}
             />
-            <Button
-              size="icon"
-              variant="destructive"
-              className="absolute bottom-1 right-1 h-6 w-6"
-              onClick={stopWebcam}
-            >
-              <X className="w-3 h-3" />
-            </Button>
+            <div className="absolute bottom-1 right-1 flex gap-1">
+              <Button
+                size="icon"
+                variant="secondary"
+                className="h-6 w-6"
+                onClick={switchCamera}
+                title={cameraFacing === 'user' ? 'Switch to back camera' : 'Switch to front camera'}
+              >
+                <SwitchCamera className="w-3 h-3" />
+              </Button>
+              <Button
+                size="icon"
+                variant="destructive"
+                className="h-6 w-6"
+                onClick={stopWebcam}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -840,7 +863,7 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
             <Button
               variant={isWebcamEnabled ? 'secondary' : 'outline'}
               size="icon"
-              onClick={isWebcamEnabled ? stopWebcam : startWebcam}
+              onClick={() => isWebcamEnabled ? stopWebcam() : startWebcam()}
               title={isWebcamEnabled ? 'Disable webcam' : 'Enable webcam'}
               className={cn(isWebcamEnabled && 'ring-2 ring-primary')}
             >
