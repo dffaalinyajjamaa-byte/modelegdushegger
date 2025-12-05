@@ -234,11 +234,16 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   // Highlight matching text in search results
   const highlightMatch = (text: string, query: string) => {
     if (!query.trim() || !text) return text;
-    const regex = new RegExp(`(${query})`, 'gi');
-    const parts = text.split(regex);
-    return parts.map((part, i) => 
-      regex.test(part) ? <span key={i} className="bg-primary/30 font-semibold">{part}</span> : part
-    );
+    try {
+      const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${escapedQuery})`, 'gi');
+      const parts = text.split(regex);
+      return parts.map((part, i) => 
+        regex.test(part) ? <span key={i} className="bg-primary/40 text-primary-foreground font-bold px-0.5 rounded">{part}</span> : part
+      );
+    } catch {
+      return text;
+    }
   };
 
   const createOrSelectChat = async (otherUser: MessagingUser) => {
@@ -910,8 +915,8 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                       <CardContent className="p-3 flex items-center gap-3">
                         <ChatBubbleAvatar src={u.profile_pic || ''} fallback={u.name[0]} />
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{u.name}</p>
-                          <p className="text-xs text-muted-foreground truncate">{u.search_id}</p>
+                          <p className="font-medium truncate">{highlightMatch(u.name, userSearchQuery)}</p>
+                          <p className="text-xs text-muted-foreground truncate">{highlightMatch(u.search_id || '', userSearchQuery)}</p>
                         </div>
                         <Badge variant="outline" className="text-xs">
                           Chat
