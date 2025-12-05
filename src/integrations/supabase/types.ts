@@ -702,41 +702,53 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age: number | null
           avatar_url: string | null
           bio: string | null
           created_at: string
           email: string
+          favorite_subject: string | null
           full_name: string
+          goal: string | null
           grade: string | null
           id: string
           last_seen: string | null
           role: string
+          school_name: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          age?: number | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           email: string
+          favorite_subject?: string | null
           full_name: string
+          goal?: string | null
           grade?: string | null
           id?: string
           last_seen?: string | null
           role?: string
+          school_name?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          age?: number | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
           email?: string
+          favorite_subject?: string | null
           full_name?: string
+          goal?: string | null
           grade?: string | null
           id?: string
           last_seen?: string | null
           role?: string
+          school_name?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -907,6 +919,30 @@ export type Database = {
           id?: string
           title?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      typing_indicators: {
+        Row: {
+          chat_id: string
+          id: string
+          is_typing: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chat_id: string
+          id?: string
+          is_typing?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chat_id?: string
+          id?: string
+          is_typing?: boolean | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
