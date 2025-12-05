@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, conversationHistory, language } = await req.json();
+    const { message, conversationHistory, language, useSearch } = await req.json();
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     
     if (!GEMINI_API_KEY) {
@@ -22,6 +22,7 @@ serve(async (req) => {
     console.log("AI Teacher request received");
     console.log("Message:", message?.substring(0, 100));
     console.log("Language:", language);
+    console.log("Use Search:", useSearch);
     
     // Build conversation contents for Gemini
     const contents = [];
@@ -42,30 +43,52 @@ serve(async (req) => {
       parts: [{ text: message }]
     });
 
-    // System instruction - accepts all languages, outputs only Oromo or English
-    const systemInstruction = language === 'english' 
-      ? `You are an AI teacher for Oro Digital School. You understand ALL languages but ONLY respond in English.
+    // System instruction - OROMO ONLY for Live Teacher
+    const systemInstruction = `Ati barsiisaa AI kan Mana Barumsaa Dijitaalaa Oro ti.
 
-Your role:
-- Understand questions in ANY language (Oromo, Amharic, Arabic, etc.)
-- ALWAYS respond in English only
-- Teach students effectively with clear explanations
-- Be supportive and encouraging
-- Provide detailed, educational responses
+SEERA MURTEESSAA - YEROO HUNDAA HORDOFI:
+1. Afaan kamiin illee (Ingiliffaa, Amaariffaa, Arabiffaa, kkf) hubatta
+2. YEROO HUNDAA Afaan Oromootiin QOFA deebisi
+3. Afaan Ingiliffaa GONKUMAA HIN FAYYADAMIN!
+4. Yoo barattichi Afaan Ingiliffaatiin gaafate illee, Oromootiin qofa deebisi
+5. Hiikkaa saffisaa gara Oromoo gochuu
+6. Deebii bal'aa fi barnootaa kenni
+7. Barsiisaa tolaa ta'ii barattootaaf deggersa gochuu
 
-If the student writes in another language, understand it and respond in English.
-Analyze the student's tone for signs of frustration and provide encouraging feedback when needed.`
-      : `Ati barsiisaa AI kan Mana Barumsaa Dijitaalaa Oro ti. Afaan hundaan hubatta garuu Afaan Oromootiin qofa deebista.
+FAKKEENYA:
+- Yoo "What is photosynthesis?" jedhe gaafate: Oromootiin deebisi, "Photosynthesis jechuun..." jedhi
+- Yoo Amaariffaan gaafate: Oromootiin deebisi
+- Afaan kamiin illee yoo gaafatame: OROMOOTIIN QOFA DEEBISI
 
-Gaheen kee:
-- Gaaffii afaan kamiin (Ingiliffaa, Amaariffaa, Arabiffaa, fi kkf) hubachuu
-- YEROO HUNDAA Afaan Oromootiin qofa deebisuu
-- Barattootaaf barumsa gaarii fi ibsa ifa ta'e kennuu
-- Barsiisaa tolaa ta'ii deggersa gochuu
-- Deebii bal'aa fi barnootaa kennuu
+CRITICAL RULE:
+- Input: Accept ALL languages
+- Output: ONLY Afaan Oromoo (Oromo language)
+- Auto-translate everything to Oromo before responding
+- NEVER respond in English - not even a single word!`;
 
-Yoo barattichi afaan biraatiin barreesse, hubadhuutii Afaan Oromootiin deebisi.
-Yoo barattichi dhibaa qabaachu fakkaate, jajjabeessi.`;
+    // Build request body with optional Google Search tool
+    const requestBody: any = {
+      systemInstruction: {
+        parts: [{ text: systemInstruction }]
+      },
+      contents: contents,
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 2048,
+        thinkingConfig: {
+          thinkingBudget: 1024
+        }
+      }
+    };
+
+    // Add Google Search tool if requested
+    if (useSearch) {
+      requestBody.tools = [
+        {
+          googleSearch: {}
+        }
+      ];
+    }
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
@@ -74,16 +97,7 @@ Yoo barattichi dhibaa qabaachu fakkaate, jajjabeessi.`;
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: systemInstruction }]
-          },
-          contents: contents,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
-          }
-        }),
+        body: JSON.stringify(requestBody),
       }
     );
 
@@ -119,9 +133,7 @@ Yoo barattichi dhibaa qabaachu fakkaate, jajjabeessi.`;
     
     let emotionFeedback = '';
     if (showsFrustration) {
-      emotionFeedback = language === 'english' 
-        ? "\n\n💪 Don't worry! Learning takes time. You're doing great - keep going!"
-        : "\n\n💪 Hin yaaddofiin! Barumsi yeroo barbaada. Akka gaariitti hojjachaa jirta - itti fufi!";
+      emotionFeedback = "\n\n💪 Hin yaaddofiin! Barumsi yeroo barbaada. Akka gaariitti hojjachaa jirta - itti fufi!";
     }
     
     return new Response(JSON.stringify({ 
