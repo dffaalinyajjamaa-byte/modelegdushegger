@@ -20,12 +20,15 @@ interface ChatMessage {
   created_at: string;
 }
 
+type TranslationStatus = 'idle' | 'understanding' | 'translating' | 'responding';
+
 export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
+  const [translationStatus, setTranslationStatus] = useState<TranslationStatus>('idle');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -122,9 +125,15 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
     const userMessage = message.trim();
     setMessage('');
     setLoading(true);
+    setTranslationStatus('understanding');
 
     try {
+      // Update status to translating
+      setTimeout(() => setTranslationStatus('translating'), 500);
+      
       let aiResponse = await generateAIResponse(userMessage);
+      
+      setTranslationStatus('responding');
 
       const { data, error } = await supabase
         .from('chat_messages')
@@ -152,6 +161,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
       console.error('Error sending message:', error);
     } finally {
       setLoading(false);
+      setTranslationStatus('idle');
     }
   };
 
@@ -258,7 +268,19 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
                 <Bot className="w-5 h-5 text-white" />
               </div>
-              <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3">
+              <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3 space-y-2">
+                {/* Translation Status Indicator */}
+                <div className="flex items-center gap-2 text-xs text-primary animate-pulse">
+                  {translationStatus === 'understanding' && (
+                    <>🧠 Hubachaa jira... (Understanding...)</>
+                  )}
+                  {translationStatus === 'translating' && (
+                    <>🌍 Gara Afaan Oromootti hiikaa jira... (Translating to Oromo...)</>
+                  )}
+                  {translationStatus === 'responding' && (
+                    <>✨ Deebisaa kennaa jira... (Responding...)</>
+                  )}
+                </div>
                 <div className="flex gap-1">
                   <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
                   <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />

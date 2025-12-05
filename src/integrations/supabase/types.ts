@@ -1118,6 +1118,27 @@ export type Database = {
         Args: { p_increment?: number; p_stat_type: string; p_user_id: string }
         Returns: undefined
       }
+      search_users_similar: {
+        Args: { exclude_user_id: string; search_term: string }
+        Returns: {
+          created_at: string | null
+          id: string
+          name: string
+          profile_pic: string | null
+          search_id: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "messaging_users"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       update_rankings: { Args: never; Returns: undefined }
       update_user_streak: { Args: { p_user_id: string }; Returns: undefined }
     }

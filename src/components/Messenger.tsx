@@ -197,13 +197,30 @@ export default function Messenger({ user, onBack }: MessengerProps) {
     setUsers(data || []);
   };
 
-  // Search users by name or ID for the dedicated search modal
+  // Search users by name or ID for the dedicated search modal with similarity matching
   const searchUsersByNameOrId = async (query: string) => {
     if (!query.trim()) {
       setUserSearchResults([]);
       return;
     }
     
+    // Try to use the similarity function for better matching
+    try {
+      const { data, error } = await supabase
+        .rpc('search_users_similar', {
+          search_term: query,
+          exclude_user_id: user.id
+        });
+      
+      if (!error && data) {
+        setUserSearchResults(data);
+        return;
+      }
+    } catch (e) {
+      console.log('Falling back to basic search');
+    }
+    
+    // Fallback to basic search
     const { data } = await supabase
       .from('messaging_users')
       .select('*')
@@ -212,6 +229,16 @@ export default function Messenger({ user, onBack }: MessengerProps) {
       .limit(20);
 
     setUserSearchResults(data || []);
+  };
+  
+  // Highlight matching text in search results
+  const highlightMatch = (text: string, query: string) => {
+    if (!query.trim() || !text) return text;
+    const regex = new RegExp(`(${query})`, 'gi');
+    const parts = text.split(regex);
+    return parts.map((part, i) => 
+      regex.test(part) ? <span key={i} className="bg-primary/30 font-semibold">{part}</span> : part
+    );
   };
 
   const createOrSelectChat = async (otherUser: MessagingUser) => {

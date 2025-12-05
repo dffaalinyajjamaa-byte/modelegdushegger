@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { BookOpen, ArrowLeft, PlayCircle } from 'lucide-react';
-import { validateContentUrl } from '@/lib/content-utils';
+import { validateContentUrl, getGoogleDriveThumbnail } from '@/lib/content-utils';
 import { useContentPoints } from '@/hooks/use-content-points';
 
 interface DigitalBooksLibraryProps {
@@ -86,6 +86,12 @@ const DigitalBooksLibrary = ({ user, onBack, onBookClick, embedded = false }: Di
   const getBookCover = (book: Book) => {
     if (book.cover_image_url) return book.cover_image_url;
     if (book.thumbnail_url) return book.thumbnail_url;
+    
+    // Try to extract thumbnail from Google Drive URL
+    if (book.url && book.url.includes('drive.google.com')) {
+      const driveThumbnail = getGoogleDriveThumbnail(book.url, 400);
+      if (driveThumbnail) return driveThumbnail;
+    }
     
     // Fallback: gradient with subject-based color
     const colors: Record<string, string> = {
