@@ -5,14 +5,14 @@ import { useToast } from '@/hooks/use-toast';
 interface VoiceSettings {
   voice_id: string;
   speech_speed: number;
-  language_preference: string;
   continuous_listening: boolean;
   auto_speak_responses: boolean;
+  realtime_audio: boolean;
 }
 
-// Gemini voice options
+// Gemini voice options - optimized for Oromo
 export const GEMINI_VOICES = [
-  { id: 'Puck', name: 'Puck - Professional Male' },
+  { id: 'Puck', name: 'Puck - Professional (Best for Oromo)' },
   { id: 'Zephyr', name: 'Zephyr - Warm Female' },
   { id: 'Kore', name: 'Kore - Neutral' },
   { id: 'Charon', name: 'Charon - Deep Male' },
@@ -22,9 +22,9 @@ export const GEMINI_VOICES = [
 const DEFAULT_SETTINGS: VoiceSettings = {
   voice_id: 'Puck',
   speech_speed: 1.0,
-  language_preference: 'oromo',
   continuous_listening: false,
   auto_speak_responses: true,
+  realtime_audio: false,
 };
 
 export const useVoiceSettings = () => {
@@ -55,9 +55,9 @@ export const useVoiceSettings = () => {
         setSettings({
           voice_id: data.voice_id || DEFAULT_SETTINGS.voice_id,
           speech_speed: Number(data.speech_speed) || DEFAULT_SETTINGS.speech_speed,
-          language_preference: data.language_preference || DEFAULT_SETTINGS.language_preference,
           continuous_listening: data.continuous_listening ?? DEFAULT_SETTINGS.continuous_listening,
           auto_speak_responses: data.auto_speak_responses ?? DEFAULT_SETTINGS.auto_speak_responses,
+          realtime_audio: false, // Default to false, user can enable
         });
       }
     } catch (error) {
@@ -75,16 +75,20 @@ export const useVoiceSettings = () => {
       const updatedSettings = { ...settings, ...newSettings };
       setSettings(updatedSettings);
 
+      // Don't save realtime_audio to DB (it's session-only)
+      const { realtime_audio, ...dbSettings } = updatedSettings;
+
       const { error } = await supabase
         .from('live_teacher_settings')
         .upsert({
           user_id: user.id,
-          ...updatedSettings,
+          ...dbSettings,
+          language_preference: 'oromo', // Always Oromo
         });
 
       if (error) throw error;
 
-      toast({ title: 'Settings updated successfully' });
+      toast({ title: 'Settings updated' });
     } catch (error) {
       console.error('Error updating settings:', error);
       toast({

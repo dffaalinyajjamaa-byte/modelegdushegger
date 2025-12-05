@@ -100,7 +100,7 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = settings.language_preference === 'english' ? 'en-US' : 'om-ET';
+      recognition.lang = 'om-ET'; // Always Oromo for Live Teacher
       
       recognition.onresult = (event: any) => {
         let interim = '';
@@ -152,7 +152,7 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
       }
       stopAudioStream();
     };
-  }, [settings.language_preference, settings.continuous_listening]);
+  }, [settings.continuous_listening]);
 
   useEffect(() => {
     scrollToBottom();
@@ -233,24 +233,23 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
     try {
       setIsSpeaking(true);
       
-      // Use Gemini TTS to process text for the target language
+      // Use Gemini TTS to process text for Oromo
       const { data, error } = await supabase.functions.invoke('gemini-tts', {
         body: { 
           text,
           voice: settings.voice_id,
-          outputLanguage: settings.language_preference,
         }
       });
 
       if (error) throw error;
 
-      // Use Web Speech API for TTS with the processed text
+      // Use Web Speech API for TTS with the processed Oromo text
       if (data?.text && 'speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance(data.text);
         utterance.rate = settings.speech_speed;
         
-        // Set language based on output preference
-        utterance.lang = settings.language_preference === 'english' ? 'en-US' : 'om-ET';
+        // Always Oromo for Live Teacher
+        utterance.lang = 'om-ET';
         
         utterance.onend = () => {
           setIsSpeaking(false);
@@ -310,7 +309,8 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
             role: m.role,
             content: m.content
           })),
-          language: settings.language_preference
+          language: 'oromo', // Always Oromo
+          useSearch: true,
         }
       });
 
@@ -336,31 +336,7 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
       // Speak the response
       await speak(data.response);
 
-      // Translate if bilingual mode
-      if (settings.language_preference === 'oromo' || settings.language_preference === 'english') {
-        try {
-          const targetLang = settings.language_preference === 'oromo' ? 'english' : 'oromo';
-          const { data: translationData } = await supabase.functions.invoke('translate-conversation', {
-            body: {
-              text: data.response,
-              from: settings.language_preference,
-              to: targetLang
-            }
-          });
-          
-          if (translationData?.translation) {
-            // Store translation for side-by-side display
-            const translatedMessage: Message = {
-              role: 'assistant',
-              content: `[${targetLang.toUpperCase()}]: ${translationData.translation}`,
-              timestamp: new Date().toISOString(),
-            };
-            setMessages(prev => [...prev, translatedMessage]);
-          }
-        } catch (err) {
-          console.error('Translation error:', err);
-        }
-      }
+      // No translation needed - always Oromo output
 
       onLogActivity('ai_interactions', 'AI Live Teacher interaction', {
         message: userMessage.content,
@@ -396,13 +372,13 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
 
         if (error) throw error;
       } else {
-        const { data, error } = await supabase
+          const { data, error } = await supabase
           .from('live_teacher_sessions')
           .insert([{
             user_id: user.id,
             messages: messages as any,
             session_name: sessionName,
-            language: settings.language_preference,
+            language: 'oromo', // Always Oromo
           }])
           .select()
           .single();
@@ -565,7 +541,7 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
           </div>
 
           <div className="flex items-center gap-4">
-            <ConnectionStatus status={connectionStatus} language={settings.language_preference} />
+            <ConnectionStatus status={connectionStatus} language="oromo" />
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

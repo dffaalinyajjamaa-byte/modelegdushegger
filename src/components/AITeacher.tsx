@@ -64,39 +64,28 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const generateAIResponse = async (userMessage: string, retryCount = 0): Promise<string> => {
     try {
       setError(null);
-      const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-teacher-oromo`;
       
-      const conversationMessages = messages.map(msg => ([
+      // Build conversation history
+      const conversationHistory = messages.map(msg => ([
         { role: 'user', content: msg.message },
         { role: 'assistant', content: msg.response }
       ])).flat();
-      
-      conversationMessages.push({ role: 'user', content: userMessage });
 
-      console.log('[AI Teacher] Sending request to:', CHAT_URL);
+      console.log('[AI Teacher] Sending request with Google Search enabled');
       
-      const response = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ messages: conversationMessages }),
+      // Use Supabase functions.invoke for cleaner API
+      const { data, error: invokeError } = await supabase.functions.invoke('ai-teacher-oromo', {
+        body: {
+          message: userMessage,
+          conversationHistory: conversationHistory,
+          language: 'oromo',
+          useSearch: true, // Enable Google Search for real-time info
+        }
       });
 
-      console.log('[AI Teacher] Response status:', response.status);
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          setError("Fedhiin baay'ee guddaa jira. Maaloo daqiiqaa 1 booda yaali.");
-          return "Maaloo yeroo muraasa booda yaali. Fedhiin baay'ee guddaa jira.";
-        }
-        if (response.status === 402) {
-          setError("Tajaajilli kun yeroo ammaa hin argamu.");
-          return "Tajaajilli kun yeroo ammaa hin argamu. Maaloo booda yaali.";
-        }
+      if (invokeError) {
+        console.error('[AI Teacher] Function error:', invokeError);
         
-        // Retry logic for transient errors
         if (retryCount < 2) {
           console.log(`[AI Teacher] Retrying... Attempt ${retryCount + 1}`);
           setRetrying(true);
@@ -105,63 +94,17 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
           return generateAIResponse(userMessage, retryCount + 1);
         }
         
-        throw new Error(`AI Teacher error: ${response.status}`);
+        throw invokeError;
       }
 
-      if (!response.body) {
-        throw new Error('No response body');
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = '';
-      let fullResponse = '';
-      let streamDone = false;
-
-      while (!streamDone) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
-          const line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-
-          if (line.startsWith('data: ')) {
-            const dataStr = line.slice(6);
-            
-            if (dataStr === '[DONE]') {
-              streamDone = true;
-              break;
-            }
-
-            try {
-              const data = JSON.parse(dataStr);
-              console.log('[AI Teacher] Parsed data:', data);
-              
-              // Lovable AI Gateway returns OpenAI-compatible format
-              if (data.choices && data.choices[0]?.delta?.content) {
-                const content = data.choices[0].delta.content;
-                fullResponse += content;
-                console.log('[AI Teacher] Received content chunk:', content.substring(0, 50));
-              }
-            } catch (e) {
-              console.error('[AI Teacher] Error parsing line:', e, 'Line:', dataStr.substring(0, 100));
-            }
-          }
-        }
-      }
-
-      console.log('[AI Teacher] Stream complete. Full response length:', fullResponse.length);
+      console.log('[AI Teacher] Response received:', data?.response?.substring(0, 100));
       
-      if (!fullResponse || fullResponse.trim().length === 0) {
+      if (!data?.response) {
         console.error('[AI Teacher] Empty response received');
         return "Gaaffii kee hubadhe, garuu deebii kennuu hin dandeenye. Maaloo gaaffii biraa gaafadhu.";
       }
       
-      return fullResponse;
+      return data.response;
     } catch (error) {
       console.error('Error generating AI response:', error);
       return "Dogongora tokko uumame. Maaloo yeroo muraasa booda yaali.";

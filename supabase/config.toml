@@ -1,5 +1,8 @@
 project_id = "asqxdhqcqexoxodrnjal"
 
+[functions.gemini-live]
+verify_jwt = false
+
 [functions.gemini-tts]
 verify_jwt = false
 

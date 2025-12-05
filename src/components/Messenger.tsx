@@ -74,6 +74,9 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [selectedProfileUser, setSelectedProfileUser] = useState<MessagingUser | null>(null);
   const [pinnedChats, setPinnedChats] = useState<string[]>([]);
+  const [isUserSearchOpen, setIsUserSearchOpen] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userSearchResults, setUserSearchResults] = useState<MessagingUser[]>([]);
   const [isRecordingModalOpen, setIsRecordingModalOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
@@ -192,6 +195,23 @@ export default function Messenger({ user, onBack }: MessengerProps) {
       .neq('user_id', user.id);
 
     setUsers(data || []);
+  };
+
+  // Search users by name or ID for the dedicated search modal
+  const searchUsersByNameOrId = async (query: string) => {
+    if (!query.trim()) {
+      setUserSearchResults([]);
+      return;
+    }
+    
+    const { data } = await supabase
+      .from('messaging_users')
+      .select('*')
+      .or(`name.ilike.%${query}%,search_id.ilike.%${query}%,user_id.ilike.%${query}%`)
+      .neq('user_id', user.id)
+      .limit(20);
+
+    setUserSearchResults(data || []);
   };
 
   const createOrSelectChat = async (otherUser: MessagingUser) => {
@@ -431,11 +451,16 @@ export default function Messenger({ user, onBack }: MessengerProps) {
         <div className={`${isMobile ? 'w-full h-full' : 'w-96 h-full'} border-r border-border/50 flex flex-col bg-background`}>
         {/* Header */}
         <div className="p-4 border-b border-border/50 flex-shrink-0">
-            <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-foreground">Messages</h2>
-            <Button size="icon" variant="ghost" onClick={() => setIsFindUserDialogOpen(true)}>
-              <UserPlus className="w-5 h-5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button size="icon" variant="ghost" onClick={() => setIsUserSearchOpen(true)} title="Search Users">
+                <Search className="w-5 h-5" />
+              </Button>
+              <Button size="icon" variant="ghost" onClick={() => setIsFindUserDialogOpen(true)} title="Find User">
+                <UserPlus className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
 
           <div className="relative">
@@ -799,6 +824,80 @@ export default function Messenger({ user, onBack }: MessengerProps) {
           )}
         </div>
       )}
+
+      {/* User Search Dialog */}
+      <Dialog open={isUserSearchOpen} onOpenChange={(open) => {
+        setIsUserSearchOpen(open);
+        if (!open) {
+          setUserSearchQuery('');
+          setUserSearchResults([]);
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Search className="w-5 h-5" />
+              Search Users
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name or user ID..."
+                value={userSearchQuery}
+                onChange={(e) => {
+                  setUserSearchQuery(e.target.value);
+                  searchUsersByNameOrId(e.target.value);
+                }}
+                className="pl-9"
+                autoFocus
+              />
+            </div>
+            
+            {userSearchQuery && (
+              <p className="text-xs text-muted-foreground">
+                {userSearchResults.length} user{userSearchResults.length !== 1 ? 's' : ''} found
+              </p>
+            )}
+            
+            <ScrollArea className="h-72">
+              <div className="space-y-2">
+                {userSearchResults.length === 0 && userSearchQuery ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    <p>No users found</p>
+                    <p className="text-xs mt-1">Try searching by name or ID</p>
+                  </div>
+                ) : (
+                  userSearchResults.map((u) => (
+                    <Card
+                      key={u.id}
+                      className="cursor-pointer hover:bg-accent/50 transition-colors"
+                      onClick={() => {
+                        createOrSelectChat(u);
+                        setIsUserSearchOpen(false);
+                        setUserSearchQuery('');
+                        setUserSearchResults([]);
+                      }}
+                    >
+                      <CardContent className="p-3 flex items-center gap-3">
+                        <ChatBubbleAvatar src={u.profile_pic || ''} fallback={u.name[0]} />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{u.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">{u.search_id}</p>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          Chat
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Find User Dialog */}
       <Dialog open={isFindUserDialogOpen} onOpenChange={setIsFindUserDialogOpen}>

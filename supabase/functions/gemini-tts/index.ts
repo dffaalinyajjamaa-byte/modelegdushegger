@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voice, outputLanguage } = await req.json();
+    const { text, voice } = await req.json();
     
     if (!text) {
       throw new Error('Text is required');
@@ -29,17 +29,18 @@ serve(async (req) => {
     console.log("Gemini TTS request received");
     console.log("Text length:", text.length);
     console.log("Voice:", voice || 'Puck');
-    console.log("Output language:", outputLanguage || 'oromo');
 
-    // Use specified voice or default to Puck
+    // Use specified voice or default to Puck (best for Oromo)
     const selectedVoice = voice && GEMINI_VOICES.includes(voice) ? voice : 'Puck';
     
-    // Prepare system instruction based on output language
-    const languageInstruction = outputLanguage === 'english' 
-      ? 'Respond in English only. Translate any non-English input to English before speaking.'
-      : 'Respond in Oromo (Afaan Oromoo) only. Translate any non-Oromo input to Oromo before speaking.';
+    // Oromo-only instruction - translate and prepare for speech
+    const languageInstruction = `Afaan Oromootiin QOFA deebisi. 
+Barreeffama kana gara Afaan Oromoo jijjiiri fi akka dubbifamuuf qopheessi.
+Yoo Afaan Oromoo ta'e, akka sirriitti dubbifamuuf qopheessi.
+Yoo Afaan biraa ta'e, Afaan Oromoo tti hiiki.
+GONKUMAA Afaan Ingiliffaa hin fayyadamin!`;
 
-    // Use Gemini to generate speech-optimized text first
+    // Use Gemini to translate and prepare text for Oromo speech
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
@@ -50,11 +51,11 @@ serve(async (req) => {
         body: JSON.stringify({
           contents: [{
             parts: [{
-              text: `${languageInstruction}\n\nConvert this text to natural speech-ready format in the target language. Keep it natural and conversational:\n\n${text}`
+              text: `${languageInstruction}\n\nBarreeffama kana Afaan Oromootiin qopheessi:\n\n${text}`
             }]
           }],
           generationConfig: {
-            temperature: 0.7,
+            temperature: 0.3,
             maxOutputTokens: 1024,
           }
         }),
@@ -70,15 +71,14 @@ serve(async (req) => {
     const data = await response.json();
     const processedText = data.candidates?.[0]?.content?.parts?.[0]?.text || text;
 
-    console.log("Text processed for TTS, length:", processedText.length);
+    console.log("Text processed for TTS (Oromo), length:", processedText.length);
 
-    // For now, return the processed text - browser's Web Speech API will handle TTS
-    // In future, we can integrate with Gemini's native audio when available
+    // Return the processed Oromo text for browser's Web Speech API
     return new Response(
       JSON.stringify({ 
         text: processedText,
         voice: selectedVoice,
-        language: outputLanguage || 'oromo'
+        language: 'oromo'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
