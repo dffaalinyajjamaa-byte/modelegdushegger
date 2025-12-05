@@ -8,6 +8,9 @@ interface VoiceSettings {
   continuous_listening: boolean;
   auto_speak_responses: boolean;
   realtime_audio: boolean;
+  webcam_enabled: boolean;
+  video_quality: 'low' | 'medium' | 'high';
+  frame_rate: number;
 }
 
 // Gemini voice options - optimized for Oromo
@@ -20,11 +23,14 @@ export const GEMINI_VOICES = [
 ];
 
 const DEFAULT_SETTINGS: VoiceSettings = {
-  voice_id: 'Puck',
+  voice_id: 'Zephyr',
   speech_speed: 1.0,
   continuous_listening: false,
   auto_speak_responses: true,
   realtime_audio: false,
+  webcam_enabled: false,
+  video_quality: 'medium',
+  frame_rate: 1,
 };
 
 export const useVoiceSettings = () => {
@@ -58,6 +64,9 @@ export const useVoiceSettings = () => {
           continuous_listening: data.continuous_listening ?? DEFAULT_SETTINGS.continuous_listening,
           auto_speak_responses: data.auto_speak_responses ?? DEFAULT_SETTINGS.auto_speak_responses,
           realtime_audio: false, // Default to false, user can enable
+          webcam_enabled: false, // Session-only setting
+          video_quality: DEFAULT_SETTINGS.video_quality,
+          frame_rate: DEFAULT_SETTINGS.frame_rate,
         });
       }
     } catch (error) {
@@ -75,8 +84,8 @@ export const useVoiceSettings = () => {
       const updatedSettings = { ...settings, ...newSettings };
       setSettings(updatedSettings);
 
-      // Don't save realtime_audio to DB (it's session-only)
-      const { realtime_audio, ...dbSettings } = updatedSettings;
+      // Don't save session-only settings to DB
+      const { realtime_audio, webcam_enabled, video_quality, frame_rate, ...dbSettings } = updatedSettings;
 
       const { error } = await supabase
         .from('live_teacher_settings')

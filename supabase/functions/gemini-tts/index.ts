@@ -33,12 +33,18 @@ serve(async (req) => {
     // Use specified voice or default to Puck (best for Oromo)
     const selectedVoice = voice && GEMINI_VOICES.includes(voice) ? voice : 'Puck';
     
-    // Oromo-only instruction - translate and prepare for speech
-    const languageInstruction = `Afaan Oromootiin QOFA deebisi. 
-Barreeffama kana gara Afaan Oromoo jijjiiri fi akka dubbifamuuf qopheessi.
-Yoo Afaan Oromoo ta'e, akka sirriitti dubbifamuuf qopheessi.
-Yoo Afaan biraa ta'e, Afaan Oromoo tti hiiki.
-GONKUMAA Afaan Ingiliffaa hin fayyadamin!`;
+    // Oromo-only instruction with proper pronunciation guide
+    const languageInstruction = `Afaan Oromootiin QOFA deebisi fi akka Oromoon dubbatu sirriitti sagalee-si.
+
+SEERA SAGALEE:
+- 'dh' = sagalee laafaa (fkn: dhugaa = dhu-gaa)
+- Dubbachiiftuu dachaa = dheeraa (aa, ee, ii, oo, uu)
+- 'q' = glottal stop
+- 'x' = ejective 't'
+- 'ny' = akka Spanish 'ñ'
+
+Barreeffama kana gara Afaan Oromoo jijjiiri fi akka OROMOON dubbatu qopheessi.
+GONKUMAA akka Ingiliffaa hin sagalee-sin - Oromoo qofa!`;
 
     // Use Gemini to translate and prepare text for Oromo speech
     const response = await fetch(

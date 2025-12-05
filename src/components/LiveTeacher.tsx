@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { AutoExpandingTextarea } from '@/components/ui/auto-expanding-textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Mic, MicOff, Send, VolumeX, ArrowLeft, Download, Save, Settings, MoreVertical } from 'lucide-react';
+import { Mic, MicOff, Send, VolumeX, ArrowLeft, Download, Save, Settings, MoreVertical, Camera, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { SiriOrb } from '@/components/ui/siri-orb';
 import { ChatBubble, ChatBubbleMessage, ChatBubbleAvatar } from '@/components/ui/chat-bubble';
@@ -19,6 +19,7 @@ import { QuickPrompts } from './live-teacher/QuickPrompts';
 import { useVoiceSettings } from '@/hooks/use-voice-settings';
 import { useContinuousListening } from '@/hooks/use-continuous-listening';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 interface LiveTeacherProps {
   user: User;
@@ -33,6 +34,7 @@ interface Message {
 }
 
 type Screen = 'home' | 'chat' | 'settings' | 'history' | 'transcript';
+type TranslationStatus = 'idle' | 'understanding' | 'translating' | 'responding';
 
 export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacherProps) {
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
@@ -47,6 +49,14 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const [interimTranscript, setInterimTranscript] = useState('');
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected'>('disconnected');
+  const [translationStatus, setTranslationStatus] = useState<TranslationStatus>('idle');
+  
+  // Webcam state
+  const [isWebcamEnabled, setIsWebcamEnabled] = useState(false);
+  const [webcamStream, setWebcamStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const webcamIntervalRef = useRef<number | null>(null);
   
   const { settings, updateSettings, loading: settingsLoading } = useVoiceSettings();
   const recognitionRef = useRef<any>(null);
@@ -300,8 +310,12 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
     setInputText('');
     setLoading(true);
     setConnectionStatus('connecting');
+    setTranslationStatus('understanding');
 
     try {
+      // Show translating status after a short delay
+      setTimeout(() => setTranslationStatus('translating'), 600);
+      
       const { data, error } = await supabase.functions.invoke('ai-teacher-oromo', {
         body: {
           message: userMessage.content,
@@ -315,6 +329,7 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
       });
 
       setConnectionStatus('connected');
+      setTranslationStatus('responding');
 
       if (error) {
         console.error('Function invocation error:', error);
@@ -354,7 +369,66 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
       });
     } finally {
       setLoading(false);
+      setTranslationStatus('idle');
     }
+  };
+
+  // Webcam functions
+  const startWebcam = async () => {
+    try {
+      const quality = settings.video_quality || 'medium';
+      const resolution = quality === 'low' ? 512 : quality === 'high' ? 1024 : 720;
+      
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: resolution, height: resolution }
+      });
+      
+      setWebcamStream(stream);
+      setIsWebcamEnabled(true);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      
+      toast({ title: 'Webcam enabled', description: 'AI can now see your video' });
+    } catch (error) {
+      console.error('Webcam error:', error);
+      toast({
+        title: 'Camera Error',
+        description: 'Could not access camera',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const stopWebcam = () => {
+    if (webcamStream) {
+      webcamStream.getTracks().forEach(track => track.stop());
+      setWebcamStream(null);
+    }
+    if (webcamIntervalRef.current) {
+      clearInterval(webcamIntervalRef.current);
+      webcamIntervalRef.current = null;
+    }
+    setIsWebcamEnabled(false);
+  };
+
+  const captureAndSendFrame = () => {
+    if (!canvasRef.current || !videoRef.current || !isWebcamEnabled) return null;
+    
+    const quality = settings.video_quality || 'medium';
+    const size = quality === 'low' ? 512 : quality === 'high' ? 1024 : 720;
+    
+    canvasRef.current.width = size;
+    canvasRef.current.height = size;
+    
+    const ctx = canvasRef.current.getContext('2d');
+    if (!ctx) return null;
+    
+    ctx.drawImage(videoRef.current, 0, 0, size, size);
+    
+    const imageData = canvasRef.current.toDataURL('image/jpeg', 0.7);
+    return imageData.split(',')[1]; // Return base64 data only
   };
 
   const saveSession = async () => {
@@ -608,13 +682,60 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
               {loading && (
                 <ChatBubble variant="received">
                   <ChatBubbleAvatar fallback="AI" />
-                  <ChatBubbleMessage variant="received" isLoading />
+                  <ChatBubbleMessage variant="received">
+                    {/* Translation Status Indicator */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs text-primary animate-pulse">
+                        {translationStatus === 'understanding' && (
+                          <>🧠 Hubachaa jira... (Understanding...)</>
+                        )}
+                        {translationStatus === 'translating' && (
+                          <>🌍 Gara Afaan Oromootti hiikaa jira... (Translating to Oromo...)</>
+                        )}
+                        {translationStatus === 'responding' && (
+                          <>✨ Deebisaa kennaa jira... (Responding...)</>
+                        )}
+                        {translationStatus === 'idle' && (
+                          <>⏳ Loading...</>
+                        )}
+                      </div>
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  </ChatBubbleMessage>
                 </ChatBubble>
               )}
             </div>
           </ScrollArea>
         )}
       </div>
+
+      {/* Webcam Preview */}
+      {isWebcamEnabled && (
+        <div className="absolute top-20 right-4 z-20">
+          <div className="w-32 h-32 rounded-lg overflow-hidden border-2 border-primary shadow-lg bg-black">
+            <video 
+              ref={videoRef}
+              autoPlay 
+              muted 
+              playsInline
+              className="w-full h-full object-cover"
+            />
+            <Button
+              size="icon"
+              variant="destructive"
+              className="absolute bottom-1 right-1 h-6 w-6"
+              onClick={stopWebcam}
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+          <canvas ref={canvasRef} className="hidden" />
+        </div>
+      )}
 
       {/* Input Area */}
       <div className="border-t bg-background p-4">
@@ -640,6 +761,17 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
               disabled={loading || settings.continuous_listening}
             >
               {isRecording ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+            </Button>
+
+            {/* Webcam Toggle */}
+            <Button
+              variant={isWebcamEnabled ? 'secondary' : 'outline'}
+              size="icon"
+              onClick={isWebcamEnabled ? stopWebcam : startWebcam}
+              title={isWebcamEnabled ? 'Disable webcam' : 'Enable webcam'}
+              className={cn(isWebcamEnabled && 'ring-2 ring-primary')}
+            >
+              <Camera className={cn('h-5 w-5', isWebcamEnabled && 'text-primary')} />
             </Button>
 
             <AutoExpandingTextarea

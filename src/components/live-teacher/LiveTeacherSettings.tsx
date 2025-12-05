@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { ArrowLeft, Volume2, Mic, Radio } from 'lucide-react';
+import { ArrowLeft, Volume2, Mic, Radio, Camera, Video } from 'lucide-react';
 import { GEMINI_VOICES } from '@/hooks/use-voice-settings';
 
 interface VoiceSettings {
@@ -15,6 +15,9 @@ interface VoiceSettings {
   continuous_listening: boolean;
   auto_speak_responses: boolean;
   realtime_audio: boolean;
+  webcam_enabled: boolean;
+  video_quality: 'low' | 'medium' | 'high';
+  frame_rate: number;
 }
 
 interface LiveTeacherSettingsProps {
@@ -79,6 +82,71 @@ export const LiveTeacherSettings: React.FC<LiveTeacherSettingsProps> = ({
                 onCheckedChange={(checked) => onUpdateSettings({ realtime_audio: checked })}
               />
             </div>
+          </Card>
+
+          {/* Webcam Settings */}
+          <Card className="p-6 space-y-6">
+            <h3 className="text-base font-semibold flex items-center gap-2">
+              <Camera className="h-5 w-5 text-primary" />
+              Webcam Settings
+            </h3>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label className="text-base">Enable Webcam</Label>
+                <p className="text-sm text-muted-foreground">
+                  Share video with AI for visual context
+                </p>
+              </div>
+              <Switch
+                checked={settings.webcam_enabled}
+                onCheckedChange={(checked) => onUpdateSettings({ webcam_enabled: checked })}
+              />
+            </div>
+
+            {settings.webcam_enabled && (
+              <>
+                <div className="space-y-2">
+                  <Label className="text-base flex items-center gap-2">
+                    <Video className="h-4 w-4" />
+                    Video Quality
+                  </Label>
+                  <Select
+                    value={settings.video_quality}
+                    onValueChange={(value: 'low' | 'medium' | 'high') => 
+                      onUpdateSettings({ video_quality: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low (512px) - Faster</SelectItem>
+                      <SelectItem value="medium">Medium (720px) - Balanced</SelectItem>
+                      <SelectItem value="high">High (1024px) - Best Quality</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base">Frame Rate</Label>
+                    <span className="text-sm text-muted-foreground">{settings.frame_rate} fps</span>
+                  </div>
+                  <Slider
+                    value={[settings.frame_rate]}
+                    onValueChange={([value]) => onUpdateSettings({ frame_rate: value })}
+                    min={1}
+                    max={5}
+                    step={1}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Higher frame rate uses more bandwidth
+                  </p>
+                </div>
+              </>
+            )}
           </Card>
 
           {/* Voice Selection */}
@@ -160,7 +228,7 @@ export const LiveTeacherSettings: React.FC<LiveTeacherSettingsProps> = ({
           <Card className="p-4 bg-muted/50 border-muted">
             <p className="text-sm text-muted-foreground">
               <strong>Multilingual Input:</strong> You can speak or type in any language (Oromo, English, Amharic, Arabic, etc.). 
-              The AI will understand and respond ONLY in Afaan Oromoo.
+              The AI will understand and respond ONLY in Afaan Oromoo with proper native pronunciation.
             </p>
           </Card>
         </motion.div>

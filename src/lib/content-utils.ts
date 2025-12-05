@@ -120,3 +120,27 @@ export function isPDFUrl(url: string): boolean {
     url.endsWith('.pdf')
   );
 }
+
+/**
+ * Extract Google Drive file ID and generate thumbnail URL
+ */
+export function getGoogleDriveThumbnail(driveUrl: string, size: number = 400): string | null {
+  if (!driveUrl) return null;
+  
+  // Patterns to extract file ID from various Google Drive URL formats
+  const patterns = [
+    /\/file\/d\/([a-zA-Z0-9_-]+)/,
+    /id=([a-zA-Z0-9_-]+)/,
+    /\/d\/([a-zA-Z0-9_-]+)/,
+  ];
+  
+  for (const pattern of patterns) {
+    const match = driveUrl.match(pattern);
+    if (match && match[1]) {
+      const fileId = match[1];
+      // Generate thumbnail URL with specified size
+      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size}`;
+    }
+  }
+  return null;
+}

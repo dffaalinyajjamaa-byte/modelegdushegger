@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Gemini Live API configuration for real-time voice-to-voice
+// Gemini Live API configuration for real-time voice-to-voice with native audio
 const MODEL = "models/gemini-2.5-flash-preview-native-audio-dialog";
 const API_VERSION = "v1alpha";
 
@@ -57,7 +57,7 @@ serve(async (req) => {
         console.log("Connected to Gemini Live API");
         isConnected = true;
         
-        // Send initial setup message with Oromo-only system instruction
+        // Send initial setup message with Oromo-only system instruction and proper pronunciation
         const setupMessage = {
           setup: {
             model: MODEL,
@@ -66,7 +66,7 @@ serve(async (req) => {
               speechConfig: {
                 voiceConfig: {
                   prebuiltVoiceConfig: {
-                    voiceName: "Puck"
+                    voiceName: "Zephyr" // Better for natural speech
                   }
                 }
               }
@@ -75,7 +75,7 @@ serve(async (req) => {
               parts: [{
                 text: `Ati barsiisaa AI kan Mana Barumsaa Dijitaalaa Oro ti.
                 
-SEERA MURTEESSAA:
+SEERA MURTEESSAA - AFAAN OROMOO QOFA:
 - Afaan kamiin illee (Ingiliffaa, Amaariffaa, Arabiffaa, kkf) hubatta
 - YEROO HUNDAA Afaan Oromootiin QOFA deebisi
 - Afaan Ingiliffaa GONKUMAA hin fayyadamin!
@@ -83,11 +83,32 @@ SEERA MURTEESSAA:
 - Deebii bal'aa fi barnootaa kenni
 - Barsiisaa tolaa ta'ii barattootaaf deggersa gochuu
 
+SEERA SAGALEE OROMO - PRONUNCIATION RULES:
+Afaan Oromoo akka Oromoon dubbatu sirriitti sagalee-si:
+- 'dh' = sagalee laafaa 'd' (fkn: "dhugaa" - dhu-gaa)
+- 'ch' = akka Ingiliffaa "church" keessa (fkn: "chala")
+- 'ph' = 'p' hafuura waliin
+- 'ny' = akka Spanish 'ñ' (fkn: "nyaata")
+- Dubbachiiftuu dachaa = sagalee dheeraa (aa, ee, ii, oo, uu)
+  - "baraa" = ba-raa (dheeraa)
+  - "bara" = ba-ra (gabaabaa)
+- 'q' = glottal stop (sagalee qoonqoo keessaa)
+- 'x' = ejective 't' (sagalee cimdii)
+
+FAKKEENYA SAGALEE:
+- "Akkam" = Ak-kam (NOT "ah-kam")
+- "Nagaa" = Na-gaa (dheeraa)
+- "Galatoomaa" = Ga-la-too-maa
+- "Fayyaa" = Fay-yaa
+- "Qabsoo" = Qab-soo (q = glottal)
+
 CRITICAL RULE:
 - Input: Accept ALL languages
 - Output: ONLY Afaan Oromoo (Oromo language)
+- Pronunciation: NATURAL Oromo sounds, NOT English pronunciation
 - Auto-translate everything to Oromo
-- NEVER respond in English`
+- NEVER respond in English
+- Speak naturally like a native Oromo speaker`
               }]
             }
           }
@@ -173,6 +194,20 @@ CRITICAL RULE:
           };
           if (geminiSocket.readyState === WebSocket.OPEN) {
             geminiSocket.send(JSON.stringify(audioMessage));
+          }
+        } else if (data.type === 'image') {
+          // Forward webcam image to Gemini for visual context
+          const imageMessage = {
+            realtimeInput: {
+              mediaChunks: [{
+                mimeType: data.mimeType || "image/jpeg",
+                data: data.data
+              }]
+            }
+          };
+          if (geminiSocket.readyState === WebSocket.OPEN) {
+            geminiSocket.send(JSON.stringify(imageMessage));
+            console.log("Sent webcam frame to Gemini");
           }
         } else if (data.type === 'text') {
           // Send text message
