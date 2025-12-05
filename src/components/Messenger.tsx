@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useScreenSize } from '@/hooks/use-screen-size';
+import { useTypingIndicator } from '@/hooks/use-typing-indicator';
 import { 
   Send, Search, Plus, Image as ImageIcon, Paperclip, Mic,
   MoreVertical, Check, CheckCheck, Users, UserPlus, AlertCircle, 
@@ -90,6 +91,24 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   const recordingIntervalRef = useRef<number>();
   const { toast } = useToast();
   const { isMobile, isLandscape } = useScreenSize();
+  
+  // Typing indicator hook
+  const { typingUsers, handleTyping, stopTyping } = useTypingIndicator(
+    selectedChat?.chat_id || null,
+    user?.id || ''
+  );
+
+  // Get typing user names
+  const getTypingUserNames = () => {
+    const typingNames = typingUsers
+      .map(uid => users.find(u => u.user_id === uid)?.name)
+      .filter(Boolean);
+    
+    if (typingNames.length === 0) return null;
+    if (typingNames.length === 1) return `${typingNames[0]} is typing...`;
+    if (typingNames.length === 2) return `${typingNames.join(' and ')} are typing...`;
+    return `${typingNames.length} people are typing...`;
+  };
 
   useEffect(() => {
     initializeMessaging();
@@ -283,6 +302,8 @@ export default function Messenger({ user, onBack }: MessengerProps) {
     if (!newMessage.trim() || !selectedChat) return;
 
     try {
+      stopTyping(); // Stop typing when sending
+      
       await supabase.from('messages').insert({
         chat_id: selectedChat.chat_id,
         sender_id: user.id,
@@ -785,6 +806,18 @@ export default function Messenger({ user, onBack }: MessengerProps) {
 
             {/* Input Area */}
             <div className="p-4 border-t border-border/50 bg-background/95 backdrop-blur-sm">
+              {/* Typing Indicator */}
+              {getTypingUserNames() && (
+                <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
+                  <div className="flex gap-1">
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                  <span>{getTypingUserNames()}</span>
+                </div>
+              )}
+
               {/* Reply Preview */}
               {replyingTo && (
                 <div className="mb-2 p-2 bg-muted rounded-lg flex items-center justify-between animate-slide-up">
@@ -822,7 +855,10 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                 <div className="relative flex-1">
                   <Input
                     value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
+                    onChange={(e) => {
+                      setNewMessage(e.target.value);
+                      handleTyping();
+                    }}
                     onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                     placeholder={replyingTo ? "Reply to message..." : "Write a message..."}
                     className="pr-10 rounded-full bg-muted border-none focus-visible:ring-1"

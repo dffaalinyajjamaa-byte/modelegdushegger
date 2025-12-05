@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Camera } from 'lucide-react';
 import logo from '@/assets/oro-logo.png';
@@ -20,12 +21,22 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [grade, setGrade] = useState('');
+  const [schoolName, setSchoolName] = useState('');
+  const [age, setAge] = useState('');
+  const [favoriteSubject, setFavoriteSubject] = useState('');
+  const [goal, setGoal] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const { toast } = useToast();
+
+  const subjects = [
+    'Mathematics', 'Physics', 'Chemistry', 'Biology', 
+    'English', 'Amharic', 'Afaan Oromoo', 'History', 
+    'Geography', 'Civics', 'Economics', 'ICT'
+  ];
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -137,7 +148,11 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
               full_name: fullName,
               grade: grade,
               role: 'student',
-              avatar_url: avatarUrl
+              avatar_url: avatarUrl,
+              school_name: schoolName || null,
+              age: age ? parseInt(age) : null,
+              favorite_subject: favoriteSubject || null,
+              goal: goal || null
             });
           
           if (profileError) {
@@ -165,7 +180,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
 
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-glow border-0">
+      <Card className="w-full max-w-md shadow-glow border-0 max-h-[90vh] overflow-y-auto">
         <CardHeader className="text-center space-y-4">
           <motion.div 
             className="flex justify-center"
@@ -228,7 +243,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
+                  <Label htmlFor="fullName">Full Name *</Label>
                   <Input
                     id="fullName"
                     type="text"
@@ -240,15 +255,70 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                   />
                 </div>
 
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="age">Age</Label>
+                    <Input
+                      id="age"
+                      type="number"
+                      placeholder="Your age"
+                      value={age}
+                      onChange={(e) => setAge(e.target.value)}
+                      min={5}
+                      max={100}
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="grade">Grade Level *</Label>
+                    <Input
+                      id="grade"
+                      type="text"
+                      placeholder="e.g., Grade 9"
+                      value={grade}
+                      onChange={(e) => setGrade(e.target.value)}
+                      required={!isLogin}
+                      className="h-11"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="grade">Grade Level</Label>
+                  <Label htmlFor="schoolName">School Name</Label>
                   <Input
-                    id="grade"
+                    id="schoolName"
                     type="text"
-                    placeholder="Enter your grade (e.g., Grade 9)"
-                    value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
-                    required={!isLogin}
+                    placeholder="Enter your school name"
+                    value={schoolName}
+                    onChange={(e) => setSchoolName(e.target.value)}
+                    className="h-11"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="favoriteSubject">Favorite Subject</Label>
+                  <Select value={favoriteSubject} onValueChange={setFavoriteSubject}>
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="Select your favorite subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map((subject) => (
+                        <SelectItem key={subject} value={subject}>
+                          {subject}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="goal">Your Learning Goal</Label>
+                  <Input
+                    id="goal"
+                    type="text"
+                    placeholder="e.g., Pass national exam with high score"
+                    value={goal}
+                    onChange={(e) => setGoal(e.target.value)}
                     className="h-11"
                   />
                 </div>
@@ -256,7 +326,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
             )}
             
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
                 type="email"
@@ -269,7 +339,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password *</Label>
               <div className="relative">
                 <Input
                   id="password"
