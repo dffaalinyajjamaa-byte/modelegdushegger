@@ -3,7 +3,7 @@ import { BackgroundPaths } from '@/components/ui/background-paths';
 import { Spotlight } from '@/components/ui/spotlight';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import logo from '@/assets/oro-logo.png';
+import logo from '@/assets/model-egdu-logo.png';
 import { motion } from 'framer-motion';
 import { BookOpen, GraduationCap, Brain } from 'lucide-react';
 
@@ -11,7 +11,7 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
   return (
     <div className="min-h-screen w-full overflow-y-auto overflow-x-hidden">
       <BackgroundPaths 
-        title="Oro Digital School" 
+        title="Model Egdu" 
         onButtonClick={onGetStarted}
         showButton={true}
       >
@@ -27,7 +27,7 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
             >
               <img 
                 src={logo} 
-                alt="Oro Digital School"
+                alt="Model Egdu"
                 className="w-32 h-32 md:w-40 md:h-40 rounded-full shadow-2xl border-4 border-red-500 mb-4"
               />
               <p className="text-xl md:text-2xl font-bold text-center bg-gradient-to-r from-red-500 via-white to-black dark:to-white bg-clip-text text-transparent px-4">
@@ -68,7 +68,7 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
                     <div className="text-center">
                       <motion.img 
                         src={logo} 
-                        alt="Oro" 
+                        alt="Model Egdu" 
                         className="w-32 h-32 rounded-full shadow-2xl border-4 border-red-500/50 mx-auto"
                         animate={{ 
                           boxShadow: [
@@ -111,7 +111,7 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
                   >
                     <img 
                       src={logo} 
-                      alt="App Preview" 
+                      alt="Model Egdu" 
                       className="w-32 h-32 md:w-40 md:h-40 rounded-full shadow-2xl border-4 border-primary"
                     />
                   </motion.div>

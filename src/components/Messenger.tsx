@@ -498,7 +498,16 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   const showChatScreen = !isMobile || selectedChat;
 
   return (
-    <div className="fixed inset-0 flex overflow-hidden bg-background" style={{ height: '100dvh' }}>
+    <div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-background">
+      <div 
+        className="flex overflow-hidden bg-background md:rounded-3xl md:shadow-2xl md:border"
+        style={{ 
+          width: '100%',
+          height: '100dvh',
+          maxWidth: 'min(100vw, calc(100dvh * 9 / 16))',
+          maxHeight: '100dvh',
+        }}
+      >
       {/* Left Sidebar - Chat List */}
       {showChatList && (
         <div className={`${isMobile ? 'w-full h-full' : 'w-96 h-full'} border-r border-border/50 flex flex-col bg-background`}>
@@ -1056,6 +1065,7 @@ export default function Messenger({ user, onBack }: MessengerProps) {
         onChange={handleFileSelect}
         accept="image/*,.pdf,.doc,.docx"
       />
+      </div>
     </div>
   );
 }
