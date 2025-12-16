@@ -50,7 +50,7 @@ const Index = () => {
       <div className="min-h-screen gradient-hero flex items-center justify-center">
         <div className="text-center text-white">
           <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-xl">Loading Oro Digital School...</p>
+          <p className="text-xl">Loading Model Egdu...</p>
         </div>
       </div>
     );

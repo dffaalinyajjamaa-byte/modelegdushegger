@@ -3,7 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle, Mic, ArrowLeft, MoreVertical } from 'lucide-react';
+import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle, Mic, ArrowLeft, MoreVertical, User as UserIcon, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import TaskManager from './TaskManager';
 import VideoViewer from './VideoViewer';
@@ -13,6 +13,7 @@ import NationalExams from './NationalExams';
 import DailyChallenge from './DailyChallenge';
 import ProfileCard from './ProfileCard';
 import AboutUs from './AboutUs';
+import StudentProfile from './StudentProfile';
 import BottomNav from './BottomNav';
 import ProgressCharts from './ProgressCharts';
 import AnimatedTagline from './AnimatedTagline';
@@ -28,12 +29,13 @@ import { useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useStreak } from '@/hooks/use-streak';
 import { usePoints } from '@/hooks/use-points';
-import logo from '@/assets/oro-logo.png';
+import logo from '@/assets/model-egdu-logo.png';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
 // Lazy load heavy components for better performance
@@ -76,7 +78,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'live-teacher' | 'tasks' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exam';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'live-teacher' | 'tasks' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exam' | 'profile' | 'about';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -294,6 +296,10 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         );
       case 'settings':
         return <SettingsComponent user={user} onBack={() => setActiveView('dashboard')} />;
+      case 'profile':
+        return <StudentProfile user={user} onBack={() => setActiveView('dashboard')} />;
+      case 'about':
+        return <AboutUs />;
       case 'messenger':
         return (
           <Suspense fallback={<LoadingFallback />}>
@@ -363,7 +369,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         <div className="relative z-10 flex flex-col items-center text-center">
           <img 
             src={logo} 
-            alt="ORO Logo" 
+            alt="Model Egdu" 
             className="w-20 h-20 mb-3 rounded-full shadow-glow"
           />
           <h1 className="text-2xl font-bold mb-2">
@@ -509,8 +515,6 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
 
       {/* Daily Challenge Widget */}
       <DailyChallenge user={user} />
-
-      {activeView === 'dashboard' && <AboutUs />}
     </div>
   );
 
@@ -524,6 +528,8 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
     if (activeView === 'quiz') return 'Quiz';
     if (activeView === 'tasks') return 'My Tasks';
     if (activeView === 'settings') return 'Settings';
+    if (activeView === 'profile') return 'My Profile';
+    if (activeView === 'about') return 'About Us';
     if (activeView === 'video') return 'Video Player';
     if (activeView === 'pdf') return 'PDF Viewer';
     if (activeView === 'national-exam') return 'National Exam';
@@ -561,10 +567,19 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => setActiveView('profile')}>
+                <UserIcon className="w-4 h-4 mr-2" />
+                My Profile
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => setActiveView('settings')}>
                 <Settings className="w-4 h-4 mr-2" />
                 Settings
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveView('about')}>
+                <Info className="w-4 h-4 mr-2" />
+                About Us
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem 
                 onClick={handleSignOut}
                 className="text-destructive focus:text-destructive"
@@ -581,9 +596,6 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-4 md:py-8">
         {renderActiveView()}
       </main>
-
-      {/* About Us Footer */}
-      {activeView === 'dashboard' && <AboutUs />}
 
       {/* Bottom Navigation */}
       <BottomNav />

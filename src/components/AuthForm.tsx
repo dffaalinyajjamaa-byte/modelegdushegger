@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Camera } from 'lucide-react';
-import logo from '@/assets/oro-logo.png';
+import logo from '@/assets/model-egdu-logo.png';
 import { motion } from 'framer-motion';
 
 interface AuthFormProps {
@@ -118,7 +118,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
         
         toast({
           title: "Welcome Back!",
-          description: "Successfully logged in to Oro Digital School.",
+          description: "Successfully logged in to Model Egdu.",
         });
       } else {
         const { data: authData, error } = await supabase.auth.signUp({
@@ -162,7 +162,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
         
         toast({
           title: "Account Created Successfully!",
-          description: "Welcome to Oro Digital School! Please check your email to verify your account.",
+          description: "Welcome to Model Egdu! Please check your email to verify your account.",
         });
       }
       
@@ -190,7 +190,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
           >
             <img 
               src={logo} 
-              alt="Oro Digital School" 
+              alt="Model Egdu" 
               className="w-28 h-28 md:w-32 md:h-32 object-cover rounded-full shadow-2xl border-4 border-primary/20" 
             />
           </motion.div>
@@ -200,7 +200,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
             transition={{ delay: 0.3, duration: 0.5 }}
           >
             <CardTitle className="text-3xl font-bold gradient-primary bg-clip-text text-transparent">
-              {isLogin ? 'Welcome Back' : 'Join Oro School'}
+              {isLogin ? 'Welcome Back' : 'Join Model Egdu'}
             </CardTitle>
             <CardDescription className="text-base mt-2">
               {isLogin 
