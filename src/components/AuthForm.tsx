@@ -15,6 +15,41 @@ interface AuthFormProps {
   onAuthChange: () => void;
 }
 
+// Retry helper function for Windows 10 compatibility
+const retryWithDelay = async <T,>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  delay: number = 500
+): Promise<T> => {
+  let lastError: any;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (i < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+      }
+    }
+  }
+  throw lastError;
+};
+
+// Wait for profile to be created by trigger
+const waitForProfile = async (userId: string, maxAttempts: number = 5): Promise<boolean> => {
+  for (let i = 0; i < maxAttempts; i++) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    
+    if (data && !error) return true;
+    await new Promise(resolve => setTimeout(resolve, 300 * (i + 1)));
+  }
+  return false;
+};
+
 export default function AuthForm({ onAuthChange }: AuthFormProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -109,9 +144,14 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+        // Login with retry for Windows 10 compatibility
+        const { error } = await retryWithDelay(async () => {
+          const result = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (result.error) throw result.error;
+          return result;
         });
         
         if (error) throw error;
@@ -121,6 +161,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
           description: "Successfully logged in to Model Egdu.",
         });
       } else {
+        // Signup
         const { data: authData, error } = await supabase.auth.signUp({
           email,
           password,
@@ -134,43 +175,71 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
           }
         });
         
-        if (error) throw error;
+        if (error) {
+          // Handle specific error messages
+          if (error.message.includes('User already registered')) {
+            throw new Error('This email is already registered. Please sign in instead.');
+          }
+          throw error;
+        }
 
-        // Create profile
+        // Wait for trigger to create profile, then UPDATE with additional fields
         if (authData.user) {
-          const avatarUrl = await uploadAvatar(authData.user.id);
-
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              user_id: authData.user.id,
-              email: email,
-              full_name: fullName,
-              grade: grade,
-              role: 'student',
-              avatar_url: avatarUrl,
-              school_name: schoolName || null,
-              age: age ? parseInt(age) : null,
-              favorite_subject: favoriteSubject || null,
-              goal: goal || null
-            });
+          // Wait for profile to be created by database trigger
+          const profileCreated = await waitForProfile(authData.user.id);
           
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
+          if (profileCreated) {
+            // Upload avatar first
+            const avatarUrl = await uploadAvatar(authData.user.id);
+
+            // UPDATE the profile with additional fields (trigger already created the basic profile)
+            await retryWithDelay(async () => {
+              const { error: updateError } = await supabase
+                .from('profiles')
+                .update({
+                  full_name: fullName,
+                  grade: grade,
+                  avatar_url: avatarUrl,
+                  school_name: schoolName || null,
+                  age: age ? parseInt(age) : null,
+                  favorite_subject: favoriteSubject || null,
+                  goal: goal || null
+                })
+                .eq('user_id', authData.user!.id);
+              
+              if (updateError) throw updateError;
+            });
+          } else {
+            console.warn('Profile not created by trigger, account created but profile incomplete');
           }
         }
         
         toast({
           title: "Account Created Successfully!",
-          description: "Welcome to Model Egdu! Please check your email to verify your account.",
+          description: "Welcome to Model Egdu! You can now start learning.",
         });
       }
       
       onAuthChange();
     } catch (error: any) {
+      console.error('Auth error:', error);
+      
+      // Handle specific error types with friendly messages
+      let errorMessage = error.message || 'An unexpected error occurred';
+      
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = 'Invalid email or password. Please check your credentials.';
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = 'Please check your email and confirm your account.';
+      } else if (error.message?.includes('row-level security')) {
+        errorMessage = 'Unable to complete registration. Please try again.';
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+      
       toast({
         title: "Authentication Error",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
