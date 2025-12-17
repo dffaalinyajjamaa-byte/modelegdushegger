@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============= SAFE VIEWPORT HEIGHT FOR WINDOWS 10 ============= */
+:root {
+  --vh: 1vh;
+}
+
+/* Safe height utilities with vh fallback for Windows 10 */
+.h-screen-safe {
+  height: 100vh; /* Fallback */
+  height: 100dvh;
+}
+
+.min-h-screen-safe {
+  min-height: 100vh; /* Fallback */
+  min-height: 100dvh;
+}
+
+.max-h-screen-safe {
+  max-height: 100vh; /* Fallback */
+  max-height: 100dvh;
+}
+
 /* Global scroll fix */
 html, body, #root {
   height: 100%;

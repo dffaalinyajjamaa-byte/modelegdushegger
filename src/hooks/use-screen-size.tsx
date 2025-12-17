@@ -11,6 +11,16 @@ interface ScreenSizeInfo {
   isDesktop: boolean;
   isLandscape: boolean;
   isPortrait: boolean;
+  viewportHeight: string; // CSS value with fallback
+}
+
+// Get viewport height with Windows 10 fallback
+function getViewportHeight(): string {
+  // Check if dvh is supported
+  if (typeof CSS !== 'undefined' && CSS.supports && CSS.supports('height', '100dvh')) {
+    return '100dvh';
+  }
+  return '100vh';
 }
 
 export function useScreenSize(): ScreenSizeInfo {
@@ -34,6 +44,7 @@ export function useScreenSize(): ScreenSizeInfo {
       isDesktop: size === 'desktop',
       isLandscape: width > height,
       isPortrait: height >= width,
+      viewportHeight: getViewportHeight(),
     };
   });
 
@@ -58,6 +69,7 @@ export function useScreenSize(): ScreenSizeInfo {
         isDesktop: size === 'desktop',
         isLandscape: width > height,
         isPortrait: height >= width,
+        viewportHeight: getViewportHeight(),
       });
     }
 

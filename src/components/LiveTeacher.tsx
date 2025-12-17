@@ -248,6 +248,7 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
   });
 
   // Helper function to play PCM audio from Gemini native audio
+  // With Windows 10 fallback for webkitAudioContext
   const playPCMAudio = async (base64Data: string, mimeType: string = 'audio/pcm;rate=24000'): Promise<void> => {
     return new Promise((resolve, reject) => {
       try {
@@ -262,8 +263,12 @@ export default function LiveTeacher({ user, onLogActivity, onBack }: LiveTeacher
         const sampleRateMatch = mimeType.match(/rate=(\d+)/);
         const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1]) : 24000;
 
-        // Create AudioContext
-        const audioContext = new AudioContext({ sampleRate });
+        // Create AudioContext with Windows 10 fallback
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) {
+          throw new Error('AudioContext not supported');
+        }
+        const audioContext = new AudioContextClass({ sampleRate });
         
         // Convert PCM Int16 to Float32
         const int16Data = new Int16Array(bytes.buffer);
