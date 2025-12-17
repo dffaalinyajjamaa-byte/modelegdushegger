@@ -3,7 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle, Mic, ArrowLeft, MoreVertical, User as UserIcon, Info } from 'lucide-react';
+import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle, Mic, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import TaskManager from './TaskManager';
 import VideoViewer from './VideoViewer';
@@ -45,6 +45,7 @@ const VideoLessonsLibrary = lazy(() => import('./VideoLessonsLibrary'));
 const DigitalBooksLibrary = lazy(() => import('./DigitalBooksLibrary'));
 const Messenger = lazy(() => import('./Messenger'));
 const QuizFeature = lazy(() => import('./QuizFeature'));
+const RelaxTime = lazy(() => import('./RelaxTime'));
 
 interface DashboardProps {
   user: User;
@@ -78,7 +79,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'live-teacher' | 'tasks' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exam' | 'profile' | 'about';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'live-teacher' | 'tasks' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exam' | 'profile' | 'about' | 'relax-time';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -312,6 +313,12 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
             <QuizFeature user={user} onBack={() => setActiveView('dashboard')} />
           </Suspense>
         );
+      case 'relax-time':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <RelaxTime user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
       case 'national-exam':
         if (selectedContent) {
           return <PDFViewer content={selectedContent} onBack={() => setActiveView('dashboard')} user={user} onLogActivity={logActivity} />;
@@ -472,6 +479,15 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-teal-500/0 group-hover:from-green-500/10 group-hover:to-teal-500/10 transition-all duration-300" />
           <CheckSquare className="relative w-12 h-12 mb-3 mx-auto text-green-500 group-hover:scale-110 transition-transform duration-300" />
           <h3 className="relative font-semibold text-center">My Tasks</h3>
+        </button>
+
+        <button
+          onClick={() => setActiveView('relax-time')}
+          className="group relative quick-access-card bg-gradient-to-br from-purple-500/20 to-violet-500/20 border-2 border-purple-500/30 hover:border-purple-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500/0 to-violet-500/0 group-hover:from-purple-500/10 group-hover:to-violet-500/10 transition-all duration-300" />
+          <Coffee className="relative w-12 h-12 mb-3 mx-auto text-purple-500 group-hover:scale-110 transition-transform duration-300" />
+          <h3 className="relative font-semibold text-center">Relax Time</h3>
         </button>
 
         <button

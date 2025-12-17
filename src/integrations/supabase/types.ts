@@ -790,6 +790,42 @@ export type Database = {
         }
         Relationships: []
       }
+      relax_time_videos: {
+        Row: {
+          category: string
+          created_at: string | null
+          display_order: number | null
+          duration: string | null
+          id: string
+          language: string
+          thumbnail_url: string | null
+          title: string
+          youtube_url: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          display_order?: number | null
+          duration?: string | null
+          id?: string
+          language: string
+          thumbnail_url?: string | null
+          title: string
+          youtube_url: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          display_order?: number | null
+          duration?: string | null
+          id?: string
+          language?: string
+          thumbnail_url?: string | null
+          title?: string
+          youtube_url?: string
+        }
+        Relationships: []
+      }
       reported_messages: {
         Row: {
           created_at: string | null
