@@ -24,24 +24,16 @@ export const usePoints = () => {
 
   const getUserRanking = async (userId: string) => {
     try {
+      // Use upsert to handle race conditions
       const { data, error } = await supabase
         .from('user_rankings')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .upsert({ user_id: userId }, { onConflict: 'user_id' })
+        .select()
+        .single();
 
-      if (error) throw error;
-
-      // If no ranking exists, create one
-      if (!data) {
-        const { data: newRanking, error: insertError } = await supabase
-          .from('user_rankings')
-          .insert({ user_id: userId })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        return newRanking;
+      if (error) {
+        console.error('Error with user ranking:', error);
+        return null;
       }
 
       return data;
