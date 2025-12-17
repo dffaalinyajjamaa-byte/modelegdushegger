@@ -14,15 +14,29 @@ const Index = () => {
 
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | null = null;
+    let mounted = true;
 
     const initAuth = async () => {
       try {
         // Set up auth state listener FIRST
         const { data } = supabase.auth.onAuthStateChange(
           (event, session) => {
-            setSession(session);
-            setUser(session?.user ?? null);
-            setLoading(false);
+            if (!mounted) return;
+            
+            // Add delay for SIGNED_IN to allow auth state to propagate
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+              setTimeout(() => {
+                if (mounted) {
+                  setSession(session);
+                  setUser(session?.user ?? null);
+                  setLoading(false);
+                }
+              }, 500);
+            } else {
+              setSession(session);
+              setUser(session?.user ?? null);
+              setLoading(false);
+            }
           }
         );
         subscription = data.subscription;
@@ -32,21 +46,23 @@ const Index = () => {
         
         if (error) {
           console.error('Session retrieval error:', error);
-          // Don't throw - just set loading to false and let user log in
         }
         
-        setSession(sessionData?.session ?? null);
-        setUser(sessionData?.session?.user ?? null);
-        setLoading(false);
+        if (mounted) {
+          setSession(sessionData?.session ?? null);
+          setUser(sessionData?.session?.user ?? null);
+          setLoading(false);
+        }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     initAuth();
 
     return () => {
+      mounted = false;
       subscription?.unsubscribe();
     };
   }, []);

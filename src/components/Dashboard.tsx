@@ -117,6 +117,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
 
   const fetchProfile = async () => {
     try {
+      // First try to get existing profile
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -124,85 +125,61 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
-        throw error;
+        console.error('Error fetching profile:', error);
+        return;
       }
 
       if (!data) {
-        console.log('Creating new profile for user:', user.id);
-        
-        const { data: newProfile, error: insertError } = await supabase
+        // Use upsert instead of insert to handle race conditions
+        const { data: newProfile, error: upsertError } = await supabase
           .from('profiles')
-          .insert({
+          .upsert({
             user_id: user.id,
             email: user.email || '',
             full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Student',
-            grade: 'Grade 8',
+            grade: user.user_metadata?.grade || 'Grade 8',
             role: 'student'
+          }, {
+            onConflict: 'user_id'
           })
           .select()
           .single();
         
-        if (insertError) {
-          console.error('Error creating profile:', insertError);
-          toast({
-            title: "Profile Creation Error",
-            description: "Unable to create your profile. Please try refreshing the page.",
-            variant: "destructive",
-          });
+        if (upsertError) {
+          console.error('Error upserting profile:', upsertError);
+          // Silent fail - don't crash the app or show error toast
           return;
         }
         
         setProfile(newProfile);
-        toast({
-          title: "Welcome!",
-          description: "Your profile has been created successfully.",
-        });
       } else {
         setProfile(data);
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      toast({
-        title: "Failed to Load Profile",
-        description: "Please refresh the page or contact support if the issue persists.",
-        variant: "destructive",
-      });
+      console.error('Error in fetchProfile:', error);
+      // Silent fail - don't show error to user
     }
   };
 
   const fetchUserStats = async () => {
     try {
+      // Use upsert to handle race conditions
       const { data, error } = await supabase
         .from('user_stats')
-        .select('*')
-        .eq('user_id', user.id)
+        .upsert({ user_id: user.id }, { onConflict: 'user_id' })
+        .select()
         .single();
 
       if (error) {
-        // If no stats exist, create them
-        if (error.code === 'PGRST116') {
-          const { data: newStats, error: insertError } = await supabase
-            .from('user_stats')
-            .insert({ user_id: user.id })
-            .select()
-            .single();
-          
-          if (insertError) throw insertError;
-          setUserStats({
-            tasks_completed: newStats.tasks_completed,
-            videos_watched: newStats.videos_watched,
-            materials_read: newStats.materials_read,
-          });
-        } else {
-          throw error;
-        }
-      } else {
-        setUserStats({
-          tasks_completed: data.tasks_completed,
-          videos_watched: data.videos_watched,
-          materials_read: data.materials_read,
-        });
+        console.error('Error with user stats:', error);
+        return;
       }
+
+      setUserStats({
+        tasks_completed: data?.tasks_completed || 0,
+        videos_watched: data?.videos_watched || 0,
+        materials_read: data?.materials_read || 0,
+      });
     } catch (error) {
       console.error('Error fetching user stats:', error);
     }
