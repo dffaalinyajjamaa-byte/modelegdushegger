@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +50,27 @@ const waitForProfile = async (userId: string, maxAttempts: number = 5): Promise<
   return false;
 };
 
+// Test connection to Supabase
+const testConnection = async (): Promise<boolean> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/`, {
+      method: 'HEAD',
+      headers: {
+        'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+      },
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    return response.ok || response.status === 400;
+  } catch {
+    return false;
+  }
+};
+
 export default function AuthForm({ onAuthChange }: AuthFormProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -68,11 +89,16 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [showRetry, setShowRetry] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const { toast } = useToast();
 
-  // Check network status
-  useState(() => {
-    const handleOnline = () => setIsOffline(false);
+  // Check network status - FIXED: was useState, now useEffect
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      setShowRetry(false);
+    };
     const handleOffline = () => setIsOffline(true);
     
     window.addEventListener('online', handleOnline);
@@ -82,7 +108,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  });
+  }, []);
 
   const subjects = [
     'Mathematics', 'Physics', 'Chemistry', 'Biology', 
@@ -204,14 +230,52 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
     }
   };
 
+  const handleRetry = async () => {
+    setRetryCount(prev => prev + 1);
+    setLoading(true);
+    
+    try {
+      const isConnected = await testConnection();
+      if (isConnected) {
+        setShowRetry(false);
+        setIsOffline(false);
+        toast({
+          title: "Connected!",
+          description: "Connection restored. You can now sign in.",
+        });
+      } else {
+        toast({
+          title: "Still Unable to Connect",
+          description: "Please check your internet connection and try again.",
+          variant: "destructive",
+        });
+      }
+    } catch {
+      toast({
+        title: "Connection Failed",
+        description: "Unable to reach the server.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setShowRetry(false);
 
     try {
       // Check network connectivity first
       if (!navigator.onLine) {
-        throw new Error('No internet connection. Please check your network and try again.');
+        throw new Error('NETWORK_ERROR');
+      }
+
+      // Test connection before attempting auth (helps Windows 10)
+      const isConnected = await testConnection();
+      if (!isConnected) {
+        throw new Error('NETWORK_ERROR');
       }
 
       if (isLogin) {
@@ -299,19 +363,25 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
       let errorMessage = error.message || 'An unexpected error occurred';
       let errorTitle = 'Authentication Error';
       
-      if (error.message?.includes('Invalid login credentials')) {
+      const isNetworkError = 
+        error.message === 'NETWORK_ERROR' ||
+        error.message?.includes('Failed to fetch') ||
+        error.message?.includes('fetch') ||
+        error.message?.includes('network') ||
+        error.name === 'TypeError' ||
+        error.message?.includes('NetworkError');
+      
+      if (isNetworkError) {
+        errorTitle = 'Connection Error';
+        errorMessage = 'Unable to connect to the server. This may be due to network settings. Please try again.';
+        setShowRetry(true);
+        setIsOffline(true);
+      } else if (error.message?.includes('Invalid login credentials')) {
         errorMessage = 'Invalid email or password. Please check your credentials.';
       } else if (error.message?.includes('Email not confirmed')) {
         errorMessage = 'Please check your email and confirm your account.';
       } else if (error.message?.includes('row-level security')) {
         errorMessage = 'Unable to complete registration. Please try again.';
-      } else if (error.message?.includes('network') || error.message?.includes('fetch') || error.name === 'TypeError') {
-        errorTitle = 'Connection Error';
-        errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
-        setIsOffline(true);
-      } else if (error.message?.includes('Failed to fetch')) {
-        errorTitle = 'Connection Error';
-        errorMessage = 'Unable to reach the server. Please check your internet connection or try again later.';
       }
       
       toast({
@@ -422,6 +492,34 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
           <div className="bg-destructive/10 border-b border-destructive/20 p-3 flex items-center gap-2 text-destructive">
             <WifiOff className="h-4 w-4" />
             <span className="text-sm">You appear to be offline. Please check your connection.</span>
+          </div>
+        )}
+        
+        {/* Retry Connection UI */}
+        {showRetry && (
+          <div className="bg-amber-500/10 border-b border-amber-500/20 p-4">
+            <div className="flex items-center gap-2 text-amber-600 mb-2">
+              <WifiOff className="h-5 w-5" />
+              <span className="font-medium">Connection Issue Detected</span>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">
+              Having trouble connecting? This can happen on Windows 10. Try these steps:
+            </p>
+            <ul className="text-xs text-muted-foreground mb-3 list-disc list-inside space-y-1">
+              <li>Check your internet connection</li>
+              <li>Disable any VPN or proxy</li>
+              <li>Try refreshing the page</li>
+            </ul>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleRetry}
+              disabled={loading}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Retry Connection {retryCount > 0 && `(${retryCount}/3)`}
+            </Button>
           </div>
         )}
         
