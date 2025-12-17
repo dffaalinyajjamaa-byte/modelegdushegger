@@ -498,15 +498,10 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   const showChatScreen = !isMobile || selectedChat;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center overflow-hidden bg-background">
+    <div className="fixed inset-0 flex overflow-hidden bg-background">
+      {/* Full width layout on PC, responsive on mobile */}
       <div 
-        className="flex overflow-hidden bg-background md:rounded-3xl md:shadow-2xl md:border"
-        style={{ 
-          width: '100%',
-          height: '100dvh',
-          maxWidth: 'min(100vw, calc(100dvh * 9 / 16))',
-          maxHeight: '100dvh',
-        }}
+        className="flex w-full h-screen overflow-hidden bg-background"
       >
       {/* Left Sidebar - Chat List */}
       {showChatList && (
@@ -634,7 +629,7 @@ export default function Messenger({ user, onBack }: MessengerProps) {
 
       {/* Right Side - Chat Area */}
       {showChatScreen && (
-        <div className={`${isMobile ? 'fixed inset-0 z-50' : 'flex-1'} flex flex-col bg-background`} style={isMobile ? { height: '100dvh' } : {}}>
+        <div className={`${isMobile ? 'fixed inset-0 z-50' : 'flex-1'} flex flex-col bg-background h-screen`}>
           {selectedChat ? (
           <>
             {/* Chat Header */}
