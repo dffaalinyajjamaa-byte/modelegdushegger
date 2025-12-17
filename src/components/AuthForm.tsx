@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Camera } from 'lucide-react';
+import { Eye, EyeOff, Camera, Mail, RefreshCw, WifiOff, ArrowLeft } from 'lucide-react';
 import logo from '@/assets/model-egdu-logo.png';
 import { motion } from 'framer-motion';
 
@@ -52,6 +52,7 @@ const waitForProfile = async (userId: string, maxAttempts: number = 5): Promise<
 
 export default function AuthForm({ onAuthChange }: AuthFormProps) {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -65,7 +66,23 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const { toast } = useToast();
+
+  // Check network status
+  useState(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  });
 
   const subjects = [
     'Mathematics', 'Physics', 'Chemistry', 'Biology', 
@@ -138,11 +155,65 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Check network connectivity
+      if (!navigator.onLine) {
+        throw new Error('No internet connection. Please check your network.');
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      setResetEmailSent(true);
+      toast({
+        title: "Reset Email Sent!",
+        description: "Check your email for the password reset link.",
+      });
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      
+      let errorMessage = 'Unable to send reset email. Please try again.';
+      if (error.message?.includes('fetch') || error.message?.includes('network')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+      
+      toast({
+        title: "Reset Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Check network connectivity first
+      if (!navigator.onLine) {
+        throw new Error('No internet connection. Please check your network and try again.');
+      }
+
       if (isLogin) {
         // Login with retry for Windows 10 compatibility
         const { error } = await retryWithDelay(async () => {
@@ -152,7 +223,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
           });
           if (result.error) throw result.error;
           return result;
-        });
+        }, 3, 1000);
         
         if (error) throw error;
         
@@ -226,6 +297,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
       
       // Handle specific error types with friendly messages
       let errorMessage = error.message || 'An unexpected error occurred';
+      let errorTitle = 'Authentication Error';
       
       if (error.message?.includes('Invalid login credentials')) {
         errorMessage = 'Invalid email or password. Please check your credentials.';
@@ -233,12 +305,17 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
         errorMessage = 'Please check your email and confirm your account.';
       } else if (error.message?.includes('row-level security')) {
         errorMessage = 'Unable to complete registration. Please try again.';
-      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
-        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error.message?.includes('network') || error.message?.includes('fetch') || error.name === 'TypeError') {
+        errorTitle = 'Connection Error';
+        errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+        setIsOffline(true);
+      } else if (error.message?.includes('Failed to fetch')) {
+        errorTitle = 'Connection Error';
+        errorMessage = 'Unable to reach the server. Please check your internet connection or try again later.';
       }
       
       toast({
-        title: "Authentication Error",
+        title: errorTitle,
         description: errorMessage,
         variant: "destructive",
       });
@@ -247,9 +324,107 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
     }
   };
 
+  // Forgot Password Form
+  if (isForgotPassword) {
+    return (
+      <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-glow border-0">
+          <CardHeader className="text-center space-y-4">
+            <motion.div 
+              className="flex justify-center"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.5, type: "spring" }}
+            >
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                <Mail className="w-10 h-10 text-white" />
+              </div>
+            </motion.div>
+            <div>
+              <CardTitle className="text-2xl font-bold">
+                {resetEmailSent ? 'Check Your Email' : 'Forgot Password?'}
+              </CardTitle>
+              <CardDescription className="mt-2">
+                {resetEmailSent 
+                  ? 'We sent a password reset link to your email.'
+                  : "Enter your email and we'll send you a reset link."}
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {resetEmailSent ? (
+              <div className="space-y-4">
+                <div className="text-center py-4">
+                  <Mail className="w-16 h-16 mx-auto text-green-500 mb-4" />
+                  <p className="text-sm text-muted-foreground">
+                    Didn't receive the email? Check your spam folder or try again.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setResetEmailSent(false);
+                    setIsForgotPassword(false);
+                  }}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Login
+                </Button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">Email Address</Label>
+                  <Input
+                    id="reset-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="h-11"
+                  />
+                </div>
+                
+                <Button
+                  type="submit"
+                  variant="hero"
+                  size="lg"
+                  className="w-full"
+                  disabled={loading}
+                >
+                  {loading ? 'Sending...' : 'Send Reset Link'}
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => setIsForgotPassword(false)}
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Login
+                </Button>
+              </form>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-glow border-0 max-h-[90vh] overflow-y-auto">
+        {/* Offline Warning */}
+        {isOffline && (
+          <div className="bg-destructive/10 border-b border-destructive/20 p-3 flex items-center gap-2 text-destructive">
+            <WifiOff className="h-4 w-4" />
+            <span className="text-sm">You appear to be offline. Please check your connection.</span>
+          </div>
+        )}
+        
         <CardHeader className="text-center space-y-4">
           <motion.div 
             className="flex justify-center"
@@ -408,7 +583,19 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="password">Password *</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password *</Label>
+                {isLogin && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-xs text-primary p-0 h-auto"
+                    onClick={() => setIsForgotPassword(true)}
+                  >
+                    Forgot Password?
+                  </Button>
+                )}
+              </div>
               <div className="relative">
                 <Input
                   id="password"
@@ -440,10 +627,29 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
               variant="hero"
               size="lg"
               className="w-full"
-              disabled={loading}
+              disabled={loading || isOffline}
             >
-              {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
+              {loading ? (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                isLogin ? 'Sign In' : 'Create Account'
+              )}
             </Button>
+
+            {isOffline && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => window.location.reload()}
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Retry Connection
+              </Button>
+            )}
             
             <div className="text-center pt-4">
               <Button
