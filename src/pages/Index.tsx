@@ -13,23 +13,42 @@ const Index = () => {
   const [showLanding, setShowLanding] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    let subscription: { unsubscribe: () => void } | null = null;
+
+    const initAuth = async () => {
+      try {
+        // Set up auth state listener FIRST
+        const { data } = supabase.auth.onAuthStateChange(
+          (event, session) => {
+            setSession(session);
+            setUser(session?.user ?? null);
+            setLoading(false);
+          }
+        );
+        subscription = data.subscription;
+
+        // Then check for existing session with error handling
+        const { data: sessionData, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Session retrieval error:', error);
+          // Don't throw - just set loading to false and let user log in
+        }
+        
+        setSession(sessionData?.session ?? null);
+        setUser(sessionData?.session?.user ?? null);
+        setLoading(false);
+      } catch (error) {
+        console.error('Auth initialization error:', error);
         setLoading(false);
       }
-    );
+    };
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    initAuth();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const handleAuthChange = () => {
