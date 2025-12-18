@@ -15,33 +15,31 @@ const Index = () => {
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | null = null;
     let mounted = true;
+    let debounceTimer: NodeJS.Timeout | null = null;
 
     const initAuth = async () => {
       try {
-        // Set up auth state listener FIRST
+        // Set up auth state listener with debouncing to prevent token refresh loops
         const { data } = supabase.auth.onAuthStateChange(
           (event, session) => {
             if (!mounted) return;
             
-            // Add delay for SIGNED_IN to allow auth state to propagate
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-              setTimeout(() => {
-                if (mounted) {
-                  setSession(session);
-                  setUser(session?.user ?? null);
-                  setLoading(false);
-                }
-              }, 500);
-            } else {
-              setSession(session);
-              setUser(session?.user ?? null);
-              setLoading(false);
-            }
+            // Clear any pending debounce
+            if (debounceTimer) clearTimeout(debounceTimer);
+            
+            // Debounce auth state changes to prevent multiple simultaneous updates
+            debounceTimer = setTimeout(() => {
+              if (mounted) {
+                setSession(session);
+                setUser(session?.user ?? null);
+                setLoading(false);
+              }
+            }, 300);
           }
         );
         subscription = data.subscription;
 
-        // Then check for existing session with error handling
+        // Check for existing session
         const { data: sessionData, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -63,6 +61,7 @@ const Index = () => {
 
     return () => {
       mounted = false;
+      if (debounceTimer) clearTimeout(debounceTimer);
       subscription?.unsubscribe();
     };
   }, []);

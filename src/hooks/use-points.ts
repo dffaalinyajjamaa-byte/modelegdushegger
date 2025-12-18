@@ -24,15 +24,15 @@ export const usePoints = () => {
 
   const getUserRanking = async (userId: string) => {
     try {
-      // Use upsert to handle race conditions
+      // Only fetch - trigger handles creation when profile is created
       const { data, error } = await supabase
         .from('user_rankings')
-        .upsert({ user_id: userId }, { onConflict: 'user_id' })
-        .select()
-        .single();
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error with user ranking:', error);
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching user ranking:', error);
         return null;
       }
 
