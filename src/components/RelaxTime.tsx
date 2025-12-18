@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { ArrowLeft, Play, Globe, Music, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import YouTube from 'react-youtube';
+import { getYouTubeThumbnail } from '@/lib/youtube-utils';
 
 interface RelaxTimeProps {
   user: User;
@@ -244,39 +245,37 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
                   <p className="text-muted-foreground">Videos will be added soon!</p>
                 </div>
               ) : (
-                <div className="grid gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {videos.map((video, index) => (
                     <motion.div
                       key={video.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
+                      transition={{ delay: index * 0.05 }}
                     >
                       <Card
-                        className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+                        className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 hover:scale-[1.02] group"
                         onClick={() => setSelectedVideo(video)}
                       >
-                        <div className="flex items-center gap-4 p-4">
-                          <div className="relative w-24 h-16 bg-muted rounded-lg overflow-hidden flex-shrink-0">
-                            {video.thumbnail_url ? (
-                              <img 
-                                src={video.thumbnail_url} 
-                                alt={video.title}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-500/20 to-pink-500/20">
-                                <Play className="h-8 w-8 text-purple-500" />
-                              </div>
-                            )}
+                        <div className="relative w-full h-40 bg-muted overflow-hidden">
+                          <img 
+                            src={video.thumbnail_url || getYouTubeThumbnail(video.youtube_url, 'hq')} 
+                            alt={video.title}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          />
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="w-14 h-14 rounded-full bg-primary/90 flex items-center justify-center">
+                              <Play className="h-7 w-7 text-primary-foreground fill-current" />
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold truncate">{video.title}</h4>
-                            {video.duration && (
-                              <p className="text-sm text-muted-foreground">{video.duration}</p>
-                            )}
-                          </div>
-                          <Play className="h-6 w-6 text-primary flex-shrink-0" />
+                          {video.duration && (
+                            <span className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                              {video.duration}
+                            </span>
+                          )}
+                        </div>
+                        <div className="p-4">
+                          <h4 className="font-semibold line-clamp-2">{video.title}</h4>
                         </div>
                       </Card>
                     </motion.div>
