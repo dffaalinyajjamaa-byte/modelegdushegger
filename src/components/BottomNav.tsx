@@ -1,7 +1,8 @@
-import { Home, Bot, Video, BookOpen, MessageCircle, Mic } from 'lucide-react';
+import { Home, Video, BookOpen, MessageCircle, Mic } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useScreenSize } from '@/hooks/use-screen-size';
+import aiTeacherRobot from '@/assets/ai-teacher-robot.png';
 
 export default function BottomNav() {
   const location = useLocation();
@@ -13,7 +14,7 @@ export default function BottomNav() {
     { icon: Home, label: 'Home', path: '/', activeView: 'dashboard' },
     { icon: BookOpen, label: 'Books', path: '/', activeView: 'books' },
     { icon: Video, label: 'Videos', path: '/', activeView: 'videos' },
-    { icon: Bot, label: 'AI', path: '/', activeView: 'ai-teacher' },
+    { icon: null, label: 'AI', path: '/', activeView: 'ai-teacher', customIcon: true },
     { icon: Mic, label: 'Live', path: '/', activeView: 'live-teacher' },
     { icon: MessageCircle, label: 'Chat', path: '/', activeView: 'messenger' },
   ];
@@ -45,7 +46,11 @@ export default function BottomNav() {
                   )}
                   title={item.label}
                 >
-                  <Icon className={cn('w-5 h-5', isActive && 'drop-shadow-glow')} />
+                  {item.customIcon ? (
+                    <img src={aiTeacherRobot} alt="AI Teacher" className={cn('w-5 h-5 rounded-full object-cover', isActive && 'drop-shadow-glow')} />
+                  ) : (
+                    <Icon className={cn('w-5 h-5', isActive && 'drop-shadow-glow')} />
+                  )}
                   <span className={cn(
                     'text-sm font-medium hidden xl:inline',
                     isActive && 'text-primary'
@@ -80,13 +85,24 @@ export default function BottomNav() {
                     : 'text-muted-foreground hover:text-foreground'
                 )}
               >
-                <Icon
-                  className={cn(
-                    'w-5 h-5 transition-all duration-300',
-                    isActive && 'drop-shadow-glow'
-                  )}
-                  fill={isActive ? 'currentColor' : 'none'}
-                />
+                {item.customIcon ? (
+                  <img 
+                    src={aiTeacherRobot} 
+                    alt="AI Teacher" 
+                    className={cn(
+                      'w-5 h-5 rounded-full object-cover transition-all duration-300',
+                      isActive && 'drop-shadow-glow'
+                    )} 
+                  />
+                ) : (
+                  <Icon
+                    className={cn(
+                      'w-5 h-5 transition-all duration-300',
+                      isActive && 'drop-shadow-glow'
+                    )}
+                    fill={isActive ? 'currentColor' : 'none'}
+                  />
+                )}
                 <span className={cn(
                   "text-[10px] font-medium transition-all duration-300",
                   isActive && "font-bold"
