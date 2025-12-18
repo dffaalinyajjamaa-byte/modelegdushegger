@@ -204,9 +204,9 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-primary to-secondary mb-6 animate-pulse">
-                <img src={aiTeacherRobot} alt="AI Teacher" className="w-full h-full object-cover" />
-              </div>
+            <div className="w-28 h-28 rounded-full overflow-hidden bg-gradient-to-br from-primary to-secondary mb-6 animate-pulse">
+              <img src={aiTeacherRobot} alt="AI Teacher" className="w-full h-full object-cover" />
+            </div>
               <h3 className="text-2xl font-bold mb-2">How can I help you today?</h3>
               <p className="text-muted-foreground text-center max-w-md mb-8">
                 Ask me anything about your lessons, homework, or any topic!
