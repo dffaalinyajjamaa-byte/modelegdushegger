@@ -5,7 +5,8 @@ import { AutoExpandingTextarea } from '@/components/ui/auto-expanding-textarea';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { User } from '@supabase/supabase-js';
-import { Send, Bot, Sparkles, Plus } from 'lucide-react';
+import { Send, Sparkles, Plus } from 'lucide-react';
+import aiTeacherRobot from '@/assets/ai-teacher-robot.png';
 
 interface AITeacherProps {
   user: User;
@@ -177,8 +178,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
       {/* Fixed Header */}
       <div className="app-header border-b bg-gradient-to-r from-primary/5 to-secondary/5 backdrop-blur-xl">
         <div className="flex items-center gap-3 flex-1">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-            <Bot className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-primary to-secondary">
+            <img src={aiTeacherRobot} alt="AI Teacher" className="w-full h-full object-cover" />
           </div>
           <div>
             <h2 className="font-bold text-base">AI Teacher</h2>
@@ -203,8 +204,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-6 animate-pulse">
-                <Sparkles className="w-10 h-10 text-white" />
+              <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-primary to-secondary mb-6 animate-pulse">
+                <img src={aiTeacherRobot} alt="AI Teacher" className="w-full h-full object-cover" />
               </div>
               <h3 className="text-2xl font-bold mb-2">How can I help you today?</h3>
               <p className="text-muted-foreground text-center max-w-md mb-8">
@@ -246,8 +247,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
 
                 {/* AI Message */}
                 <div className="flex justify-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-5 h-5 text-white" />
+                  <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-primary to-secondary flex-shrink-0">
+                    <img src={aiTeacherRobot} alt="AI Teacher" className="w-full h-full object-cover" />
                   </div>
                   <div className="w-full max-w-[85%] flex flex-col">
                     <p className="text-xs font-semibold mb-1 text-muted-foreground px-2">AI Teacher</p>
@@ -265,8 +266,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
           
           {loading && (
             <div className="flex justify-start gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center flex-shrink-0">
-                <Bot className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-primary to-secondary flex-shrink-0">
+                <img src={aiTeacherRobot} alt="AI Teacher" className="w-full h-full object-cover" />
               </div>
               <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3 space-y-2">
                 {/* Translation Status Indicator */}
