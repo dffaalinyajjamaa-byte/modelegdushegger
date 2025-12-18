@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { ArrowLeft, Play, Globe, Music, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import YouTube from 'react-youtube';
-import { getYouTubeThumbnail } from '@/lib/youtube-utils';
+import { getYouTubeThumbnail, getYouTubeVideoId } from '@/lib/youtube-utils';
 
 interface RelaxTimeProps {
   user: User;
@@ -104,10 +104,6 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
     }
   };
 
-  const getYoutubeId = (url: string) => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/);
-    return match ? match[1] : null;
-  };
 
   const handleBack = () => {
     if (selectedVideo) {
@@ -295,9 +291,9 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
               className="space-y-4"
             >
               <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black">
-                {getYoutubeId(selectedVideo.youtube_url) ? (
+                {getYouTubeVideoId(selectedVideo.youtube_url) ? (
                   <YouTube
-                    videoId={getYoutubeId(selectedVideo.youtube_url)!}
+                    videoId={getYouTubeVideoId(selectedVideo.youtube_url)!}
                     opts={{
                       width: '100%',
                       height: '100%',
