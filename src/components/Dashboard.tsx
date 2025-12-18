@@ -93,13 +93,22 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
   const streak = useStreak(user?.id);
   const { getUserRanking } = usePoints();
   const [userRanking, setUserRanking] = useState<any>(null);
+  const [dataFetched, setDataFetched] = useState(false);
 
+  // Single data fetch with guard to prevent multiple calls
   useEffect(() => {
-    fetchProfile();
-    fetchUserStats();
-    fetchContent();
-    fetchUserRanking();
-  }, [user]);
+    if (!user?.id || dataFetched) return;
+    
+    const loadData = async () => {
+      setDataFetched(true);
+      await fetchProfile();
+      await fetchUserStats();
+      await fetchContent();
+      await fetchUserRanking();
+    };
+
+    loadData();
+  }, [user?.id, dataFetched]);
 
   const fetchUserRanking = async () => {
     if (!user?.id) return;
@@ -116,8 +125,10 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
   }, [location]);
 
   const fetchProfile = async () => {
+    if (!user?.id) return;
+    
     try {
-      // First try to get existing profile
+      // Only fetch - trigger handles creation on signup
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -129,49 +140,26 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         return;
       }
 
-      if (!data) {
-        // Use upsert instead of insert to handle race conditions
-        const { data: newProfile, error: upsertError } = await supabase
-          .from('profiles')
-          .upsert({
-            user_id: user.id,
-            email: user.email || '',
-            full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Student',
-            grade: user.user_metadata?.grade || 'Grade 8',
-            role: 'student'
-          }, {
-            onConflict: 'user_id'
-          })
-          .select()
-          .single();
-        
-        if (upsertError) {
-          console.error('Error upserting profile:', upsertError);
-          // Silent fail - don't crash the app or show error toast
-          return;
-        }
-        
-        setProfile(newProfile);
-      } else {
-        setProfile(data);
-      }
+      // Set profile data (may be null if trigger hasn't run yet)
+      setProfile(data);
     } catch (error) {
       console.error('Error in fetchProfile:', error);
-      // Silent fail - don't show error to user
     }
   };
 
   const fetchUserStats = async () => {
+    if (!user?.id) return;
+    
     try {
-      // Use upsert to handle race conditions
+      // Only fetch - trigger handles creation when profile is created
       const { data, error } = await supabase
         .from('user_stats')
-        .upsert({ user_id: user.id }, { onConflict: 'user_id' })
-        .select()
-        .single();
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error with user stats:', error);
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching user stats:', error);
         return;
       }
 
