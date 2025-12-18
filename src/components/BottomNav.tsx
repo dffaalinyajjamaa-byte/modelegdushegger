@@ -47,7 +47,7 @@ export default function BottomNav() {
                   title={item.label}
                 >
                   {item.customIcon ? (
-                    <img src={aiTeacherRobot} alt="AI Teacher" className={cn('w-5 h-5 rounded-full object-cover', isActive && 'drop-shadow-glow')} />
+                    <img src={aiTeacherRobot} alt="AI Teacher" className={cn('w-6 h-6 rounded-full object-cover', isActive && 'drop-shadow-glow')} />
                   ) : (
                     <Icon className={cn('w-5 h-5', isActive && 'drop-shadow-glow')} />
                   )}
@@ -90,7 +90,7 @@ export default function BottomNav() {
                     src={aiTeacherRobot} 
                     alt="AI Teacher" 
                     className={cn(
-                      'w-5 h-5 rounded-full object-cover transition-all duration-300',
+                      'w-6 h-6 rounded-full object-cover transition-all duration-300',
                       isActive && 'drop-shadow-glow'
                     )} 
                   />
