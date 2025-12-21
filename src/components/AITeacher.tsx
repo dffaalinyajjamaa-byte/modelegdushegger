@@ -174,7 +174,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   };
 
   return (
-    <div className="app-screen">
+    <div className="app-screen overflow-x-hidden">
       {/* Fixed Header */}
       <div className="app-header border-b bg-gradient-to-r from-primary/5 to-secondary/5 backdrop-blur-xl">
         <div className="flex items-center gap-3 flex-1">
@@ -294,8 +294,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
       </ScrollArea>
 
       {/* Input Area - with mobile navigation padding */}
-      <div className="border-t bg-background/95 backdrop-blur-xl p-4 pb-20 md:pb-4">
-        <div className="max-w-3xl mx-auto flex gap-2">
+      <div className="border-t bg-background/95 backdrop-blur-xl p-4 pb-24 md:pb-4 safe-area-bottom">
+        <div className="max-w-3xl mx-auto flex gap-2 overflow-x-hidden">
           <AutoExpandingTextarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
