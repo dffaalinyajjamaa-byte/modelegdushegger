@@ -39,8 +39,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 // Lazy load heavy components for better performance
-const AITeacher = lazy(() => import('./AITeacher'));
-const LiveTeacher = lazy(() => import('./LiveTeacher'));
+const AiChat = lazy(() => import('./AiChat'));
+const LiveTeacherModal = lazy(() => import('./LiveTeacherModal'));
 const VideoLessonsLibrary = lazy(() => import('./VideoLessonsLibrary'));
 const DigitalBooksLibrary = lazy(() => import('./DigitalBooksLibrary'));
 const Messenger = lazy(() => import('./Messenger'));
@@ -243,13 +243,13 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
       case 'ai-teacher':
         return (
           <Suspense fallback={<LoadingFallback />}>
-            <AITeacher user={user} onLogActivity={logActivity} />
+            <AiChat user={user} onLogActivity={logActivity} />
           </Suspense>
         );
       case 'live-teacher':
         return (
           <Suspense fallback={<LoadingFallback />}>
-            <LiveTeacher user={user} onLogActivity={logActivity} />
+            <LiveTeacherModal isOpen={true} onClose={() => setActiveView('dashboard')} />
           </Suspense>
         );
       case 'tasks':
