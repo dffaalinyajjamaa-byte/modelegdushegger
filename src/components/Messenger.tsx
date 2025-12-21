@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useScreenSize } from '@/hooks/use-screen-size';
 import { useTypingIndicator } from '@/hooks/use-typing-indicator';
+import { useGeminiSTT } from '@/hooks/use-gemini-stt';
 import { 
   Send, Search, Plus, Image as ImageIcon, Paperclip, Mic, MicOff,
   MoreVertical, Check, CheckCheck, Users, UserPlus, AlertCircle, 
-  Ban, Pin, X, ArrowLeft, Reply, MessageSquare, SmilePlus
+  Ban, Pin, X, ArrowLeft, Reply, MessageSquare, SmilePlus, Loader2
 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { ChatBubble, ChatBubbleAvatar, ChatBubbleMessage } from '@/components/ui/chat-bubble';
@@ -86,12 +87,9 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
   const [isThreadOpen, setIsThreadOpen] = useState(false);
   const [messageReactions, setMessageReactions] = useState<Record<string, Array<{emoji: string; count: number; reacted: boolean}>>>({});
-  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recordingIntervalRef = useRef<number>();
-  const recognitionRef = useRef<any>(null);
-  const lastTranscriptRef = useRef<string>('');
   const { toast } = useToast();
   const { isMobile, isLandscape } = useScreenSize();
   
@@ -100,6 +98,31 @@ export default function Messenger({ user, onBack }: MessengerProps) {
     selectedChat?.chat_id || null,
     user?.id || ''
   );
+
+  // Gemini STT hook for voice input
+  const handleTranscript = useCallback((text: string) => {
+    setNewMessage(prev => {
+      const trimmedPrev = prev.trim();
+      if (trimmedPrev.toLowerCase().endsWith(text.toLowerCase())) {
+        return prev;
+      }
+      return trimmedPrev ? `${trimmedPrev} ${text}` : text;
+    });
+  }, []);
+
+  const handleSTTError = useCallback((error: string) => {
+    toast({
+      title: "Voice input error",
+      description: error,
+      variant: "destructive"
+    });
+  }, [toast]);
+
+  const { isListening, isProcessing, toggleListening, stopListening } = useGeminiSTT({
+    language: 'en',
+    onTranscript: handleTranscript,
+    onError: handleSTTError,
+  });
 
   // Get typing user names
   const getTypingUserNames = () => {
@@ -120,54 +143,6 @@ export default function Messenger({ user, onBack }: MessengerProps) {
     // Load pinned chats from localStorage
     const saved = localStorage.getItem(`pinnedChats_${user?.id}`);
     if (saved) setPinnedChats(JSON.parse(saved));
-
-    // Initialize speech recognition for voice input
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'en-US';
-      
-      recognitionRef.current.onresult = (event: any) => {
-        let finalTranscript = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript.trim();
-          if (event.results[i].isFinal && transcript) {
-            finalTranscript = transcript;
-          }
-        }
-        
-        // Only add final transcripts, avoiding duplicates with improved tracking
-        if (finalTranscript && finalTranscript !== lastTranscriptRef.current) {
-          lastTranscriptRef.current = finalTranscript;
-          setNewMessage(prev => {
-            const trimmedPrev = prev.trim();
-            // Check if transcript already exists at the end
-            if (trimmedPrev.toLowerCase().endsWith(finalTranscript.toLowerCase())) {
-              return prev;
-            }
-            return trimmedPrev ? `${trimmedPrev} ${finalTranscript}` : finalTranscript;
-          });
-        }
-      };
-      
-      recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-      };
-      
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-      };
-    }
-    
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
   }, [user]);
 
   useEffect(() => {
@@ -354,7 +329,7 @@ export default function Messenger({ user, onBack }: MessengerProps) {
 
     try {
       stopTyping(); // Stop typing when sending
-      lastTranscriptRef.current = ''; // Reset voice transcript on send to prevent duplicates
+      if (isListening) stopListening(); // Stop voice input on send
       
       await supabase.from('messages').insert({
         chat_id: selectedChat.chat_id,
@@ -509,37 +484,6 @@ export default function Messenger({ user, onBack }: MessengerProps) {
     });
     toast({ title: "User blocked", description: "You will no longer receive messages from this user" });
   };
-
-  // Voice input controls
-  const startListening = () => {
-    if (recognitionRef.current && !isListening) {
-      try {
-        // Reset last transcript when starting new session
-        lastTranscriptRef.current = '';
-        recognitionRef.current.start();
-        setIsListening(true);
-      } catch (error) {
-        console.error('Error starting speech recognition:', error);
-      }
-    }
-  };
-
-  const stopListening = () => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
-  };
-
-  const toggleListening = () => {
-    if (isListening) {
-      stopListening();
-    } else {
-      startListening();
-    }
-  };
-
-  const hasSpeechRecognition = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
 
   const getChatUser = (chat: Chat) => {
     const otherUserId = chat.members.find(m => m !== user.id);
@@ -973,23 +917,24 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                   </Button>
                 </div>
                 
-                {/* Voice Input Button */}
-                {hasSpeechRecognition && (
-                  <Button
-                    onClick={toggleListening}
-                    size="icon"
-                    variant={isListening ? "destructive" : "outline"}
-                    className={`flex-shrink-0 h-10 w-10 rounded-full transition-all ${
-                      isListening ? 'animate-pulse ring-2 ring-destructive ring-offset-2' : ''
-                    }`}
-                  >
-                    {isListening ? (
-                      <MicOff className="w-5 h-5" />
-                    ) : (
-                      <Mic className="w-5 h-5" />
-                    )}
-                  </Button>
-                )}
+                {/* Voice Input Button - Gemini STT */}
+                <Button
+                  onClick={toggleListening}
+                  size="icon"
+                  variant={isListening ? "destructive" : "outline"}
+                  disabled={isProcessing}
+                  className={`flex-shrink-0 h-10 w-10 rounded-full transition-all ${
+                    isListening ? 'animate-pulse ring-2 ring-destructive ring-offset-2' : ''
+                  }`}
+                >
+                  {isProcessing ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : isListening ? (
+                    <MicOff className="w-5 h-5" />
+                  ) : (
+                    <Mic className="w-5 h-5" />
+                  )}
+                </Button>
                 
                 <Button 
                   onClick={handleSendMessage} 

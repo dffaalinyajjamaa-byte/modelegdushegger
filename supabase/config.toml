@@ -6,7 +6,7 @@ verify_jwt = false
 [functions.gemini-tts]
 verify_jwt = false
 
-[functions.elevenlabs-tts]
+[functions.gemini-stt]
 verify_jwt = false
 
 [functions.ai-teacher-oromo]

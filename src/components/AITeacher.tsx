@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { AutoExpandingTextarea } from '@/components/ui/auto-expanding-textarea';
@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { useGeminiSTT } from '@/hooks/use-gemini-stt';
 import aiTeacherRobot from '@/assets/ai-teacher-robot.png';
 
 interface AITeacherProps {
@@ -47,77 +48,44 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const [retrying, setRetrying] = useState(false);
   const [translationStatus, setTranslationStatus] = useState<TranslationStatus>('idle');
   const [language, setLanguage] = useState<LanguageCode>('om');
-  const [isListening, setIsListening] = useState(false);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const [loadingTTS, setLoadingTTS] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const lastTranscriptRef = useRef<string>('');
   const { toast } = useToast();
+
+  // Use Gemini STT hook
+  const handleTranscript = useCallback((text: string) => {
+    setMessage(prev => {
+      const trimmedPrev = prev.trim();
+      if (trimmedPrev.toLowerCase().endsWith(text.toLowerCase())) {
+        return prev;
+      }
+      return trimmedPrev ? `${trimmedPrev} ${text}` : text;
+    });
+  }, []);
+
+  const handleSTTError = useCallback((error: string) => {
+    toast({
+      title: "Voice input error",
+      description: error,
+      variant: "destructive"
+    });
+  }, [toast]);
+
+  const { isListening, isProcessing, toggleListening, stopListening } = useGeminiSTT({
+    language,
+    onTranscript: handleTranscript,
+    onError: handleSTTError,
+  });
 
   useEffect(() => {
     fetchChatHistory();
-    
-    // Initialize speech recognition
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = true;
-      recognitionRef.current.interimResults = true;
-      
-      recognitionRef.current.onresult = (event: any) => {
-        let finalTranscript = '';
-        
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript.trim();
-          if (event.results[i].isFinal && transcript) {
-            finalTranscript = transcript;
-          }
-        }
-        
-        // Only add final transcripts, avoiding duplicates with improved tracking
-        if (finalTranscript && finalTranscript !== lastTranscriptRef.current) {
-          lastTranscriptRef.current = finalTranscript;
-          setMessage(prev => {
-            const trimmedPrev = prev.trim();
-            // Check if transcript already exists at the end
-            if (trimmedPrev.toLowerCase().endsWith(finalTranscript.toLowerCase())) {
-              return prev;
-            }
-            return trimmedPrev ? `${trimmedPrev} ${finalTranscript}` : finalTranscript;
-          });
-        }
-      };
-      
-      recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error:', event.error);
-        setIsListening(false);
-      };
-      
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
-      };
-    }
-    
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
   }, []);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Update speech recognition language when language changes
-  useEffect(() => {
-    if (recognitionRef.current) {
-      const langConfig = LANGUAGES.find(l => l.code === language);
-      recognitionRef.current.lang = langConfig?.speechCode || 'en-US';
-    }
-  }, [language]);
 
   const fetchChatHistory = async () => {
     try {
@@ -144,75 +112,99 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
     }
   };
 
-  const startListening = () => {
-    if (recognitionRef.current && !isListening) {
-      try {
-        // Reset last transcript when starting new session
-        lastTranscriptRef.current = '';
-        const langConfig = LANGUAGES.find(l => l.code === language);
-        recognitionRef.current.lang = langConfig?.speechCode || 'en-US';
-        recognitionRef.current.start();
-        setIsListening(true);
-      } catch (error) {
-        console.error('Error starting speech recognition:', error);
-      }
-    }
-  };
-
-  const stopListening = () => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    }
-  };
-
-  const toggleListening = () => {
-    if (isListening) {
-      stopListening();
-    } else {
-      startListening();
-    }
-  };
-
-  // Text-to-Speech function using browser's free Web Speech API
-  const handleSpeak = (text: string, messageId: string) => {
+  // Text-to-Speech function using Gemini TTS edge function
+  const handleSpeak = async (text: string, messageId: string) => {
     // If already speaking this message, stop it
     if (speakingMessageId === messageId) {
-      window.speechSynthesis.cancel();
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       setSpeakingMessageId(null);
       return;
     }
 
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
+    // Stop any ongoing playback
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
     
-    const cleanText = text.replace(/[*#_`]/g, ''); // Remove markdown
-    const utterance = new SpeechSynthesisUtterance(cleanText);
+    setLoadingTTS(messageId);
     
-    // Set language based on selection
-    const langMap: Record<string, string> = {
-      'om': 'om-ET', // Oromo
-      'en': 'en-US', // English
-      'am': 'am-ET'  // Amharic
-    };
-    utterance.lang = langMap[language] || 'en-US';
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
-
-    utterance.onend = () => {
-      setSpeakingMessageId(null);
-    };
-
-    utterance.onerror = () => {
-      setSpeakingMessageId(null);
-      toast({
-        title: "Speech synthesis failed",
-        variant: "destructive"
+    try {
+      const cleanText = text.replace(/[*#_`]/g, ''); // Remove markdown
+      
+      // Call Gemini TTS edge function
+      const { data, error } = await supabase.functions.invoke('gemini-tts', {
+        body: { text: cleanText, language }
       });
-    };
 
-    setSpeakingMessageId(messageId);
-    window.speechSynthesis.speak(utterance);
+      if (error) throw error;
+
+      if (data?.audioContent) {
+        // Play the audio from base64
+        const audioUrl = `data:audio/mp3;base64,${data.audioContent}`;
+        const audio = new Audio(audioUrl);
+        audioRef.current = audio;
+        
+        audio.onended = () => {
+          setSpeakingMessageId(null);
+          audioRef.current = null;
+        };
+
+        audio.onerror = () => {
+          setSpeakingMessageId(null);
+          audioRef.current = null;
+          toast({
+            title: "Audio playback failed",
+            variant: "destructive"
+          });
+        };
+
+        setSpeakingMessageId(messageId);
+        await audio.play();
+      } else if (data?.text) {
+        // Fallback to browser TTS if Gemini returns text instead of audio
+        const utterance = new SpeechSynthesisUtterance(data.text);
+        const langMap: Record<string, string> = {
+          'om': 'om-ET',
+          'en': 'en-US',
+          'am': 'am-ET'
+        };
+        utterance.lang = langMap[language] || 'en-US';
+        utterance.rate = 0.9;
+        
+        utterance.onend = () => setSpeakingMessageId(null);
+        utterance.onerror = () => {
+          setSpeakingMessageId(null);
+          toast({ title: "Speech synthesis failed", variant: "destructive" });
+        };
+        
+        setSpeakingMessageId(messageId);
+        window.speechSynthesis.speak(utterance);
+      }
+    } catch (error) {
+      console.error('TTS error:', error);
+      // Fallback to browser TTS
+      const cleanText = text.replace(/[*#_`]/g, '');
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      const langMap: Record<string, string> = {
+        'om': 'om-ET',
+        'en': 'en-US',
+        'am': 'am-ET'
+      };
+      utterance.lang = langMap[language] || 'en-US';
+      utterance.rate = 0.9;
+      
+      utterance.onend = () => setSpeakingMessageId(null);
+      utterance.onerror = () => setSpeakingMessageId(null);
+      
+      setSpeakingMessageId(messageId);
+      window.speechSynthesis.speak(utterance);
+    } finally {
+      setLoadingTTS(null);
+    }
   };
 
   const generateAIResponse = async (userMessage: string, retryCount = 0): Promise<string> => {
@@ -233,7 +225,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
           message: userMessage,
           conversationHistory: conversationHistory,
           language: language,
-          useSearch: true, // Enable Google Search for real-time info
+          useSearch: true,
         }
       });
 
@@ -280,7 +272,6 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
     
     const userMessage = message.trim();
     setMessage('');
-    lastTranscriptRef.current = ''; // Reset voice transcript on send to prevent duplicates
     setLoading(true);
     setTranslationStatus('understanding');
 
@@ -330,7 +321,6 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   };
 
   const currentLang = LANGUAGES.find(l => l.code === language);
-  const hasSpeechRecognition = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
 
   return (
     <div className="app-screen overflow-x-hidden">
@@ -475,16 +465,21 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
                     <>🧠 Hubachaa jira... (Understanding...)</>
                   )}
                   {translationStatus === 'translating' && (
-                    <>🌍 Gara Afaan Oromootti hiikaa jira... (Translating to Oromo...)</>
+                    <>🔄 Hiikaa jira... (Translating...)</>
                   )}
                   {translationStatus === 'responding' && (
-                    <>✨ Deebisaa kennaa jira... (Responding...)</>
+                    <>✨ Deebisaa qopheessaa jira... (Preparing response...)</>
                   )}
                 </div>
-                <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                {retrying && (
+                  <div className="flex items-center gap-2 text-xs text-amber-500">
+                    🔄 Irra deebi'ee yaalaa jira... (Retrying...)
+                  </div>
+                )}
+                <div className="flex space-x-2">
+                  <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                  <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                  <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                 </div>
               </div>
             </div>
@@ -492,67 +487,49 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         </div>
       </ScrollArea>
 
-      {/* Input Area - with mobile navigation padding */}
-      <div className="border-t bg-background/95 backdrop-blur-xl p-4 pb-24 md:pb-4 safe-area-bottom overflow-x-hidden">
-        <div className="max-w-3xl mx-auto flex gap-2 items-end overflow-x-hidden">
-          <AutoExpandingTextarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSendMessage();
-              }
-            }}
-            placeholder="Ask me anything... (Shift+Enter for new line)"
-            className="rounded-2xl bg-muted border-0 flex-1 min-w-0"
-            disabled={loading}
-          />
-          
-          {/* Voice Input Button */}
-          {hasSpeechRecognition && (
+      {/* Input Area */}
+      <div className="app-footer border-t bg-background/80 backdrop-blur-xl">
+        <div className="max-w-3xl mx-auto px-4 py-3">
+          <div className="flex items-end gap-2">
+            {/* Voice Input Button with Gemini STT */}
             <Button
-              onClick={toggleListening}
-              disabled={loading}
+              variant={isListening ? "destructive" : "ghost"}
               size="icon"
-              variant={isListening ? "destructive" : "outline"}
-              className={`rounded-full h-11 w-11 flex-shrink-0 transition-all ${
-                isListening ? 'animate-pulse ring-2 ring-destructive ring-offset-2' : ''
-              }`}
+              onClick={toggleListening}
+              disabled={isProcessing}
+              className={`shrink-0 ${isListening ? 'animate-pulse' : ''}`}
             >
-              {isListening ? (
+              {isProcessing ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : isListening ? (
                 <MicOff className="w-5 h-5" />
               ) : (
                 <Mic className="w-5 h-5" />
               )}
             </Button>
-          )}
-          
-          <Button
-            onClick={handleSendMessage}
-            disabled={!message.trim() || loading}
-            size="icon"
-            className="rounded-full h-11 w-11 flex-shrink-0"
-          >
-            <Send className="w-5 h-5" />
-          </Button>
-        </div>
-        
-        {/* Listening Indicator */}
-        {isListening && (
-          <div className="max-w-3xl mx-auto mt-2">
-            <div className="flex items-center gap-2 text-xs text-destructive animate-pulse">
-              <div className="flex gap-0.5">
-                <span className="w-1 h-3 bg-destructive rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
-                <span className="w-1 h-4 bg-destructive rounded-full animate-pulse" style={{ animationDelay: '100ms' }} />
-                <span className="w-1 h-2 bg-destructive rounded-full animate-pulse" style={{ animationDelay: '200ms' }} />
-                <span className="w-1 h-5 bg-destructive rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
-                <span className="w-1 h-3 bg-destructive rounded-full animate-pulse" style={{ animationDelay: '400ms' }} />
-              </div>
-              <span>Listening in {currentLang?.name}...</span>
-            </div>
+            
+            <AutoExpandingTextarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder={isListening ? "Listening..." : isProcessing ? "Processing..." : "Ask me anything..."}
+              className="flex-1 min-h-[44px]"
+              disabled={loading}
+            />
+            <Button 
+              size="icon"
+              onClick={handleSendMessage}
+              disabled={loading || !message.trim()}
+              className="shrink-0 bg-primary hover:bg-primary/90"
+            >
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+            </Button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
