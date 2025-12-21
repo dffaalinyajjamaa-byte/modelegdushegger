@@ -5,7 +5,13 @@ import { AutoExpandingTextarea } from '@/components/ui/auto-expanding-textarea';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { User } from '@supabase/supabase-js';
-import { Send, Sparkles, Plus } from 'lucide-react';
+import { Send, Sparkles, Plus, Mic, MicOff, Globe, ChevronDown } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import aiTeacherRobot from '@/assets/ai-teacher-robot.png';
 
 interface AITeacherProps {
@@ -23,6 +29,15 @@ interface ChatMessage {
 
 type TranslationStatus = 'idle' | 'understanding' | 'translating' | 'responding';
 
+// Language configuration
+const LANGUAGES = [
+  { code: 'om', name: 'Afaan Oromoo', speechCode: 'om-ET' },
+  { code: 'en', name: 'English', speechCode: 'en-US' },
+  { code: 'am', name: 'አማርኛ', speechCode: 'am-ET' },
+] as const;
+
+type LanguageCode = typeof LANGUAGES[number]['code'];
+
 export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -30,15 +45,67 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
   const [translationStatus, setTranslationStatus] = useState<TranslationStatus>('idle');
+  const [language, setLanguage] = useState<LanguageCode>('om');
+  const [isListening, setIsListening] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     fetchChatHistory();
+    
+    // Initialize speech recognition
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      
+      recognitionRef.current.onresult = (event: any) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        
+        if (finalTranscript) {
+          setMessage(prev => prev + finalTranscript);
+        }
+      };
+      
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+      
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+    
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
   }, []);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Update speech recognition language when language changes
+  useEffect(() => {
+    if (recognitionRef.current) {
+      const langConfig = LANGUAGES.find(l => l.code === language);
+      recognitionRef.current.lang = langConfig?.speechCode || 'en-US';
+    }
+  }, [language]);
 
   const fetchChatHistory = async () => {
     try {
@@ -65,6 +132,34 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
     }
   };
 
+  const startListening = () => {
+    if (recognitionRef.current && !isListening) {
+      try {
+        const langConfig = LANGUAGES.find(l => l.code === language);
+        recognitionRef.current.lang = langConfig?.speechCode || 'en-US';
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+      }
+    }
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
+
   const generateAIResponse = async (userMessage: string, retryCount = 0): Promise<string> => {
     try {
       setError(null);
@@ -82,7 +177,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         body: {
           message: userMessage,
           conversationHistory: conversationHistory,
-          language: 'oromo',
+          language: language,
           useSearch: true, // Enable Google Search for real-time info
         }
       });
@@ -123,6 +218,11 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const handleSendMessage = async () => {
     if (!message.trim()) return;
     
+    // Stop listening if active
+    if (isListening) {
+      stopListening();
+    }
+    
     const userMessage = message.trim();
     setMessage('');
     setLoading(true);
@@ -142,7 +242,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
           user_id: user.id,
           message: userMessage,
           response: aiResponse,
-          language: 'om',
+          language: language,
         })
         .select()
         .single();
@@ -153,8 +253,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         setMessages((prev) => [...prev, data]);
       }
 
-      onLogActivity('ai_chat', `Barsiisaa AI gaafate: ${userMessage}`, {
-        language: 'om',
+      onLogActivity('ai_chat', `AI Teacher asked: ${userMessage}`, {
+        language: language,
         response_length: aiResponse.length
       });
 
@@ -173,6 +273,9 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
     }
   };
 
+  const currentLang = LANGUAGES.find(l => l.code === language);
+  const hasSpeechRecognition = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+
   return (
     <div className="app-screen overflow-x-hidden">
       {/* Fixed Header */}
@@ -188,6 +291,28 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         </div>
         
         <div className="flex items-center gap-2">
+          {/* Language Switcher */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-1 h-9 px-2">
+                <Globe className="w-4 h-4" />
+                <span className="text-xs hidden sm:inline">{currentLang?.name}</span>
+                <ChevronDown className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {LANGUAGES.map((lang) => (
+                <DropdownMenuItem
+                  key={lang.code}
+                  onClick={() => setLanguage(lang.code)}
+                  className={language === lang.code ? 'bg-accent' : ''}
+                >
+                  {lang.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
           <Button 
             variant="ghost" 
             size="icon" 
@@ -200,8 +325,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
       </div>
 
       {/* Messages Area */}
-      <ScrollArea className="flex-1 app-content" ref={scrollAreaRef}>
-        <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+      <ScrollArea className="flex-1 app-content overflow-x-hidden" ref={scrollAreaRef}>
+        <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 overflow-x-hidden">
           {messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
             <div className="w-28 h-28 rounded-full overflow-hidden bg-gradient-to-br from-primary to-secondary mb-6 animate-pulse">
@@ -294,8 +419,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
       </ScrollArea>
 
       {/* Input Area - with mobile navigation padding */}
-      <div className="border-t bg-background/95 backdrop-blur-xl p-4 pb-24 md:pb-4 safe-area-bottom">
-        <div className="max-w-3xl mx-auto flex gap-2 overflow-x-hidden">
+      <div className="border-t bg-background/95 backdrop-blur-xl p-4 pb-24 md:pb-4 safe-area-bottom overflow-x-hidden">
+        <div className="max-w-3xl mx-auto flex gap-2 items-end overflow-x-hidden">
           <AutoExpandingTextarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -306,9 +431,28 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
               }
             }}
             placeholder="Ask me anything... (Shift+Enter for new line)"
-            className="rounded-2xl bg-muted border-0"
+            className="rounded-2xl bg-muted border-0 flex-1 min-w-0"
             disabled={loading}
           />
+          
+          {/* Voice Input Button */}
+          {hasSpeechRecognition && (
+            <Button
+              onClick={toggleListening}
+              disabled={loading}
+              size="icon"
+              variant={isListening ? "destructive" : "outline"}
+              className={`rounded-full h-11 w-11 flex-shrink-0 transition-all ${
+                isListening ? 'animate-pulse ring-2 ring-destructive ring-offset-2' : ''
+              }`}
+            >
+              {isListening ? (
+                <MicOff className="w-5 h-5" />
+              ) : (
+                <Mic className="w-5 h-5" />
+              )}
+            </Button>
+          )}
           
           <Button
             onClick={handleSendMessage}
@@ -319,6 +463,22 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
             <Send className="w-5 h-5" />
           </Button>
         </div>
+        
+        {/* Listening Indicator */}
+        {isListening && (
+          <div className="max-w-3xl mx-auto mt-2">
+            <div className="flex items-center gap-2 text-xs text-destructive animate-pulse">
+              <div className="flex gap-0.5">
+                <span className="w-1 h-3 bg-destructive rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+                <span className="w-1 h-4 bg-destructive rounded-full animate-pulse" style={{ animationDelay: '100ms' }} />
+                <span className="w-1 h-2 bg-destructive rounded-full animate-pulse" style={{ animationDelay: '200ms' }} />
+                <span className="w-1 h-5 bg-destructive rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+                <span className="w-1 h-3 bg-destructive rounded-full animate-pulse" style={{ animationDelay: '400ms' }} />
+              </div>
+              <span>Listening in {currentLang?.name}...</span>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
