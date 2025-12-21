@@ -280,6 +280,7 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
     
     const userMessage = message.trim();
     setMessage('');
+    lastTranscriptRef.current = ''; // Reset voice transcript on send to prevent duplicates
     setLoading(true);
     setTranslationStatus('understanding');
 

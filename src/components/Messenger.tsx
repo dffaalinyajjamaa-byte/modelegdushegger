@@ -354,6 +354,7 @@ export default function Messenger({ user, onBack }: MessengerProps) {
 
     try {
       stopTyping(); // Stop typing when sending
+      lastTranscriptRef.current = ''; // Reset voice transcript on send to prevent duplicates
       
       await supabase.from('messages').insert({
         chat_id: selectedChat.chat_id,
@@ -580,14 +581,14 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   const showChatScreen = !isMobile || selectedChat;
 
   return (
-    <div className="fixed inset-0 flex overflow-hidden bg-background">
+    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background h-[100dvh]">
       {/* Full width layout on PC, responsive on mobile */}
       <div 
-        className="flex w-full h-screen overflow-hidden bg-background"
+        className="flex w-full flex-1 overflow-hidden bg-background min-h-0"
       >
       {/* Left Sidebar - Chat List */}
       {showChatList && (
-        <div className={`${isMobile ? 'w-full h-full' : 'w-96 h-full'} border-r border-border/50 flex flex-col bg-background`}>
+        <div className={`${isMobile ? 'w-full' : 'w-96'} h-full border-r border-border/50 flex flex-col bg-background overflow-y-auto overflow-x-hidden`}>
         {/* Header */}
         <div className="p-4 border-b border-border/50 flex-shrink-0">
           <div className="flex items-center justify-between mb-4">

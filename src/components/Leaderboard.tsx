@@ -115,8 +115,9 @@ export default function Leaderboard({ currentUserId }: LeaderboardProps) {
           </Select>
         </div>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[500px] pr-4">
+      <CardContent className="overflow-x-auto">
+        <div className="min-w-[350px]">
+        <ScrollArea className="h-[calc(100vh-280px)] min-h-[300px] max-h-[500px] pr-4">
           <div className="space-y-3">
             {loading ? (
               <p className="text-center text-muted-foreground py-8">Loading...</p>
@@ -172,6 +173,7 @@ export default function Leaderboard({ currentUserId }: LeaderboardProps) {
             )}
           </div>
         </ScrollArea>
+        </div>
       </CardContent>
     </Card>
   );

@@ -40,8 +40,8 @@ serve(async (req) => {
     // Upgrade to WebSocket
     const { socket: clientSocket, response } = Deno.upgradeWebSocket(req);
     
-    // Correct Gemini Live API WebSocket URL
-    const geminiWsUrl = `wss://generativelanguage.googleapis.com/${API_VERSION}/models/${MODEL}:streamGenerateContent?key=${GEMINI_API_KEY}`;
+// Correct Gemini Live API WebSocket URL - using BidiGenerateContent for bidirectional audio
+    const geminiWsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.${API_VERSION}.GenerativeService.BidiGenerateContent?key=${GEMINI_API_KEY}`;
     
     let geminiSocket: WebSocket | null = null;
     let isConnected = false;
