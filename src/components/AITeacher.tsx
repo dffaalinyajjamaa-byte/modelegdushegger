@@ -293,8 +293,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         </div>
       </ScrollArea>
 
-      {/* Input Area */}
-      <div className="border-t bg-background/95 backdrop-blur-xl p-4">
+      {/* Input Area - with mobile navigation padding */}
+      <div className="border-t bg-background/95 backdrop-blur-xl p-4 pb-20 md:pb-4">
         <div className="max-w-3xl mx-auto flex gap-2">
           <AutoExpandingTextarea
             value={message}

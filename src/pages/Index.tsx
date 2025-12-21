@@ -15,53 +15,35 @@ const Index = () => {
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | null = null;
     let mounted = true;
-    let debounceTimer: NodeJS.Timeout | null = null;
 
-    const initAuth = async () => {
-      try {
-        // Set up auth state listener with debouncing to prevent token refresh loops
-        const { data } = supabase.auth.onAuthStateChange(
-          (event, session) => {
-            if (!mounted) return;
-            
-            // Clear any pending debounce
-            if (debounceTimer) clearTimeout(debounceTimer);
-            
-            // Debounce auth state changes to prevent multiple simultaneous updates
-            debounceTimer = setTimeout(() => {
-              if (mounted) {
-                setSession(session);
-                setUser(session?.user ?? null);
-                setLoading(false);
-              }
-            }, 300);
-          }
-        );
-        subscription = data.subscription;
-
-        // Check for existing session
-        const { data: sessionData, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Session retrieval error:', error);
-        }
-        
-        if (mounted) {
-          setSession(sessionData?.session ?? null);
-          setUser(sessionData?.session?.user ?? null);
+    // Set up auth state listener FIRST (no debouncing - was causing redirect issues)
+    const { data } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (!mounted) return;
+        setSession(session);
+        setUser(session?.user ?? null);
+        // Only set loading false after we have a definitive auth state
+        if (event !== 'INITIAL_SESSION') {
           setLoading(false);
         }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-        if (mounted) setLoading(false);
       }
-    };
+    );
+    subscription = data.subscription;
 
-    initAuth();
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: sessionData, error }) => {
+      if (error) {
+        console.error('Session retrieval error:', error);
+      }
+      if (mounted) {
+        setSession(sessionData?.session ?? null);
+        setUser(sessionData?.session?.user ?? null);
+        setLoading(false);
+      }
+    });
 
     return () => {
       mounted = false;
-      if (debounceTimer) clearTimeout(debounceTimer);
       subscription?.unsubscribe();
     };
   }, []);
