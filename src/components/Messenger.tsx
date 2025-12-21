@@ -808,8 +808,8 @@ export default function Messenger({ user, onBack }: MessengerProps) {
               <div ref={messagesEndRef} />
             </ScrollArea>
 
-            {/* Input Area */}
-            <div className="p-4 border-t border-border/50 bg-background/95 backdrop-blur-sm">
+            {/* Input Area - with mobile navigation padding */}
+            <div className="p-4 pb-24 md:pb-4 border-t border-border/50 bg-background/95 backdrop-blur-sm safe-area-bottom">
               {/* Typing Indicator */}
               {getTypingUserNames() && (
                 <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground animate-pulse">
