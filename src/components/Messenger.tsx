@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useScreenSize } from '@/hooks/use-screen-size';
 import { useTypingIndicator } from '@/hooks/use-typing-indicator';
 import { 
-  Send, Search, Plus, Image as ImageIcon, Paperclip, Mic,
+  Send, Search, Plus, Image as ImageIcon, Paperclip, Mic, MicOff,
   MoreVertical, Check, CheckCheck, Users, UserPlus, AlertCircle, 
   Ban, Pin, X, ArrowLeft, Reply, MessageSquare, SmilePlus
 } from 'lucide-react';
@@ -86,9 +86,11 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   const [threadMessage, setThreadMessage] = useState<Message | null>(null);
   const [isThreadOpen, setIsThreadOpen] = useState(false);
   const [messageReactions, setMessageReactions] = useState<Record<string, Array<{emoji: string; count: number; reacted: boolean}>>>({});
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recordingIntervalRef = useRef<number>();
+  const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
   const { isMobile, isLandscape } = useScreenSize();
   
@@ -117,6 +119,50 @@ export default function Messenger({ user, onBack }: MessengerProps) {
     // Load pinned chats from localStorage
     const saved = localStorage.getItem(`pinnedChats_${user?.id}`);
     if (saved) setPinnedChats(JSON.parse(saved));
+
+    // Initialize speech recognition for voice input
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = true;
+      recognitionRef.current.interimResults = true;
+      recognitionRef.current.lang = 'en-US';
+      
+      recognitionRef.current.onresult = (event: any) => {
+        let finalTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript.trim();
+          }
+        }
+        
+        // Only add final transcripts, avoiding duplicates
+        if (finalTranscript) {
+          setNewMessage(prev => {
+            const trimmedPrev = prev.trim();
+            if (trimmedPrev.endsWith(finalTranscript)) return prev;
+            return trimmedPrev ? `${trimmedPrev} ${finalTranscript}` : finalTranscript;
+          });
+        }
+      };
+      
+      recognitionRef.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        setIsListening(false);
+      };
+      
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+    
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
   }, [user]);
 
   useEffect(() => {
@@ -457,6 +503,35 @@ export default function Messenger({ user, onBack }: MessengerProps) {
     });
     toast({ title: "User blocked", description: "You will no longer receive messages from this user" });
   };
+
+  // Voice input controls
+  const startListening = () => {
+    if (recognitionRef.current && !isListening) {
+      try {
+        recognitionRef.current.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Error starting speech recognition:', error);
+      }
+    }
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
+
+  const hasSpeechRecognition = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
 
   const getChatUser = (chat: Chat) => {
     const otherUserId = chat.members.find(m => m !== user.id);
@@ -847,12 +922,25 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                 </div>
               )}
 
+              {/* Listening Indicator */}
+              {isListening && (
+                <div className="mb-2 flex items-center gap-2 text-xs text-destructive animate-pulse">
+                  <div className="flex gap-0.5">
+                    <span className="w-1 h-3 bg-destructive rounded-full animate-pulse" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1 h-4 bg-destructive rounded-full animate-pulse" style={{ animationDelay: '100ms' }} />
+                    <span className="w-1 h-3 bg-destructive rounded-full animate-pulse" style={{ animationDelay: '200ms' }} />
+                    <span className="w-1 h-5 bg-destructive rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
+                  </div>
+                  <span>Listening... Tap mic to stop</span>
+                </div>
+              )}
+
               <div className="flex items-center gap-2">
                 <Button 
                   size="icon" 
                   variant="ghost" 
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex-shrink-0"
+                  className="flex-shrink-0 h-10 w-10 rounded-full"
                 >
                   <Paperclip className="w-5 h-5" />
                 </Button>
@@ -865,7 +953,7 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                     }}
                     onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                     placeholder={replyingTo ? "Reply to message..." : "Write a message..."}
-                    className="pr-10 rounded-full bg-muted border-none focus-visible:ring-1"
+                    className="pr-10 rounded-2xl bg-muted border-0 focus-visible:ring-1"
                   />
                   <Button
                     size="icon"
@@ -876,11 +964,30 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                     <SmilePlus className="w-4 h-4" />
                   </Button>
                 </div>
+                
+                {/* Voice Input Button */}
+                {hasSpeechRecognition && (
+                  <Button
+                    onClick={toggleListening}
+                    size="icon"
+                    variant={isListening ? "destructive" : "outline"}
+                    className={`flex-shrink-0 h-10 w-10 rounded-full transition-all ${
+                      isListening ? 'animate-pulse ring-2 ring-destructive ring-offset-2' : ''
+                    }`}
+                  >
+                    {isListening ? (
+                      <MicOff className="w-5 h-5" />
+                    ) : (
+                      <Mic className="w-5 h-5" />
+                    )}
+                  </Button>
+                )}
+                
                 <Button 
                   onClick={handleSendMessage} 
                   disabled={!newMessage.trim()}
                   size="icon"
-                  className="flex-shrink-0 rounded-full"
+                  className="flex-shrink-0 h-10 w-10 rounded-full"
                 >
                   <Send className="w-4 h-4" />
                 </Button>

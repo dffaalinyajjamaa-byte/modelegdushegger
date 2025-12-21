@@ -62,19 +62,22 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
       
       recognitionRef.current.onresult = (event: any) => {
         let finalTranscript = '';
-        let interimTranscript = '';
         
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += transcript;
-          } else {
-            interimTranscript += transcript;
+            finalTranscript += transcript.trim();
           }
         }
         
+        // Only add final transcripts, avoiding duplicates
         if (finalTranscript) {
-          setMessage(prev => prev + finalTranscript);
+          setMessage(prev => {
+            const trimmedPrev = prev.trim();
+            // Prevent duplicating if the transcript was already added
+            if (trimmedPrev.endsWith(finalTranscript)) return prev;
+            return trimmedPrev ? `${trimmedPrev} ${finalTranscript}` : finalTranscript;
+          });
         }
       };
       
