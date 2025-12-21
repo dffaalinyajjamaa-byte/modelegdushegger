@@ -91,6 +91,7 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const recordingIntervalRef = useRef<number>();
   const recognitionRef = useRef<any>(null);
+  const lastTranscriptRef = useRef<string>('');
   const { toast } = useToast();
   const { isMobile, isLandscape } = useScreenSize();
   
@@ -132,17 +133,21 @@ export default function Messenger({ user, onBack }: MessengerProps) {
         let finalTranscript = '';
         
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript.trim();
+          const transcript = event.results[i][0].transcript.trim();
+          if (event.results[i].isFinal && transcript) {
+            finalTranscript = transcript;
           }
         }
         
-        // Only add final transcripts, avoiding duplicates
-        if (finalTranscript) {
+        // Only add final transcripts, avoiding duplicates with improved tracking
+        if (finalTranscript && finalTranscript !== lastTranscriptRef.current) {
+          lastTranscriptRef.current = finalTranscript;
           setNewMessage(prev => {
             const trimmedPrev = prev.trim();
-            if (trimmedPrev.endsWith(finalTranscript)) return prev;
+            // Check if transcript already exists at the end
+            if (trimmedPrev.toLowerCase().endsWith(finalTranscript.toLowerCase())) {
+              return prev;
+            }
             return trimmedPrev ? `${trimmedPrev} ${finalTranscript}` : finalTranscript;
           });
         }
@@ -508,6 +513,8 @@ export default function Messenger({ user, onBack }: MessengerProps) {
   const startListening = () => {
     if (recognitionRef.current && !isListening) {
       try {
+        // Reset last transcript when starting new session
+        lastTranscriptRef.current = '';
         recognitionRef.current.start();
         setIsListening(true);
       } catch (error) {

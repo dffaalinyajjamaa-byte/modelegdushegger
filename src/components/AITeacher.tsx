@@ -5,13 +5,14 @@ import { AutoExpandingTextarea } from '@/components/ui/auto-expanding-textarea';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { User } from '@supabase/supabase-js';
-import { Send, Sparkles, Plus, Mic, MicOff, Globe, ChevronDown } from 'lucide-react';
+import { Send, Sparkles, Plus, Mic, MicOff, Globe, ChevronDown, Volume2, VolumeX, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useToast } from '@/hooks/use-toast';
 import aiTeacherRobot from '@/assets/ai-teacher-robot.png';
 
 interface AITeacherProps {
@@ -47,8 +48,13 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const [translationStatus, setTranslationStatus] = useState<TranslationStatus>('idle');
   const [language, setLanguage] = useState<LanguageCode>('om');
   const [isListening, setIsListening] = useState(false);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
+  const [loadingTTS, setLoadingTTS] = useState<string | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lastTranscriptRef = useRef<string>('');
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchChatHistory();
@@ -64,18 +70,21 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         let finalTranscript = '';
         
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript.trim();
+          const transcript = event.results[i][0].transcript.trim();
+          if (event.results[i].isFinal && transcript) {
+            finalTranscript = transcript;
           }
         }
         
-        // Only add final transcripts, avoiding duplicates
-        if (finalTranscript) {
+        // Only add final transcripts, avoiding duplicates with improved tracking
+        if (finalTranscript && finalTranscript !== lastTranscriptRef.current) {
+          lastTranscriptRef.current = finalTranscript;
           setMessage(prev => {
             const trimmedPrev = prev.trim();
-            // Prevent duplicating if the transcript was already added
-            if (trimmedPrev.endsWith(finalTranscript)) return prev;
+            // Check if transcript already exists at the end
+            if (trimmedPrev.toLowerCase().endsWith(finalTranscript.toLowerCase())) {
+              return prev;
+            }
             return trimmedPrev ? `${trimmedPrev} ${finalTranscript}` : finalTranscript;
           });
         }
@@ -138,6 +147,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const startListening = () => {
     if (recognitionRef.current && !isListening) {
       try {
+        // Reset last transcript when starting new session
+        lastTranscriptRef.current = '';
         const langConfig = LANGUAGES.find(l => l.code === language);
         recognitionRef.current.lang = langConfig?.speechCode || 'en-US';
         recognitionRef.current.start();
@@ -160,6 +171,83 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
       stopListening();
     } else {
       startListening();
+    }
+  };
+
+  // Text-to-Speech function using ElevenLabs
+  const handleSpeak = async (text: string, messageId: string) => {
+    // If already speaking this message, stop it
+    if (speakingMessageId === messageId) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      setSpeakingMessageId(null);
+      return;
+    }
+
+    // Stop any currently playing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+
+    setLoadingTTS(messageId);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ text, language }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`TTS request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Play audio using data URI
+      const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+      
+      audio.onended = () => {
+        setSpeakingMessageId(null);
+        audioRef.current = null;
+      };
+      
+      audio.onerror = () => {
+        setSpeakingMessageId(null);
+        audioRef.current = null;
+        toast({
+          title: "Audio playback error",
+          variant: "destructive"
+        });
+      };
+
+      setSpeakingMessageId(messageId);
+      setLoadingTTS(null);
+      await audio.play();
+    } catch (error) {
+      console.error('TTS error:', error);
+      setLoadingTTS(null);
+      toast({
+        title: "Could not play audio",
+        description: error instanceof Error ? error.message : "Please try again",
+        variant: "destructive"
+      });
     }
   };
 
@@ -379,7 +467,25 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
                     <img src={aiTeacherRobot} alt="AI Teacher" className="w-full h-full object-cover" />
                   </div>
                   <div className="w-full max-w-[85%] flex flex-col">
-                    <p className="text-xs font-semibold mb-1 text-muted-foreground px-2">AI Teacher</p>
+                    <div className="flex items-center gap-2 mb-1 px-2">
+                      <p className="text-xs font-semibold text-muted-foreground">AI Teacher</p>
+                      {/* TTS Button */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 rounded-full hover:bg-primary/10 transition-all"
+                        onClick={() => handleSpeak(msg.response, msg.id)}
+                        disabled={loadingTTS === msg.id}
+                      >
+                        {loadingTTS === msg.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                        ) : speakingMessageId === msg.id ? (
+                          <VolumeX className="h-3.5 w-3.5 text-destructive" />
+                        ) : (
+                          <Volume2 className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+                        )}
+                      </Button>
+                    </div>
                     <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3 w-full">
                       <p className="text-sm whitespace-pre-wrap break-words">{msg.response}</p>
                     </div>

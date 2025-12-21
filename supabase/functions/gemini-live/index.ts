@@ -5,9 +5,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Gemini Live API configuration for real-time voice-to-voice with native audio
-const MODEL = "models/gemini-2.5-flash-preview-native-audio-dialog";
-const API_VERSION = "v1alpha";
+// Gemini Live API configuration - using correct model and endpoint
+const MODEL = "gemini-2.0-flash-live-001";
+const API_VERSION = "v1beta";
 
 serve(async (req) => {
   const { headers } = req;
@@ -20,7 +20,6 @@ serve(async (req) => {
 
   // Check if WebSocket upgrade is requested
   if (upgradeHeader.toLowerCase() !== "websocket") {
-    // Non-WebSocket request - return info or handle regular HTTP
     return new Response(JSON.stringify({ 
       message: "Gemini Live API WebSocket endpoint",
       usage: "Connect via WebSocket for real-time audio streaming"
@@ -41,11 +40,12 @@ serve(async (req) => {
     // Upgrade to WebSocket
     const { socket: clientSocket, response } = Deno.upgradeWebSocket(req);
     
-    // Connect to Gemini Live API
-    const geminiWsUrl = `wss://generativelanguage.googleapis.com/${API_VERSION}/${MODEL}:streamGenerateContent?key=${GEMINI_API_KEY}`;
+    // Correct Gemini Live API WebSocket URL
+    const geminiWsUrl = `wss://generativelanguage.googleapis.com/${API_VERSION}/models/${MODEL}:streamGenerateContent?key=${GEMINI_API_KEY}`;
     
     let geminiSocket: WebSocket | null = null;
     let isConnected = false;
+    let setupSent = false;
 
     clientSocket.onopen = () => {
       console.log("Client WebSocket connected");
@@ -57,16 +57,16 @@ serve(async (req) => {
         console.log("Connected to Gemini Live API");
         isConnected = true;
         
-        // Send initial setup message with Oromo-only system instruction and proper pronunciation
+        // Send initial setup message with correct format for Gemini Live API
         const setupMessage = {
           setup: {
-            model: MODEL,
+            model: `models/${MODEL}`,
             generationConfig: {
               responseModalities: ["AUDIO"],
               speechConfig: {
                 voiceConfig: {
                   prebuiltVoiceConfig: {
-                    voiceName: "Zephyr" // Better for natural speech
+                    voiceName: "Aoede"
                   }
                 }
               }
@@ -84,29 +84,15 @@ SEERA MURTEESSAA - AFAAN OROMOO QOFA:
 - Barsiisaa tolaa ta'ii barattootaaf deggersa gochuu
 
 SEERA SAGALEE OROMO - PRONUNCIATION RULES:
-Afaan Oromoo akka Oromoon dubbatu sirriitti sagalee-si:
 - 'dh' = sagalee laafaa 'd' (fkn: "dhugaa" - dhu-gaa)
 - 'ch' = akka Ingiliffaa "church" keessa (fkn: "chala")
 - 'ph' = 'p' hafuura waliin
 - 'ny' = akka Spanish 'ñ' (fkn: "nyaata")
 - Dubbachiiftuu dachaa = sagalee dheeraa (aa, ee, ii, oo, uu)
-  - "baraa" = ba-raa (dheeraa)
-  - "bara" = ba-ra (gabaabaa)
-- 'q' = glottal stop (sagalee qoonqoo keessaa)
-- 'x' = ejective 't' (sagalee cimdii)
-
-FAKKEENYA SAGALEE:
-- "Akkam" = Ak-kam (NOT "ah-kam")
-- "Nagaa" = Na-gaa (dheeraa)
-- "Galatoomaa" = Ga-la-too-maa
-- "Fayyaa" = Fay-yaa
-- "Qabsoo" = Qab-soo (q = glottal)
 
 CRITICAL RULE:
 - Input: Accept ALL languages
 - Output: ONLY Afaan Oromoo (Oromo language)
-- Pronunciation: NATURAL Oromo sounds, NOT English pronunciation
-- Auto-translate everything to Oromo
 - NEVER respond in English
 - Speak naturally like a native Oromo speaker`
               }]
@@ -116,6 +102,8 @@ CRITICAL RULE:
         
         if (geminiSocket && geminiSocket.readyState === WebSocket.OPEN) {
           geminiSocket.send(JSON.stringify(setupMessage));
+          setupSent = true;
+          console.log("Setup message sent to Gemini");
         }
         
         // Notify client that connection is ready
@@ -125,13 +113,19 @@ CRITICAL RULE:
       geminiSocket.onmessage = (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data);
-          console.log("Received from Gemini:", data.type || "audio data");
+          console.log("Received from Gemini:", JSON.stringify(data).substring(0, 200));
+          
+          // Handle setup complete
+          if (data.setupComplete) {
+            console.log("Gemini setup complete");
+            clientSocket.send(JSON.stringify({ type: 'setup_complete' }));
+            return;
+          }
           
           // Forward audio data to client
           if (data.serverContent?.modelTurn?.parts) {
             for (const part of data.serverContent.modelTurn.parts) {
               if (part.inlineData?.data) {
-                // Send audio data to client
                 clientSocket.send(JSON.stringify({
                   type: 'audio',
                   data: part.inlineData.data,
@@ -139,7 +133,6 @@ CRITICAL RULE:
                 }));
               }
               if (part.text) {
-                // Send text response
                 clientSocket.send(JSON.stringify({
                   type: 'text',
                   content: part.text
@@ -153,6 +146,15 @@ CRITICAL RULE:
             clientSocket.send(JSON.stringify({ type: 'turn_complete' }));
           }
           
+          // Handle errors from Gemini
+          if (data.error) {
+            console.error("Gemini error:", data.error);
+            clientSocket.send(JSON.stringify({ 
+              type: 'error', 
+              message: data.error.message || 'Gemini API error' 
+            }));
+          }
+          
         } catch (e) {
           console.error("Error processing Gemini message:", e);
         }
@@ -160,14 +162,20 @@ CRITICAL RULE:
 
       geminiSocket.onerror = (error: Event) => {
         console.error("Gemini WebSocket error:", error);
-        clientSocket.send(JSON.stringify({ type: 'error', message: 'Connection error to AI' }));
+        clientSocket.send(JSON.stringify({ 
+          type: 'error', 
+          message: 'Connection error to AI. Please try again.' 
+        }));
       };
 
-      geminiSocket.onclose = () => {
-        console.log("Gemini WebSocket closed");
+      geminiSocket.onclose = (event: CloseEvent) => {
+        console.log("Gemini WebSocket closed:", event.code, event.reason);
         isConnected = false;
         if (clientSocket.readyState === WebSocket.OPEN) {
-          clientSocket.send(JSON.stringify({ type: 'disconnected' }));
+          clientSocket.send(JSON.stringify({ 
+            type: 'disconnected',
+            reason: event.reason || 'Connection closed'
+          }));
         }
       };
     };
@@ -183,7 +191,7 @@ CRITICAL RULE:
         console.log("Received from client:", data.type);
         
         if (data.type === 'audio') {
-          // Forward audio data to Gemini
+          // Forward audio data to Gemini with correct format
           const audioMessage = {
             realtimeInput: {
               mediaChunks: [{
