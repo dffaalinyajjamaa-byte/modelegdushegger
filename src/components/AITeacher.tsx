@@ -174,81 +174,45 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
     }
   };
 
-  // Text-to-Speech function using ElevenLabs
-  const handleSpeak = async (text: string, messageId: string) => {
+  // Text-to-Speech function using browser's free Web Speech API
+  const handleSpeak = (text: string, messageId: string) => {
     // If already speaking this message, stop it
     if (speakingMessageId === messageId) {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
+      window.speechSynthesis.cancel();
       setSpeakingMessageId(null);
       return;
     }
 
-    // Stop any currently playing audio
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    
+    const cleanText = text.replace(/[*#_`]/g, ''); // Remove markdown
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    
+    // Set language based on selection
+    const langMap: Record<string, string> = {
+      'om': 'om-ET', // Oromo
+      'en': 'en-US', // English
+      'am': 'am-ET'  // Amharic
+    };
+    utterance.lang = langMap[language] || 'en-US';
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
 
-    setLoadingTTS(messageId);
+    utterance.onend = () => {
+      setSpeakingMessageId(null);
+    };
 
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
-          body: JSON.stringify({ text, language }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`TTS request failed: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      // Play audio using data URI
-      const audioUrl = `data:audio/mpeg;base64,${data.audioContent}`;
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
-      
-      audio.onended = () => {
-        setSpeakingMessageId(null);
-        audioRef.current = null;
-      };
-      
-      audio.onerror = () => {
-        setSpeakingMessageId(null);
-        audioRef.current = null;
-        toast({
-          title: "Audio playback error",
-          variant: "destructive"
-        });
-      };
-
-      setSpeakingMessageId(messageId);
-      setLoadingTTS(null);
-      await audio.play();
-    } catch (error) {
-      console.error('TTS error:', error);
-      setLoadingTTS(null);
+    utterance.onerror = () => {
+      setSpeakingMessageId(null);
       toast({
-        title: "Could not play audio",
-        description: error instanceof Error ? error.message : "Please try again",
+        title: "Speech synthesis failed",
         variant: "destructive"
       });
-    }
+    };
+
+    setSpeakingMessageId(messageId);
+    window.speechSynthesis.speak(utterance);
   };
 
   const generateAIResponse = async (userMessage: string, retryCount = 0): Promise<string> => {
