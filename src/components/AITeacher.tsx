@@ -112,6 +112,9 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
     }
   };
 
+  // Audio context for PCM playback
+  const audioContextRef = useRef<AudioContext | null>(null);
+
   // Text-to-Speech function using Gemini TTS edge function
   const handleSpeak = async (text: string, messageId: string) => {
     // If already speaking this message, stop it
@@ -119,6 +122,10 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
       if (audioRef.current) {
         audioRef.current.pause();
         audioRef.current = null;
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+        audioContextRef.current = null;
       }
       setSpeakingMessageId(null);
       return;
@@ -128,6 +135,10 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
     }
     
     setLoadingTTS(messageId);
@@ -142,31 +153,77 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
 
       if (error) throw error;
 
-      if (data?.audioContent) {
-        // Play the audio from base64
-        const audioUrl = `data:audio/mp3;base64,${data.audioContent}`;
-        const audio = new Audio(audioUrl);
-        audioRef.current = audio;
+      if (data?.audioData) {
+        // Handle PCM audio from Gemini native audio
+        const mimeType = data.mimeType || 'audio/pcm;rate=24000';
         
-        audio.onended = () => {
-          setSpeakingMessageId(null);
-          audioRef.current = null;
-        };
+        if (mimeType.includes('pcm')) {
+          // Decode base64 to bytes
+          const binaryString = atob(data.audioData);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+          
+          // Parse sample rate from mime type
+          const rateMatch = mimeType.match(/rate=(\d+)/);
+          const sampleRate = rateMatch ? parseInt(rateMatch[1]) : 24000;
+          
+          // Create audio context and play PCM
+          const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+          const ctx = new AudioContextClass({ sampleRate });
+          audioContextRef.current = ctx;
+          
+          // Convert Int16 PCM to Float32
+          const adjData = bytes.length % 2 !== 0 ? bytes.slice(0, bytes.length - 1) : bytes;
+          const dataInt16 = new Int16Array(adjData.buffer);
+          const frameCount = dataInt16.length;
+          const buffer = ctx.createBuffer(1, frameCount, sampleRate);
+          const channelData = buffer.getChannelData(0);
+          
+          for (let i = 0; i < frameCount; i++) {
+            channelData[i] = dataInt16[i] / 32768.0;
+          }
+          
+          const source = ctx.createBufferSource();
+          source.buffer = buffer;
+          source.connect(ctx.destination);
+          
+          source.onended = () => {
+            setSpeakingMessageId(null);
+            ctx.close();
+            audioContextRef.current = null;
+          };
+          
+          setSpeakingMessageId(messageId);
+          source.start();
+        } else {
+          // Handle MP3/other formats
+          const audioUrl = `data:${mimeType};base64,${data.audioData}`;
+          const audio = new Audio(audioUrl);
+          audioRef.current = audio;
+          
+          audio.onended = () => {
+            setSpeakingMessageId(null);
+            audioRef.current = null;
+          };
 
-        audio.onerror = () => {
-          setSpeakingMessageId(null);
-          audioRef.current = null;
-          toast({
-            title: "Audio playback failed",
-            variant: "destructive"
-          });
-        };
+          audio.onerror = () => {
+            setSpeakingMessageId(null);
+            audioRef.current = null;
+            toast({
+              title: "Audio playback failed",
+              variant: "destructive"
+            });
+          };
 
-        setSpeakingMessageId(messageId);
-        await audio.play();
-      } else if (data?.text) {
+          setSpeakingMessageId(messageId);
+          await audio.play();
+        }
+      } else if (data?.text || data?.fallback) {
         // Fallback to browser TTS if Gemini returns text instead of audio
-        const utterance = new SpeechSynthesisUtterance(data.text);
+        const textToSpeak = data.text || cleanText;
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
         const langMap: Record<string, string> = {
           'om': 'om-ET',
           'en': 'en-US',
