@@ -6,8 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Use Gemini 2.5 native audio model for true Oromo pronunciation
-const MODEL = "gemini-2.5-flash-preview-native-audio-dialog";
+// Use Gemini 2.5 flash with native audio for Oromo TTS
+const AUDIO_MODEL = "gemini-2.5-flash-preview-native-audio-dialog";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voice } = await req.json();
+    const { text, language, voice } = await req.json();
     
     if (!text) {
       throw new Error('Text is required');
@@ -26,14 +26,17 @@ serve(async (req) => {
       throw new Error('GEMINI_API_KEY is not configured');
     }
 
-    console.log("Gemini Native Audio TTS request");
-    console.log("Text length:", text.length);
-    console.log("Voice:", voice || 'Puck');
+    console.log("[Gemini TTS] Request received");
+    console.log("[Gemini TTS] Text length:", text.length);
+    console.log("[Gemini TTS] Language:", language || 'om');
 
-    const selectedVoice = voice || 'Puck';
+    const selectedVoice = voice || 'Kore';
+    const lang = language || 'om';
     
-    // System instruction for native Oromo pronunciation
-    const systemInstruction = `You are an Oromo language speaker generating SPEECH ONLY.
+    // Build system instruction based on language
+    let systemInstruction = '';
+    if (lang === 'om') {
+      systemInstruction = `You are an Oromo language speaker generating SPEECH ONLY.
 
 CRITICAL PRONUNCIATION RULES FOR OROMO:
 - 'dh' = soft d sound (like in "dhugaa" - pronounced "dhu-gaa")
@@ -50,11 +53,18 @@ SPEAK LIKE A NATIVE OROMO SPEAKER:
 - Clear pronunciation of all Oromo sounds
 - Do NOT pronounce like English - use OROMO sounds
 
-Output speech audio only. No text response.`;
+Read the following text aloud in native Oromo pronunciation:`;
+    } else if (lang === 'am') {
+      systemInstruction = `You are an Amharic language speaker generating SPEECH ONLY.
+Read the following text aloud in native Amharic pronunciation with proper Ethiopian accent:`;
+    } else {
+      systemInstruction = `You are an English speaker generating SPEECH ONLY.
+Read the following text aloud clearly:`;
+    }
 
-    // Use Gemini with native audio output for proper Oromo pronunciation
+    // Use Gemini with native audio output
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1alpha/models/${MODEL}:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1alpha/models/${AUDIO_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -63,7 +73,7 @@ Output speech audio only. No text response.`;
             parts: [{ text: systemInstruction }]
           },
           contents: [{
-            parts: [{ text: `Speak this text in native Oromo pronunciation:\n\n${text}` }]
+            parts: [{ text: text }]
           }],
           generationConfig: {
             responseModalities: ["AUDIO"],
@@ -79,11 +89,18 @@ Output speech audio only. No text response.`;
 
     if (!response.ok) {
       const error = await response.text();
-      console.error("Gemini API error:", response.status, error);
+      console.error("[Gemini TTS] API error:", response.status, error);
       
-      // Fallback to text translation if native audio fails
-      console.log("Falling back to text-only mode");
-      return await fallbackToText(text, GEMINI_API_KEY, selectedVoice);
+      // Fallback to text-based response for browser TTS
+      console.log("[Gemini TTS] Falling back to text mode");
+      return new Response(
+        JSON.stringify({ 
+          text: text,
+          language: lang,
+          fallback: true
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const data = await response.json();
@@ -92,92 +109,39 @@ Output speech audio only. No text response.`;
     const audioData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
     
     if (audioData?.data) {
-      console.log("Native audio generated successfully, format:", audioData.mimeType);
+      console.log("[Gemini TTS] Audio generated successfully");
+      console.log("[Gemini TTS] MIME type:", audioData.mimeType);
+      
+      // Convert PCM to playable format
+      const mimeType = audioData.mimeType || 'audio/pcm;rate=24000';
       
       return new Response(
         JSON.stringify({ 
           audioData: audioData.data,
-          mimeType: audioData.mimeType || 'audio/pcm;rate=24000',
-          voice: selectedVoice,
-          language: 'oromo'
+          mimeType: mimeType,
+          language: lang,
+          voice: selectedVoice
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    // If no audio in response, fall back to text
-    console.log("No audio data in response, falling back to text");
-    return await fallbackToText(text, GEMINI_API_KEY, selectedVoice);
+    // If no audio in response, return text for browser TTS
+    console.log("[Gemini TTS] No audio data, returning text");
+    return new Response(
+      JSON.stringify({ 
+        text: text,
+        language: lang,
+        fallback: true
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
-    console.error("Error in gemini-tts function:", error);
+    console.error("[Gemini TTS] Error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });
-
-// Fallback function to return Oromo text for Web Speech API
-async function fallbackToText(text: string, apiKey: string, voice: string) {
-  try {
-    const languageInstruction = `Afaan Oromootiin QOFA deebisi fi akka Oromoon dubbatu sirriitti sagalee-si.
-
-SEERA SAGALEE:
-- 'dh' = sagalee laafaa (fkn: dhugaa = dhu-gaa)
-- Dubbachiiftuu dachaa = dheeraa (aa, ee, ii, oo, uu)
-- 'q' = glottal stop
-- 'x' = ejective 't'
-- 'ny' = akka Spanish 'ñ'
-
-Barreeffama kana gara Afaan Oromoo jijjiiri.`;
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `${languageInstruction}\n\nBarreeffama kana Afaan Oromootiin qopheessi:\n\n${text}`
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.3,
-            maxOutputTokens: 1024,
-          }
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error('Fallback text generation failed');
-    }
-
-    const data = await response.json();
-    const processedText = data.candidates?.[0]?.content?.parts?.[0]?.text || text;
-
-    return new Response(
-      JSON.stringify({ 
-        text: processedText,
-        voice: voice,
-        language: 'oromo',
-        fallback: true
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
-    console.error("Fallback error:", error);
-    // Return original text as last resort
-    return new Response(
-      JSON.stringify({ 
-        text: text,
-        voice: voice,
-        language: 'oromo',
-        fallback: true
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-}

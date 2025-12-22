@@ -3,7 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle, Mic, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee } from 'lucide-react';
+import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import TaskManager from './TaskManager';
 import VideoViewer from './VideoViewer';
@@ -40,7 +40,7 @@ import {
 
 // Lazy load heavy components for better performance
 const AITeacher = lazy(() => import('./AITeacher'));
-const LiveTeacher = lazy(() => import('./LiveTeacher'));
+const ScienceExperiments = lazy(() => import('./ScienceExperiments'));
 const VideoLessonsLibrary = lazy(() => import('./VideoLessonsLibrary'));
 const DigitalBooksLibrary = lazy(() => import('./DigitalBooksLibrary'));
 const Messenger = lazy(() => import('./Messenger'));
@@ -79,7 +79,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'live-teacher' | 'tasks' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exam' | 'profile' | 'about' | 'relax-time';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exam' | 'profile' | 'about' | 'relax-time' | 'science-experiments';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -246,10 +246,10 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
             <AITeacher user={user} onLogActivity={logActivity} />
           </Suspense>
         );
-      case 'live-teacher':
+      case 'science-experiments':
         return (
           <Suspense fallback={<LoadingFallback />}>
-            <LiveTeacher user={user} onLogActivity={logActivity} onBack={() => setActiveView('dashboard')} />
+            <ScienceExperiments user={user} onBack={() => setActiveView('dashboard')} />
           </Suspense>
         );
       case 'tasks':
@@ -456,6 +456,15 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         </button>
 
         <button
+          onClick={() => setActiveView('science-experiments')}
+          className="group relative quick-access-card bg-gradient-to-br from-cyan-500/20 to-teal-500/20 border-2 border-cyan-500/30 hover:border-cyan-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 to-teal-500/0 group-hover:from-cyan-500/10 group-hover:to-teal-500/10 transition-all duration-300" />
+          <FlaskConical className="relative w-12 h-12 mb-3 mx-auto text-cyan-500 group-hover:scale-110 transition-transform duration-300" />
+          <h3 className="relative font-semibold text-center">Science</h3>
+        </button>
+
+        <button
           onClick={() => setActiveView('messenger')}
           className="group relative quick-access-card bg-gradient-to-br from-pink-500/20 to-rose-500/20 border-2 border-pink-500/30 hover:border-pink-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
         >
@@ -502,7 +511,6 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
   const getViewTitle = () => {
     if (activeView === 'dashboard') return 'Dashboard';
     if (activeView === 'ai-teacher') return 'AI Teacher';
-    if (activeView === 'live-teacher') return 'Live Teacher';
     if (activeView === 'videos') return 'Video Lessons';
     if (activeView === 'books') return 'Digital Books';
     if (activeView === 'messenger') return 'Messenger';
@@ -514,6 +522,8 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
     if (activeView === 'video') return 'Video Player';
     if (activeView === 'pdf') return 'PDF Viewer';
     if (activeView === 'national-exam') return 'National Exam';
+    if (activeView === 'relax-time') return 'Relax Time';
+    if (activeView === 'science-experiments') return 'Science Experiments';
     return 'Dashboard';
   };
 
