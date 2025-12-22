@@ -3,7 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee, FlaskConical } from 'lucide-react';
+import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee, FlaskConical, Trophy, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import TaskManager from './TaskManager';
 import VideoViewer from './VideoViewer';
@@ -41,6 +41,8 @@ import {
 // Lazy load heavy components for better performance
 const AITeacher = lazy(() => import('./AITeacher'));
 const ScienceExperiments = lazy(() => import('./ScienceExperiments'));
+const Competition = lazy(() => import('./Competition'));
+const Worksheets = lazy(() => import('./Worksheets'));
 const VideoLessonsLibrary = lazy(() => import('./VideoLessonsLibrary'));
 const DigitalBooksLibrary = lazy(() => import('./DigitalBooksLibrary'));
 const Messenger = lazy(() => import('./Messenger'));
@@ -79,7 +81,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exam' | 'profile' | 'about' | 'relax-time' | 'science-experiments';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exam' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -250,6 +252,18 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         return (
           <Suspense fallback={<LoadingFallback />}>
             <ScienceExperiments user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
+      case 'competition':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <Competition user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
+      case 'worksheets':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <Worksheets user={user} onBack={() => setActiveView('dashboard')} />
           </Suspense>
         );
       case 'tasks':
@@ -481,6 +495,24 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
           <Brain className="relative w-12 h-12 mb-3 mx-auto text-orange-500 group-hover:scale-110 transition-transform duration-300" />
           <h3 className="relative font-semibold text-center">Quiz</h3>
         </button>
+
+        <button
+          onClick={() => setActiveView('competition')}
+          className="group relative quick-access-card bg-gradient-to-br from-yellow-500/20 to-amber-500/20 border-2 border-yellow-500/30 hover:border-yellow-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/0 to-amber-500/0 group-hover:from-yellow-500/10 group-hover:to-amber-500/10 transition-all duration-300" />
+          <Trophy className="relative w-12 h-12 mb-3 mx-auto text-yellow-500 group-hover:scale-110 transition-transform duration-300" />
+          <h3 className="relative font-semibold text-center">Dorgaadorgee</h3>
+        </button>
+
+        <button
+          onClick={() => setActiveView('worksheets')}
+          className="group relative quick-access-card bg-gradient-to-br from-indigo-500/20 to-violet-500/20 border-2 border-indigo-500/30 hover:border-indigo-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/0 to-violet-500/0 group-hover:from-indigo-500/10 group-hover:to-violet-500/10 transition-all duration-300" />
+          <ClipboardList className="relative w-12 h-12 mb-3 mx-auto text-indigo-500 group-hover:scale-110 transition-transform duration-300" />
+          <h3 className="relative font-semibold text-center">Worksheets</h3>
+        </button>
       </div>
 
       {/* National Exams Section */}
@@ -524,6 +556,8 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
     if (activeView === 'national-exam') return 'National Exam';
     if (activeView === 'relax-time') return 'Relax Time';
     if (activeView === 'science-experiments') return 'Science Experiments';
+    if (activeView === 'competition') return 'Dorgaadorgee';
+    if (activeView === 'worksheets') return 'Worksheets';
     return 'Dashboard';
   };
 

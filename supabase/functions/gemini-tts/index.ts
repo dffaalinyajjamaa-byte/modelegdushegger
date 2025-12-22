@@ -6,8 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Use Gemini 2.5 flash with native audio for Oromo TTS
-const AUDIO_MODEL = "gemini-2.5-flash-preview-native-audio-dialog";
+// Use Gemini 2.5 flash with latest native audio for Oromo TTS (December 2025)
+const AUDIO_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
