@@ -84,19 +84,63 @@ const VideoLessonsLibrary = ({ user, onBack, onVideoClick, embedded = false }: V
     ? videos.filter(video => video.subject === selectedSubject)
     : videos;
 
-  // Sort videos: in-progress first, then unwatched, then completed
+  // Helper function to extract unit/boqonna number from title
+  const extractUnitNumber = (title: string): number => {
+    const lowerTitle = title.toLowerCase();
+    // Map Oromo number words to digits
+    const oromoNumbers: { [key: string]: number } = {
+      'tokko': 1, 'lama': 2, 'sadii': 3, 'afur': 4, 'shan': 5,
+      'ji\'a': 6, 'jaha': 6, 'torbaa': 7, 'saddet': 8, 'sagal': 9, 'kudhan': 10,
+      'kudhaa tokko': 11, 'kudhaa lama': 12, 'kudhaa sadii': 13, 
+      'kudhaa afur': 14, 'kudhaa shan': 15
+    };
+    
+    // Check for "boqonna X" or "unit X" pattern
+    const boqonnaMatch = lowerTitle.match(/boqonna\s+(\w+(?:\s+\w+)?)/);
+    const unitMatch = lowerTitle.match(/unit\s+(\d+)/);
+    
+    if (unitMatch) {
+      return parseInt(unitMatch[1], 10);
+    }
+    
+    if (boqonnaMatch) {
+      const numWord = boqonnaMatch[1].trim();
+      // Check if it's a two-word number like "kudhaa tokko"
+      for (const [word, num] of Object.entries(oromoNumbers)) {
+        if (numWord.includes(word) || word.includes(numWord)) {
+          return num;
+        }
+      }
+      // Try direct number
+      const directNum = parseInt(numWord, 10);
+      if (!isNaN(directNum)) return directNum;
+    }
+    
+    return 0;
+  };
+
+  // Helper function to extract part number from title
+  const extractPartNumber = (title: string): number => {
+    const partMatch = title.toLowerCase().match(/part\s*\.?\s*(\d+)/);
+    if (partMatch) {
+      return parseInt(partMatch[1], 10);
+    }
+    return 0;
+  };
+
+  // Sort videos by unit/boqonna number, then by part number
   const sortedVideos = [...filteredVideos].sort((a, b) => {
-    const progressA = progressMap[a.id];
-    const progressB = progressMap[b.id];
+    const unitA = extractUnitNumber(a.title);
+    const unitB = extractUnitNumber(b.title);
     
-    const scoreA = progressA 
-      ? (progressA.completed ? 0 : (progressA.percentage_watched > 0 ? 2 : 1))
-      : 1;
-    const scoreB = progressB 
-      ? (progressB.completed ? 0 : (progressB.percentage_watched > 0 ? 2 : 1))
-      : 1;
+    if (unitA !== unitB) {
+      return unitA - unitB;
+    }
     
-    return scoreB - scoreA;
+    const partA = extractPartNumber(a.title);
+    const partB = extractPartNumber(b.title);
+    
+    return partA - partB;
   });
 
   const displayVideos = embedded && !selectedSubject ? sortedVideos.slice(0, 6) : sortedVideos;
