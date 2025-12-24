@@ -4,11 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, CheckCircle, Clock, Sparkles } from 'lucide-react';
+import { Trophy, CheckCircle, Clock, Sparkles, BookOpen, Video, Brain, FileText, Coffee, ClipboardList } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface DailyChallengeProps {
   user: User;
+  onNavigate?: (view: string) => void;
 }
 
 interface Challenge {
@@ -19,6 +20,7 @@ interface Challenge {
   challenge_type: string;
   points: number;
   active_date: string;
+  content_data: any;
 }
 
 interface ChallengeProgress {
@@ -27,7 +29,27 @@ interface ChallengeProgress {
   points_earned: number;
 }
 
-export default function DailyChallenge({ user }: DailyChallengeProps) {
+const challengeTypeIcons: { [key: string]: any } = {
+  reading: BookOpen,
+  video: Video,
+  quiz: Brain,
+  worksheet: ClipboardList,
+  exam: FileText,
+  relax: Coffee,
+  practice: Brain,
+};
+
+const challengeTypeColors: { [key: string]: string } = {
+  reading: 'from-blue-500/20 to-blue-900/30 border-blue-500/30',
+  video: 'from-red-500/20 to-red-900/30 border-red-500/30',
+  quiz: 'from-orange-500/20 to-orange-900/30 border-orange-500/30',
+  worksheet: 'from-indigo-500/20 to-indigo-900/30 border-indigo-500/30',
+  exam: 'from-purple-500/20 to-purple-900/30 border-purple-500/30',
+  relax: 'from-pink-500/20 to-pink-900/30 border-pink-500/30',
+  practice: 'from-green-500/20 to-green-900/30 border-green-500/30',
+};
+
+export default function DailyChallenge({ user, onNavigate }: DailyChallengeProps) {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [progress, setProgress] = useState<ChallengeProgress[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,6 +90,30 @@ export default function DailyChallenge({ user }: DailyChallengeProps) {
     } catch (error) {
       console.error('Error fetching progress:', error);
     }
+  };
+
+  const startChallenge = (challenge: Challenge) => {
+    // Navigate to the appropriate feature based on challenge type
+    const navigationMap: { [key: string]: string } = {
+      reading: 'books',
+      video: 'videos',
+      quiz: 'quiz',
+      worksheet: 'worksheets',
+      exam: 'national-exams',
+      relax: 'relax-time',
+      practice: 'quiz',
+    };
+
+    const targetView = navigationMap[challenge.challenge_type] || 'dashboard';
+    
+    if (onNavigate) {
+      onNavigate(targetView);
+    }
+    
+    toast({
+      title: `Starting: ${challenge.title}`,
+      description: `Complete this challenge to earn ${challenge.points} points!`,
+    });
   };
 
   const completeChallenge = async (challenge: Challenge) => {
@@ -112,6 +158,7 @@ export default function DailyChallenge({ user }: DailyChallengeProps) {
   };
 
   const totalPoints = progress.reduce((sum, p) => sum + (p.completed ? p.points_earned : 0), 0);
+  const completedCount = challenges.filter(c => isCompleted(c.id)).length;
 
   if (loading) {
     return (
@@ -125,7 +172,7 @@ export default function DailyChallenge({ user }: DailyChallengeProps) {
         <CardContent>
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
+              <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />
             ))}
           </div>
         </CardContent>
@@ -161,54 +208,77 @@ export default function DailyChallenge({ user }: DailyChallengeProps) {
             <Sparkles className="w-5 h-5 text-primary" />
             Daily Challenges
           </CardTitle>
-          <Badge variant="secondary" className="flex items-center gap-1">
-            <Trophy className="w-4 h-4" />
-            {totalPoints} pts
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs">
+              {completedCount}/{challenges.length} Done
+            </Badge>
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Trophy className="w-4 h-4" />
+              {totalPoints} pts
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
           {challenges.map((challenge) => {
             const completed = isCompleted(challenge.id);
+            const IconComponent = challengeTypeIcons[challenge.challenge_type] || Sparkles;
+            const colorClass = challengeTypeColors[challenge.challenge_type] || 'from-gray-500/20 to-gray-900/30 border-gray-500/30';
             
             return (
               <Card
                 key={challenge.id}
-                className={`p-4 transition-all ${
+                className={`overflow-hidden transition-all border-2 ${
                   completed
                     ? 'bg-primary/10 border-primary/50'
-                    : 'glass-card hover:border-primary/30'
+                    : `bg-gradient-to-br ${colorClass}`
                 }`}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="outline" className="text-xs">
-                        {challenge.subject}
-                      </Badge>
-                      <Badge variant="secondary" className="text-xs">
-                        {challenge.points} pts
-                      </Badge>
+                <div className="p-4">
+                  <div className="flex items-start gap-3">
+                    {/* Icon */}
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      completed ? 'bg-primary/20' : 'bg-background/50'
+                    }`}>
+                      <IconComponent className={`w-5 h-5 ${completed ? 'text-primary' : 'text-foreground'}`} />
                     </div>
-                    <h4 className="font-semibold text-sm mb-1">{challenge.title}</h4>
-                    {challenge.description && (
-                      <p className="text-xs text-muted-foreground">
-                        {challenge.description}
-                      </p>
-                    )}
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <Badge variant="outline" className="text-xs">
+                          {challenge.subject}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">
+                          +{challenge.points} pts
+                        </Badge>
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {challenge.challenge_type}
+                        </Badge>
+                      </div>
+                      <h4 className="font-semibold text-sm mb-1">{challenge.title}</h4>
+                      {challenge.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {challenge.description}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Action */}
+                    <div className="flex-shrink-0">
+                      {completed ? (
+                        <CheckCircle className="w-6 h-6 text-primary" />
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => startChallenge(challenge)}
+                        >
+                          Start
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  
-                  {completed ? (
-                    <CheckCircle className="w-6 h-6 text-primary flex-shrink-0" />
-                  ) : (
-                    <Button
-                      size="sm"
-                      onClick={() => completeChallenge(challenge)}
-                    >
-                      Start
-                    </Button>
-                  )}
                 </div>
               </Card>
             );

@@ -3,7 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee, FlaskConical, Trophy, ClipboardList } from 'lucide-react';
+import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee, FlaskConical, Trophy, ClipboardList, GraduationCap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import TaskManager from './TaskManager';
 import VideoViewer from './VideoViewer';
@@ -81,7 +81,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exam' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -298,11 +298,12 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
             <RelaxTime user={user} onBack={() => setActiveView('dashboard')} />
           </Suspense>
         );
-      case 'national-exam':
-        if (selectedContent) {
-          return <PDFViewer content={selectedContent} onBack={() => setActiveView('dashboard')} user={user} onLogActivity={logActivity} />;
-        }
-        return null;
+      case 'national-exams':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <NationalExams user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
       case 'books':
         return (
           <Suspense fallback={<LoadingFallback />}>
@@ -381,6 +382,21 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         <TabsContent value="all" className="space-y-6">
           <ChargingPoints userId={user.id} />
           <SubjectProgressCards userId={user.id} />
+          <RecentLessons 
+            userId={user.id} 
+            onLessonClick={(content, playbackTime) => {
+              setSelectedContent({
+                id: content.id,
+                title: content.title,
+                description: content.description || '',
+                type: content.type,
+                url: content.url,
+                grade_level: content.grade_level || '',
+                subject: content.subject || ''
+              });
+              setActiveView('video');
+            }}
+          />
           <RecentLessons userId={user.id} />
         </TabsContent>
 
@@ -470,6 +486,15 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         </button>
 
         <button
+          onClick={() => setActiveView('national-exams')}
+          className="group relative quick-access-card bg-gradient-to-br from-rose-500/20 to-red-500/20 border-2 border-rose-500/30 hover:border-rose-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-rose-500/0 to-red-500/0 group-hover:from-rose-500/10 group-hover:to-red-500/10 transition-all duration-300" />
+          <GraduationCap className="relative w-12 h-12 mb-3 mx-auto text-rose-500 group-hover:scale-110 transition-transform duration-300" />
+          <h3 className="relative font-semibold text-center">National Exams</h3>
+        </button>
+
+        <button
           onClick={() => setActiveView('science-experiments')}
           className="group relative quick-access-card bg-gradient-to-br from-cyan-500/20 to-teal-500/20 border-2 border-cyan-500/30 hover:border-cyan-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
         >
@@ -515,28 +540,8 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         </button>
       </div>
 
-      {/* National Exams Section */}
-      <div className="mt-6">
-        <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          <FileText className="w-6 h-6 text-primary" />
-          National Exams
-        </h2>
-        <NationalExams user={user} onExamClick={(exam) => {
-          setSelectedContent({
-            id: exam.id,
-            title: exam.title,
-            description: exam.description || '',
-            type: 'pdf',
-            url: exam.pdf_url,
-            grade_level: 'Grade 8',
-            subject: exam.subject
-          });
-          setActiveView('national-exam');
-        }} />
-      </div>
-
       {/* Daily Challenge Widget */}
-      <DailyChallenge user={user} />
+      <DailyChallenge user={user} onNavigate={(view) => setActiveView(view as ActiveView)} />
     </div>
   );
 
@@ -553,7 +558,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
     if (activeView === 'about') return 'About Us';
     if (activeView === 'video') return 'Video Player';
     if (activeView === 'pdf') return 'PDF Viewer';
-    if (activeView === 'national-exam') return 'National Exam';
+    if (activeView === 'national-exams') return 'National Exams';
     if (activeView === 'relax-time') return 'Relax Time';
     if (activeView === 'science-experiments') return 'Science Experiments';
     if (activeView === 'competition') return 'Dorgaadorgee';
