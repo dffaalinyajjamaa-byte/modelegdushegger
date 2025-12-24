@@ -57,12 +57,19 @@ export default function NationalExams({ user, onBack }: NationalExamsProps) {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedExam, setSelectedExam] = useState<NationalExam | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userGrade, setUserGrade] = useState<string | null>(null);
   const { toast } = useToast();
   const { awardPointsForContent } = useContentPoints();
 
   useEffect(() => {
-    fetchSubjects();
-  }, []);
+    fetchUserGrade();
+  }, [user.id]);
+
+  useEffect(() => {
+    if (userGrade !== null) {
+      fetchSubjects();
+    }
+  }, [userGrade]);
 
   useEffect(() => {
     if (selectedSubject) {
@@ -70,18 +77,52 @@ export default function NationalExams({ user, onBack }: NationalExamsProps) {
     }
   }, [selectedSubject]);
 
+  const fetchUserGrade = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('grade')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+      setUserGrade(data?.grade || null);
+    } catch (error) {
+      console.error('Error fetching user grade:', error);
+      setUserGrade(null);
+    }
+  };
+
   const fetchSubjects = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Build query - filter by grade if user has a grade set
+      let query = supabase
         .from('national_exams')
-        .select('subject')
+        .select('subject, description')
         .order('subject');
+
+      const { data, error } = await query;
 
       if (error) throw error;
       
-      // Get unique subjects
-      const uniqueSubjects = Array.from(new Set(data?.map(e => e.subject) || []));
+      // Filter exams by user's grade level (e.g., "Grade 6" users shouldn't see "Grade 8" exams)
+      const filteredData = data?.filter(exam => {
+        if (!userGrade) return true; // Show all if no grade set
+        
+        const gradeNum = userGrade.replace(/\D/g, ''); // Extract number from "Grade 6"
+        const examDesc = exam.description?.toLowerCase() || '';
+        
+        // If exam description mentions a specific grade, check if it matches user's grade
+        if (examDesc.includes('grade 8') && gradeNum !== '8') return false;
+        if (examDesc.includes('grade 6') && gradeNum !== '6') return false;
+        
+        return true;
+      });
+      
+      // Get unique subjects from filtered exams
+      const uniqueSubjects = Array.from(new Set(filteredData?.map(e => e.subject) || []));
       setSubjects(uniqueSubjects);
     } catch (error) {
       console.error('Error fetching subjects:', error);
@@ -107,7 +148,21 @@ export default function NationalExams({ user, onBack }: NationalExamsProps) {
         .order('year', { ascending: false });
 
       if (error) throw error;
-      setExams(data || []);
+      
+      // Filter exams by user's grade level
+      const filteredExams = data?.filter(exam => {
+        if (!userGrade) return true;
+        
+        const gradeNum = userGrade.replace(/\D/g, '');
+        const examDesc = exam.description?.toLowerCase() || '';
+        
+        if (examDesc.includes('grade 8') && gradeNum !== '8') return false;
+        if (examDesc.includes('grade 6') && gradeNum !== '6') return false;
+        
+        return true;
+      });
+      
+      setExams(filteredExams || []);
     } catch (error) {
       console.error('Error fetching exams:', error);
       toast({
