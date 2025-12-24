@@ -268,7 +268,10 @@ export default function DailyChallenge({ user, onNavigate }: DailyChallengeProps
                     {/* Action */}
                     <div className="flex-shrink-0">
                       {completed ? (
-                        <CheckCircle className="w-6 h-6 text-primary" />
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-primary/30 rounded-full animate-ping" />
+                          <CheckCircle className="w-8 h-8 text-primary animate-scale-in drop-shadow-lg" />
+                        </div>
                       ) : (
                         <Button
                           size="sm"
