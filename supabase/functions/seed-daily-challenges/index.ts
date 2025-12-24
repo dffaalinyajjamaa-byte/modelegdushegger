@@ -234,17 +234,43 @@ serve(async (req) => {
       .delete()
       .lt('active_date', weekAgoStr)
 
-    // Upsert today's challenges
-    const { data, error } = await supabase
+    // Check if challenges already exist for today
+    const { data: existingChallenges, error: checkError } = await supabase
       .from('daily_challenges')
-      .upsert(challengesWithDate, {
-        onConflict: 'active_date,subject,title',
-        ignoreDuplicates: false
-      })
-      .select()
+      .select('id')
+      .eq('active_date', todayStr)
+      .limit(1)
 
-    if (error) {
-      throw error
+    if (checkError) {
+      throw checkError
+    }
+
+    let data = null
+    
+    // Only insert if no challenges exist for today
+    if (!existingChallenges || existingChallenges.length === 0) {
+      const { data: insertedData, error: insertError } = await supabase
+        .from('daily_challenges')
+        .insert(challengesWithDate)
+        .select()
+
+      if (insertError) {
+        throw insertError
+      }
+      data = insertedData
+      console.log(`Inserted ${data?.length || 0} new challenges`)
+    } else {
+      // Fetch existing challenges to return
+      const { data: fetchedData, error: fetchError } = await supabase
+        .from('daily_challenges')
+        .select('*')
+        .eq('active_date', todayStr)
+
+      if (fetchError) {
+        throw fetchError
+      }
+      data = fetchedData
+      console.log(`Challenges already exist for today, returning ${data?.length || 0} existing challenges`)
     }
 
     console.log(`Successfully seeded ${data?.length || 0} daily challenges for ${todayStr}`)

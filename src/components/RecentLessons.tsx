@@ -50,8 +50,9 @@ const RecentLessons = ({ userId, onLessonClick }: RecentLessonsProps) => {
         .from('video_progress')
         .select('*')
         .eq('user_id', userId)
+        .eq('completed', false) // Only show incomplete videos
         .order('last_watched_at', { ascending: false })
-        .limit(5);
+        .limit(10); // Fetch more to account for deduplication
 
       if (progressError) throw progressError;
 
@@ -61,8 +62,18 @@ const RecentLessons = ({ userId, onLessonClick }: RecentLessonsProps) => {
         return;
       }
 
+      // Deduplicate by content_id - keep only the most recent entry for each video
+      const seenContentIds = new Set<string>();
+      const uniqueProgressData = progressData.filter(p => {
+        if (seenContentIds.has(p.content_id)) {
+          return false;
+        }
+        seenContentIds.add(p.content_id);
+        return true;
+      }).slice(0, 5); // Limit to 5 after deduplication
+
       // Fetch content for each video progress
-      const contentIds = progressData.map(p => p.content_id);
+      const contentIds = uniqueProgressData.map(p => p.content_id);
       const { data: contentData, error: contentError } = await supabase
         .from('content')
         .select('*')
@@ -71,7 +82,7 @@ const RecentLessons = ({ userId, onLessonClick }: RecentLessonsProps) => {
       if (contentError) throw contentError;
 
       // Combine progress with content
-      const combined: RecentVideoLesson[] = progressData.map(progress => {
+      const combined: RecentVideoLesson[] = uniqueProgressData.map(progress => {
         const content = contentData?.find(c => c.id === progress.content_id);
         return {
           progress: {
