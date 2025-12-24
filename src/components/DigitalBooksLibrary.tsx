@@ -61,11 +61,11 @@ const DigitalBooksLibrary = ({ user, onBack, onBookClick, embedded = false }: Di
   };
 
   const fetchBooksAndProgress = async () => {
-    // Fetch books filtered by grade
+    // Fetch books filtered by grade - include both 'pdf' and 'book' types
     let booksQuery = supabase
       .from('content')
       .select('*')
-      .eq('type', 'pdf')
+      .in('type', ['pdf', 'book'])
       .order('subject', { ascending: true });
 
     // Filter by grade level
