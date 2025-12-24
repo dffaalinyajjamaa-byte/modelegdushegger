@@ -37,19 +37,45 @@ const DigitalBooksLibrary = ({ user, onBack, onBookClick, embedded = false }: Di
   const [progress, setProgress] = useState<Record<string, BookProgress>>({});
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userGrade, setUserGrade] = useState<string | null>(null);
   const { awardPointsForContent } = useContentPoints();
 
   useEffect(() => {
-    fetchBooksAndProgress();
-  }, []);
+    fetchUserProfile();
+  }, [user.id]);
+
+  useEffect(() => {
+    if (userGrade !== null) {
+      fetchBooksAndProgress();
+    }
+  }, [userGrade]);
+
+  const fetchUserProfile = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('grade')
+      .eq('user_id', user.id)
+      .single();
+    
+    setUserGrade(data?.grade || 'Grade 8');
+  };
 
   const fetchBooksAndProgress = async () => {
-    // Fetch books
-    const { data: booksData, error: booksError } = await supabase
+    // Fetch books filtered by grade
+    let booksQuery = supabase
       .from('content')
       .select('*')
       .eq('type', 'pdf')
       .order('subject', { ascending: true });
+
+    // Filter by grade level
+    if (userGrade === 'Grade 6') {
+      booksQuery = booksQuery.eq('grade_level', 'Grade 6');
+    } else {
+      booksQuery = booksQuery.eq('grade_level', 'Grade 8');
+    }
+
+    const { data: booksData, error: booksError } = await booksQuery;
 
     // Fetch progress
     const { data: progressData } = await supabase

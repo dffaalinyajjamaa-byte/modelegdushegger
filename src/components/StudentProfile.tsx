@@ -36,11 +36,7 @@ export default function StudentProfile({ user, onBack }: StudentProfileProps) {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const subjects = [
-    'Mathematics', 'Physics', 'Chemistry', 'Biology', 
-    'English', 'Amharic', 'Afaan Oromoo', 'History', 
-    'Geography', 'Civics', 'Economics', 'ICT'
-  ];
+  const grades = ['Grade 6', 'Grade 8'];
 
   useEffect(() => {
     fetchProfile();
@@ -233,12 +229,21 @@ export default function StudentProfile({ user, onBack }: StudentProfileProps) {
 
               <div className="space-y-2">
                 <Label htmlFor="grade">Grade Level</Label>
-                <Input
-                  id="grade"
-                  value={profile.grade || ''}
-                  onChange={(e) => setProfile({ ...profile, grade: e.target.value })}
-                  placeholder="e.g., Grade 9"
-                />
+                <Select 
+                  value={profile.grade || ''} 
+                  onValueChange={(value) => setProfile({ ...profile, grade: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select grade level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {grades.map((g) => (
+                      <SelectItem key={g} value={g}>
+                        {g}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -255,27 +260,6 @@ export default function StudentProfile({ user, onBack }: StudentProfileProps) {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="favoriteSubject" className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4" />
-                Favorite Subject
-              </Label>
-              <Select 
-                value={profile.favorite_subject || ''} 
-                onValueChange={(value) => setProfile({ ...profile, favorite_subject: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your favorite subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjects.map((subject) => (
-                    <SelectItem key={subject} value={subject}>
-                      {subject}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="goal" className="flex items-center gap-2">
