@@ -80,7 +80,6 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
   const [grade, setGrade] = useState('');
   const [schoolName, setSchoolName] = useState('');
   const [age, setAge] = useState('');
-  const [favoriteSubject, setFavoriteSubject] = useState('');
   const [goal, setGoal] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -110,11 +109,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
     };
   }, []);
 
-  const subjects = [
-    'Mathematics', 'Physics', 'Chemistry', 'Biology', 
-    'English', 'Amharic', 'Afaan Oromoo', 'History', 
-    'Geography', 'Civics', 'Economics', 'ICT'
-  ];
+  const grades = ['Grade 6', 'Grade 8'];
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -337,7 +332,6 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                   avatar_url: avatarUrl,
                   school_name: schoolName || null,
                   age: age ? parseInt(age) : null,
-                  favorite_subject: favoriteSubject || null,
                   goal: goal || null
                 })
                 .eq('user_id', authData.user!.id);
@@ -613,15 +607,18 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="grade">Grade Level *</Label>
-                    <Input
-                      id="grade"
-                      type="text"
-                      placeholder="e.g., Grade 9"
-                      value={grade}
-                      onChange={(e) => setGrade(e.target.value)}
-                      required={!isLogin}
-                      className="h-11"
-                    />
+                    <Select value={grade} onValueChange={setGrade} required>
+                      <SelectTrigger className="h-11">
+                        <SelectValue placeholder="Select grade" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {grades.map((g) => (
+                          <SelectItem key={g} value={g}>
+                            {g}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -635,22 +632,6 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                     onChange={(e) => setSchoolName(e.target.value)}
                     className="h-11"
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="favoriteSubject">Favorite Subject</Label>
-                  <Select value={favoriteSubject} onValueChange={setFavoriteSubject}>
-                    <SelectTrigger className="h-11">
-                      <SelectValue placeholder="Select your favorite subject" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {subjects.map((subject) => (
-                        <SelectItem key={subject} value={subject}>
-                          {subject}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
 
                 <div className="space-y-2">

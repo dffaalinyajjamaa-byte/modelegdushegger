@@ -32,19 +32,45 @@ const VideoLessonsLibrary = ({ user, onBack, onVideoClick, embedded = false }: V
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [thumbnailErrors, setThumbnailErrors] = useState<Set<string>>(new Set());
+  const [userGrade, setUserGrade] = useState<string | null>(null);
   const { progressMap, loading: progressLoading } = useAllVideoProgress(user.id);
   const { awardPointsForContent } = useContentPoints();
 
   useEffect(() => {
-    fetchVideos();
-  }, []);
+    fetchUserProfile();
+  }, [user.id]);
+
+  useEffect(() => {
+    if (userGrade !== null) {
+      fetchVideos();
+    }
+  }, [userGrade]);
+
+  const fetchUserProfile = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('grade')
+      .eq('user_id', user.id)
+      .single();
+    
+    setUserGrade(data?.grade || 'Grade 8');
+  };
 
   const fetchVideos = async () => {
-    const { data, error } = await supabase
+    let query = supabase
       .from('content')
       .select('*')
       .eq('type', 'video')
       .order('subject', { ascending: true });
+
+    // Filter by grade level if user is Grade 6
+    if (userGrade === 'Grade 6') {
+      query = query.eq('grade_level', 'Grade 6');
+    } else {
+      query = query.eq('grade_level', 'Grade 8');
+    }
+
+    const { data, error } = await query;
 
     if (data && !error) {
       setVideos(data);

@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, FileText, BookOpen, Calculator, Globe, Users, Flag, ScrollText, Languages, Atom, X, ExternalLink } from 'lucide-react';
+import { ArrowLeft, FileText, BookOpen, Calculator, Globe, Users, Flag, ScrollText, Languages, Atom, X, ExternalLink, Lock } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface WorksheetsProps {
@@ -22,6 +23,7 @@ interface Subject {
   icon: React.ComponentType<{ className?: string }>;
   color: string;
   worksheets: Worksheet[];
+  gradeLevel: 'Grade 6' | 'Grade 8' | 'all';
 }
 
 const subjects: Subject[] = [
@@ -30,6 +32,7 @@ const subjects: Subject[] = [
     name: 'English',
     icon: Languages,
     color: 'from-blue-500/20 to-indigo-500/20 border-blue-500/30',
+    gradeLevel: 'Grade 8',
     worksheets: [
       { id: 'en1', title: 'Worksheet 1', driveUrl: '1NM_6NC9KgEsRSkg-ZnVYR6ax5b8gK0Rs' },
       { id: 'en2', title: 'Worksheet 2', driveUrl: '1gpmCAn3HE4PnAIxJRmnm2ZwQMdvf_nMF' },
@@ -44,6 +47,7 @@ const subjects: Subject[] = [
     name: 'Afaan Oromoo',
     icon: BookOpen,
     color: 'from-green-500/20 to-emerald-500/20 border-green-500/30',
+    gradeLevel: 'Grade 8',
     worksheets: [
       { id: 'ao1', title: 'Worksheet 1', driveUrl: '11AlkSIgr1Vl1FKGtJEq9IErwJPl-ThrA' },
       { id: 'ao2', title: 'Worksheet 2', driveUrl: '1QzEPGmuo7fDFRsVkSsvkZ2jcDQ7jcO87' },
@@ -56,6 +60,7 @@ const subjects: Subject[] = [
     name: 'Saayinsi Waliigalaa',
     icon: Atom,
     color: 'from-cyan-500/20 to-teal-500/20 border-cyan-500/30',
+    gradeLevel: 'Grade 8',
     worksheets: [
       { id: 'sw1', title: 'Worksheet 1', driveUrl: '1Hs6EJpR6E0O8Y3PSz6_9jDm_gjYMy1Or' },
       { id: 'sw2', title: 'Worksheet 2', driveUrl: '1B5PJ-odafMKwVaAwF012ZZXjp2zkBsXm' },
@@ -68,6 +73,7 @@ const subjects: Subject[] = [
     name: 'Herrega',
     icon: Calculator,
     color: 'from-purple-500/20 to-violet-500/20 border-purple-500/30',
+    gradeLevel: 'Grade 8',
     worksheets: [
       { id: 'hr1', title: 'Worksheet 1', driveUrl: '1_nOGwWUUXn42KJ909z-9bXTHYlZqVvlz' },
       { id: 'hr2', title: 'Worksheet 2', driveUrl: '1o5g7svLAc4TglcK7I54xMjk2ixnYXm6-' },
@@ -82,6 +88,7 @@ const subjects: Subject[] = [
     name: 'Hawaasa',
     icon: Globe,
     color: 'from-orange-500/20 to-amber-500/20 border-orange-500/30',
+    gradeLevel: 'Grade 8',
     worksheets: [
       { id: 'hw1', title: 'Worksheet 1', driveUrl: '1tyttp6PQgqg-tS9xtPZPbHt-ApD-QmFr' },
       { id: 'hw2', title: 'Worksheet 2', driveUrl: '1MxO2GIC4fgF1zMZG8rJCcn-oBdOyxQGM' },
@@ -94,6 +101,7 @@ const subjects: Subject[] = [
     name: 'Amariffaa',
     icon: ScrollText,
     color: 'from-red-500/20 to-rose-500/20 border-red-500/30',
+    gradeLevel: 'Grade 8',
     worksheets: [
       { id: 'am1', title: 'Worksheet 1', driveUrl: '1vwHdrcDyEp2H6c28r1dUj9rwGW_l4vU1' },
       { id: 'am2', title: 'Worksheet 2', driveUrl: '1ipneuk8_wdQLhBvDJQa9MSlKAEFPkwCt' },
@@ -104,6 +112,7 @@ const subjects: Subject[] = [
     name: 'Gadaa',
     icon: Users,
     color: 'from-yellow-500/20 to-lime-500/20 border-yellow-500/30',
+    gradeLevel: 'Grade 8',
     worksheets: [
       { id: 'gd1', title: 'Worksheet 1', driveUrl: '1cw-PSefaHQHs8b4xY6z7m42JxxwJIKFJ' },
       { id: 'gd2', title: 'Worksheet 2', driveUrl: '1BL2Vh2MvSac_51AZvbILESDWsIkxrj0D' },
@@ -115,6 +124,7 @@ const subjects: Subject[] = [
     name: 'Lammummaa',
     icon: Flag,
     color: 'from-pink-500/20 to-fuchsia-500/20 border-pink-500/30',
+    gradeLevel: 'Grade 8',
     worksheets: [
       { id: 'lm1', title: 'Worksheet 1', driveUrl: '1mWJPWyDicb6coILrCSzYqplWqqolR6HU' },
       { id: 'lm2', title: 'Worksheet 2', driveUrl: '1YTHrER93-EDGjXakLwO9Efmgo0JbY_3j' },
@@ -125,10 +135,65 @@ const subjects: Subject[] = [
 export default function Worksheets({ user, onBack }: WorksheetsProps) {
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
   const [selectedWorksheet, setSelectedWorksheet] = useState<Worksheet | null>(null);
+  const [userGrade, setUserGrade] = useState<string>('Grade 8');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, [user.id]);
+
+  const fetchUserProfile = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('grade')
+      .eq('user_id', user.id)
+      .single();
+    
+    setUserGrade(data?.grade || 'Grade 8');
+    setLoading(false);
+  };
+
+  // Filter subjects based on user's grade
+  const filteredSubjects = subjects.filter(subject => 
+    subject.gradeLevel === userGrade || subject.gradeLevel === 'all'
+  );
 
   const getGoogleDriveEmbedUrl = (fileId: string) => {
     return `https://drive.google.com/file/d/${fileId}/preview`;
   };
+
+  // Show message for Grade 6 users since worksheets are Grade 8 only
+  if (!loading && userGrade === 'Grade 6') {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center gap-4 mb-6">
+            <Button variant="ghost" size="icon" onClick={onBack}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20">
+                <FileText className="w-6 h-6 text-indigo-500" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">Worksheets</h1>
+                <p className="text-sm text-muted-foreground">Practice Materials</p>
+              </div>
+            </div>
+          </div>
+
+          <Card className="p-8 text-center">
+            <Lock className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
+            <h2 className="text-xl font-semibold mb-2">Worksheets for Grade 8</h2>
+            <p className="text-muted-foreground">
+              Worksheets are currently available for Grade 8 students only. 
+              Grade 6 worksheets are coming soon!
+            </p>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   // Viewing a specific worksheet
   if (selectedWorksheet && selectedSubject) {
@@ -241,7 +306,7 @@ export default function Worksheets({ user, onBack }: WorksheetsProps) {
 
         <ScrollArea className="h-[calc(100vh-200px)]">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {subjects.map((subject) => {
+            {filteredSubjects.map((subject) => {
               const IconComponent = subject.icon;
               return (
                 <Card

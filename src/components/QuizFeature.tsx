@@ -58,12 +58,18 @@ export default function QuizFeature({ user, onBack }: QuizFeatureProps) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userRank, setUserRank] = useState(1);
   const [profile, setProfile] = useState<any>(null);
+  const [userGrade, setUserGrade] = useState<string>('Grade 8');
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchQuizzes();
     fetchProfile();
   }, []);
+
+  useEffect(() => {
+    if (userGrade) {
+      fetchQuizzes();
+    }
+  }, [userGrade]);
 
   const fetchProfile = async () => {
     const { data } = await supabase
@@ -72,7 +78,10 @@ export default function QuizFeature({ user, onBack }: QuizFeatureProps) {
       .eq('user_id', user.id)
       .maybeSingle();
     
-    if (data) setProfile(data);
+    if (data) {
+      setProfile(data);
+      setUserGrade(data.grade || 'Grade 8');
+    }
   };
 
   useEffect(() => {
@@ -154,7 +163,7 @@ export default function QuizFeature({ user, onBack }: QuizFeatureProps) {
     let query = supabase
       .from('exams')
       .select('*')
-      .eq('grade_level', 'Grade 8');
+      .eq('grade_level', userGrade);
 
     if (subject) {
       query = query.eq('subject', subject);
@@ -367,7 +376,7 @@ export default function QuizFeature({ user, onBack }: QuizFeatureProps) {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <BookOpen className="w-8 h-8 text-primary" />
-              Grade 8 Quizzes
+              {userGrade} Quizzes
             </h1>
             <p className="text-muted-foreground mt-2">Choose your subject</p>
           </div>
@@ -414,7 +423,7 @@ export default function QuizFeature({ user, onBack }: QuizFeatureProps) {
             <BookOpen className="w-8 h-8 text-primary" />
             {selectedSubject} Quizzes
           </h1>
-          <Badge className="mt-2">Grade 8</Badge>
+          <Badge className="mt-2">{userGrade}</Badge>
         </div>
         <Button variant="outline" onClick={() => setSelectedSubject(null)}>
           <ArrowLeft className="w-4 h-4 mr-2" />
