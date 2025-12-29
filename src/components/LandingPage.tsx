@@ -32,24 +32,13 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
   }, []);
   return (
     <div className="min-h-screen w-full overflow-y-auto overflow-x-hidden">
-      {/* Fixed Header with Logo */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-center">
-          <img 
-            src={logo} 
-            alt="Model Egdu"
-            className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-red-500"
-          />
-        </div>
-      </header>
-
       <BackgroundPaths 
         title="Model Egdu" 
         onButtonClick={onGetStarted}
         showButton={true}
       >
         {/* Logo with Afaan Oromo text and 3D Scene */}
-        <div className="relative z-10 pt-24 pb-20">
+        <div className="relative z-10 py-20">
           <div className="container mx-auto px-4">
             {/* Logo and tagline */}
             <motion.div 
