@@ -4,10 +4,39 @@ import { Spotlight } from '@/components/ui/spotlight';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import logo from '@/assets/model-egdu-logo.png';
-import { motion } from 'framer-motion';
-import { BookOpen, GraduationCap, Brain } from 'lucide-react';
+import classroom1 from '@/assets/classroom-1.png';
+import classroom2 from '@/assets/classroom-2.png';
+import classroom3 from '@/assets/classroom-3.png';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
+
+const classroomImages = [classroom1, classroom2, classroom3];
+
+const headlines = [
+  "A wise person closes their mouth but not their door.",
+  "Beekaan namaa afaan cufata malee hulaa hin cufatu.",
+  "Let Us Build Our Community With Knowledge.",
+  "Hawaasa Keenya Beekumsaan Haa Ijaarrannu."
+];
 
 export default function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentTextIndex, setCurrentTextIndex] = useState(0);
+
+  useEffect(() => {
+    const imageInterval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % classroomImages.length);
+    }, 4000);
+
+    const textInterval = setInterval(() => {
+      setCurrentTextIndex((prev) => (prev + 1) % headlines.length);
+    }, 5000);
+
+    return () => {
+      clearInterval(imageInterval);
+      clearInterval(textInterval);
+    };
+  }, []);
   return (
     <div className="min-h-screen w-full overflow-y-auto overflow-x-hidden">
       <BackgroundPaths 
@@ -63,32 +92,50 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
                     </Button>
                   </div>
 
-                  {/* Right: Visual with gradient and educational icons */}
-                  <div className="flex-1 relative bg-gradient-to-br from-red-500/20 via-black to-red-900/30 flex items-center justify-center">
-                    <div className="text-center">
-                      <motion.img 
-                        src={logo} 
-                        alt="Model Egdu" 
-                        className="w-32 h-32 rounded-full shadow-2xl border-4 border-red-500/50 mx-auto"
-                        animate={{ 
-                          boxShadow: [
-                            "0 0 20px rgba(239, 68, 68, 0.5)",
-                            "0 0 40px rgba(239, 68, 68, 0.8)",
-                            "0 0 20px rgba(239, 68, 68, 0.5)"
-                          ]
-                        }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      />
-                      <motion.div 
-                        className="mt-6 flex gap-4 justify-center"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                      >
-                        <BookOpen className="w-10 h-10 text-red-400" />
-                        <GraduationCap className="w-10 h-10 text-white" />
-                        <Brain className="w-10 h-10 text-red-400" />
-                      </motion.div>
+                  {/* Right: Auto-scrolling image carousel with bilingual headlines */}
+                  <div className="flex-1 relative bg-gradient-to-br from-red-500/20 via-black to-red-900/30 flex flex-col items-center justify-center overflow-hidden p-6">
+                    {/* Auto-scrolling Images */}
+                    <div className="relative w-full h-48 md:h-56 mb-4 rounded-xl overflow-hidden">
+                      <AnimatePresence mode="wait">
+                        <motion.img
+                          key={currentImageIndex}
+                          src={classroomImages[currentImageIndex]}
+                          alt="Classroom"
+                          className="absolute inset-0 w-full h-full object-cover rounded-xl"
+                          initial={{ opacity: 0, scale: 1.1 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.7 }}
+                        />
+                      </AnimatePresence>
+                      
+                      {/* Image indicators */}
+                      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
+                        {classroomImages.map((_, idx) => (
+                          <div
+                            key={idx}
+                            className={`w-2 h-2 rounded-full transition-all ${
+                              idx === currentImageIndex ? 'bg-red-500 w-4' : 'bg-white/50'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Auto-transitioning Bilingual Headlines */}
+                    <div className="h-16 flex items-center justify-center px-4">
+                      <AnimatePresence mode="wait">
+                        <motion.p
+                          key={currentTextIndex}
+                          className="text-center text-sm md:text-base font-medium text-white/90 italic"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.5 }}
+                        >
+                          "{headlines[currentTextIndex]}"
+                        </motion.p>
+                      </AnimatePresence>
                     </div>
                   </div>
                 </div>
