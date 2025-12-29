@@ -65,9 +65,8 @@ export default function LandingPage({
                       <span className="text-black dark:text-white"> Today</span>
                     </h1>
                     
-                    <p className="mt-4 text-gray-300 max-w-lg">
-                      Experience the future of education with AI-powered learning, 
-                      interactive 3D content, and personalized study paths.
+                    <p className="mt-4 max-w-lg text-primary-foreground py-[23px] font-sans">
+                      ​model egdu is digital learning site designed for grade 8 and 6 oromoo students to improve their learning .                                  
                     </p>
                     
                     <Button onClick={onGetStarted} size="lg" className="mt-6 bg-red-500 hover:bg-red-600 text-white rounded-full px-8 w-fit">
