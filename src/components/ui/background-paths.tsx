@@ -1,7 +1,15 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+
+const wisdomQuotes = [
+  "A wise person closes their mouth but not their door.",
+  "Beekaan namaa afaan cufata malee hulaa hin cufatu.",
+  "Let Us Build Our Community With Knowledge.",
+  "Hawaasa Keenya Beekumsaan Haa Ijaarrannu.",
+];
 
 function FloatingPaths({ position }: { position: number }) {
     const paths = Array.from({ length: 36 }, (_, i) => ({
@@ -62,6 +70,15 @@ export function BackgroundPaths({
   children?: React.ReactNode;
 }) {
   const words = title ? title.split(" ") : [];
+  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentQuoteIndex((prev) => (prev + 1) % wisdomQuotes.length);
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, []);
 
     return (
         <div className="relative min-h-screen w-full flex flex-col overflow-auto bg-white dark:bg-neutral-950">
@@ -108,6 +125,22 @@ export function BackgroundPaths({
                             </span>
                         ))}
                     </h1>
+
+                    {/* Morphing Wisdom Quotes */}
+                    <div className="h-20 flex items-center justify-center mb-8">
+                      <AnimatePresence mode="wait">
+                        <motion.p
+                          key={currentQuoteIndex}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.6, ease: "easeInOut" }}
+                          className="text-lg md:text-xl lg:text-2xl font-medium text-neutral-600 dark:text-neutral-300 text-center max-w-2xl italic"
+                        >
+                          "{wisdomQuotes[currentQuoteIndex]}"
+                        </motion.p>
+                      </AnimatePresence>
+                    </div>
 
                     {showButton && (
                         <div className="inline-block group relative bg-gradient-to-b from-black/10 to-white/10 dark:from-white/10 dark:to-black/10 p-px rounded-2xl backdrop-blur-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
