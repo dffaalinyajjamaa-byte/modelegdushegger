@@ -3,6 +3,7 @@ import { BackgroundPaths } from '@/components/ui/background-paths';
 import { Spotlight } from '@/components/ui/spotlight';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { MorphingText } from '@/components/ui/morphing-text';
 import logo from '@/assets/model-egdu-logo.png';
 import classroom1 from '@/assets/classroom-1.png';
 import classroom2 from '@/assets/classroom-2.png';
@@ -12,40 +13,43 @@ import { useState, useEffect } from 'react';
 
 const classroomImages = [classroom1, classroom2, classroom3];
 
-const headlines = [
-  "A wise person closes their mouth but not their door.",
-  "Beekaan namaa afaan cufata malee hulaa hin cufatu.",
-  "Let Us Build Our Community With Knowledge.",
-  "Hawaasa Keenya Beekumsaan Haa Ijaarrannu."
+const morphingTexts = [
+  "Barnoonni humnadha.",
+  "Beekumsi furtuu egereeti."
 ];
 
 export default function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [currentTextIndex, setCurrentTextIndex] = useState(0);
 
   useEffect(() => {
     const imageInterval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % classroomImages.length);
     }, 4000);
 
-    const textInterval = setInterval(() => {
-      setCurrentTextIndex((prev) => (prev + 1) % headlines.length);
-    }, 5000);
-
     return () => {
       clearInterval(imageInterval);
-      clearInterval(textInterval);
     };
   }, []);
   return (
     <div className="min-h-screen w-full overflow-y-auto overflow-x-hidden">
+      {/* Fixed Header with Logo */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-center">
+          <img 
+            src={logo} 
+            alt="Model Egdu"
+            className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-red-500"
+          />
+        </div>
+      </header>
+
       <BackgroundPaths 
         title="Model Egdu" 
         onButtonClick={onGetStarted}
         showButton={true}
       >
         {/* Logo with Afaan Oromo text and 3D Scene */}
-        <div className="relative z-10 py-20">
+        <div className="relative z-10 pt-24 pb-20">
           <div className="container mx-auto px-4">
             {/* Logo and tagline */}
             <motion.div 
@@ -122,20 +126,12 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
                       </div>
                     </div>
                     
-                    {/* Auto-transitioning Bilingual Headlines */}
-                    <div className="h-16 flex items-center justify-center px-4">
-                      <AnimatePresence mode="wait">
-                        <motion.p
-                          key={currentTextIndex}
-                          className="text-center text-sm md:text-base font-medium text-white/90 italic"
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -20 }}
-                          transition={{ duration: 0.5 }}
-                        >
-                          "{headlines[currentTextIndex]}"
-                        </motion.p>
-                      </AnimatePresence>
+                    {/* Morphing Text Headlines */}
+                    <div className="h-20 flex items-center justify-center px-4">
+                      <MorphingText 
+                        texts={morphingTexts} 
+                        className="text-lg md:text-xl text-white"
+                      />
                     </div>
                   </div>
                 </div>
