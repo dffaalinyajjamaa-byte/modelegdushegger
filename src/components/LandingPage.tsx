@@ -171,8 +171,11 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
                 </>
               }
             >
-              <div className="w-full h-full bg-gradient-to-br from-red-500/20 via-white/10 to-black/20 rounded-2xl flex items-center justify-center">
-                <img src={logo} alt="Preview" className="w-48 h-48 object-contain opacity-70" />
+              <div className="w-full h-full bg-gradient-to-br from-red-500/20 via-white/10 to-black/20 rounded-2xl flex items-center justify-center p-8">
+                <MorphingText 
+                  texts={morphingTexts} 
+                  className="text-2xl md:text-4xl text-white"
+                />
               </div>
             </ContainerScroll>
           </div>
