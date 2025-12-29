@@ -11,6 +11,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 const classroomImages = [classroom1, classroom2, classroom3];
 const morphingTexts = ["Barnoonni humnadha.", "Beekumsi furtuu egereeti."];
+const descriptionTexts = [
+  "Model Egdu is a digital learning site designed for grade 8 and 6 Oromo students to improve their learning.",
+  "Model Egduun marsariitii barumsaa dijitaalaa barattoota Oromoo kutaa 8 fi 6f qophaa'edha."
+];
 export default function LandingPage({
   onGetStarted
 }: {
@@ -18,6 +22,7 @@ export default function LandingPage({
 }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
+  const [currentDescIndex, setCurrentDescIndex] = useState(0);
   useEffect(() => {
     const imageInterval = setInterval(() => {
       setCurrentImageIndex(prev => (prev + 1) % classroomImages.length);
@@ -25,9 +30,13 @@ export default function LandingPage({
     const textInterval = setInterval(() => {
       setCurrentTextIndex(prev => (prev + 1) % morphingTexts.length);
     }, 3000);
+    const descInterval = setInterval(() => {
+      setCurrentDescIndex(prev => (prev + 1) % descriptionTexts.length);
+    }, 4000);
     return () => {
       clearInterval(imageInterval);
       clearInterval(textInterval);
+      clearInterval(descInterval);
     };
   }, []);
   return <div className="min-h-screen w-full overflow-y-auto overflow-x-hidden">
@@ -65,9 +74,20 @@ export default function LandingPage({
                       <span className="text-black dark:text-white"> Today</span>
                     </h1>
                     
-                    <p className="mt-4 max-w-lg text-primary-foreground py-[23px] font-sans">
-                      ​model egdu is digital learning site designed for grade 8 and 6 oromoo students to improve their learning .                                  
-                    </p>
+                    <div className="mt-4 max-w-lg text-primary-foreground py-[23px] font-sans h-16 relative">
+                      <AnimatePresence mode="wait">
+                        <motion.p
+                          key={currentDescIndex}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.5 }}
+                          className="absolute inset-0"
+                        >
+                          {descriptionTexts[currentDescIndex]}
+                        </motion.p>
+                      </AnimatePresence>
+                    </div>
                     
                     <Button onClick={onGetStarted} size="lg" className="mt-6 bg-red-500 hover:bg-red-600 text-white rounded-full px-8 w-fit">
                       Start Learning
