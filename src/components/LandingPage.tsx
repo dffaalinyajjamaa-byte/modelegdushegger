@@ -3,7 +3,7 @@ import { BackgroundPaths } from '@/components/ui/background-paths';
 import { Spotlight } from '@/components/ui/spotlight';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { MorphingText } from '@/components/ui/morphing-text';
+
 import logo from '@/assets/model-egdu-logo.png';
 import classroom1 from '@/assets/classroom-1.png';
 import classroom2 from '@/assets/classroom-2.png';
@@ -19,15 +19,21 @@ const morphingTexts = [
 ];
 
 export default function LandingPage({ onGetStarted }: { onGetStarted: () => void }) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentTextIndex, setCurrentTextIndex] = useState(0);
 
   useEffect(() => {
     const imageInterval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % classroomImages.length);
     }, 4000);
 
+    const textInterval = setInterval(() => {
+      setCurrentTextIndex((prev) => (prev + 1) % morphingTexts.length);
+    }, 3000);
+
     return () => {
       clearInterval(imageInterval);
+      clearInterval(textInterval);
     };
   }, []);
   return (
@@ -115,12 +121,20 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
                       </div>
                     </div>
                     
-                    {/* Morphing Text Headlines */}
+                    {/* Animated Text Headlines */}
                     <div className="h-20 flex items-center justify-center px-4">
-                      <MorphingText 
-                        texts={morphingTexts} 
-                        className="text-lg md:text-xl text-white"
-                      />
+                      <AnimatePresence mode="wait">
+                        <motion.p
+                          key={currentTextIndex}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.5 }}
+                          className="text-lg md:text-xl text-white font-semibold text-center"
+                        >
+                          {morphingTexts[currentTextIndex]}
+                        </motion.p>
+                      </AnimatePresence>
                     </div>
                   </div>
                 </div>
@@ -161,10 +175,18 @@ export default function LandingPage({ onGetStarted }: { onGetStarted: () => void
               }
             >
               <div className="w-full h-full bg-gradient-to-br from-red-500/20 via-white/10 to-black/20 rounded-2xl flex items-center justify-center p-8">
-                <MorphingText 
-                  texts={morphingTexts} 
-                  className="text-2xl md:text-4xl text-white"
-                />
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={currentTextIndex}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.1 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-2xl md:text-4xl text-white font-bold text-center"
+                  >
+                    {morphingTexts[currentTextIndex]}
+                  </motion.p>
+                </AnimatePresence>
               </div>
             </ContainerScroll>
           </div>
