@@ -280,7 +280,7 @@ export default function SmartPlanner({ user, onBack }: SmartPlannerProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={onBack}>

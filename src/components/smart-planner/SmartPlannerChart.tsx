@@ -72,11 +72,11 @@ export default function SmartPlannerChart({ plan }: SmartPlannerChartProps) {
   )];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Weekly Timeline Chart */}
-      <Card className="p-6">
+      <Card className="p-4 sm:p-6 overflow-hidden">
         <h3 className="font-semibold mb-4">Weekly Study Distribution</h3>
-        <div className="h-[300px]">
+        <div className="h-[250px] sm:h-[300px] -mx-2 sm:mx-0">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={timelineData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -116,22 +116,23 @@ export default function SmartPlannerChart({ plan }: SmartPlannerChartProps) {
       </Card>
 
       {/* Subject Hours Bar Chart */}
-      <Card className="p-6">
+      <Card className="p-4 sm:p-6 overflow-hidden">
         <h3 className="font-semibold mb-4">Total Hours by Subject</h3>
-        <div className="h-[250px]">
+        <div className="h-[220px] sm:h-[250px] -mx-2 sm:mx-0">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={barChartData}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
               <XAxis 
                 dataKey="subject" 
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 10 }}
                 interval={0}
                 angle={-45}
                 textAnchor="end"
-                height={80}
+                height={70}
               />
               <YAxis 
                 tickFormatter={(value) => `${value}h`}
+                width={35}
               />
               <Tooltip 
                 formatter={(value: number, name: string, props: any) => [
@@ -162,9 +163,9 @@ export default function SmartPlannerChart({ plan }: SmartPlannerChartProps) {
       </Card>
 
       {/* Color Legend */}
-      <Card className="p-4">
+      <Card className="p-4 overflow-hidden">
         <h4 className="text-sm font-medium mb-3">Subject Colors</h4>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           {allSubjects.map(subject => (
             <div key={subject} className="flex items-center gap-2">
               <div 
