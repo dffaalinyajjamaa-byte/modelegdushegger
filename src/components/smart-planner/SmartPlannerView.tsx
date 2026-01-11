@@ -64,7 +64,7 @@ export default function SmartPlannerView({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       {/* Actions Bar */}
       <div className="flex flex-wrap gap-2 justify-between items-center">
         <div>
