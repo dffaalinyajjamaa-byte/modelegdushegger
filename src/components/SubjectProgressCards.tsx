@@ -96,9 +96,17 @@ const SubjectProgressCards = ({
   if (subjects.length === 0) {
     return <div className="subject-grid">
         {['Afaan Oromoo', 'Saayinsii (Science)', 'Mathematics', 'English'].map(subject => {
-        const config = SUBJECT_CONFIG[subject] || SUBJECT_CONFIG['Default'];
-        return;
-      })}
+          const config = SUBJECT_CONFIG[subject] || SUBJECT_CONFIG['Default'];
+          return (
+            <Card key={subject} className={`subject-card subject-card-${config.color} hover-scale cursor-pointer`}>
+              <div className="subject-card-icon">{config.icon}</div>
+              <div className="subject-card-content">
+                <h3 className="subject-card-title">{subject}</h3>
+                <p className="subject-card-time">0 min</p>
+              </div>
+            </Card>
+          );
+        })}
       </div>;
   }
   return <div className="subject-grid">
