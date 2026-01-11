@@ -18,6 +18,9 @@ verify_jwt = false
 [functions.generate-study-plan]
 verify_jwt = true
 
+[functions.generate-smart-plan]
+verify_jwt = false
+
 [functions.live-teacher-settings]
 verify_jwt = true
 

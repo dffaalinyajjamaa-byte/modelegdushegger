@@ -861,6 +861,99 @@ export type Database = {
           },
         ]
       }
+      smart_planner_plans: {
+        Row: {
+          created_at: string
+          id: string
+          plan_data: Json
+          user_id: string
+          week_index: number
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          plan_data: Json
+          user_id: string
+          week_index: number
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          plan_data?: Json
+          user_id?: string
+          week_index?: number
+          year?: number
+        }
+        Relationships: []
+      }
+      smart_planner_settings: {
+        Row: {
+          created_at: string
+          day_of_week: string
+          dinner_end: string | null
+          dinner_start: string | null
+          id: string
+          rest_end: string | null
+          rest_start: string | null
+          school_end: string | null
+          school_start: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: string
+          dinner_end?: string | null
+          dinner_start?: string | null
+          id?: string
+          rest_end?: string | null
+          rest_start?: string | null
+          school_end?: string | null
+          school_start?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: string
+          dinner_end?: string | null
+          dinner_start?: string | null
+          id?: string
+          rest_end?: string | null
+          rest_start?: string | null
+          school_end?: string | null
+          school_start?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      smart_planner_subjects: {
+        Row: {
+          created_at: string
+          id: string
+          priority: string
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          priority?: string
+          subject: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          priority?: string
+          subject?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stories: {
         Row: {
           background_color: string | null

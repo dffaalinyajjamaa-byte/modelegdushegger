@@ -3,9 +3,9 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { LogOut, Settings, Video, BookOpen, CheckSquare, Bot, FileText, Brain, MessageCircle, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee, FlaskConical, Trophy, ClipboardList, GraduationCap } from 'lucide-react';
+import { LogOut, Settings, Video, BookOpen, Bot, FileText, Brain, MessageCircle, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee, FlaskConical, Trophy, ClipboardList, GraduationCap, CalendarClock } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import TaskManager from './TaskManager';
+import SmartPlanner from './SmartPlanner';
 import VideoViewer from './VideoViewer';
 import PDFViewer from './PDFViewer';
 import SettingsComponent from './Settings';
@@ -81,7 +81,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'tasks' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -266,12 +266,11 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
             <Worksheets user={user} onBack={() => setActiveView('dashboard')} />
           </Suspense>
         );
-      case 'tasks':
+      case 'smart-planner':
         return (
-          <TaskManager 
+          <SmartPlanner 
             user={user} 
-            onLogActivity={logActivity}
-            onTaskComplete={() => updateUserStats('tasks_completed')}
+            onBack={() => setActiveView('dashboard')}
           />
         );
       case 'settings':
@@ -468,12 +467,12 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         </button>
 
         <button
-          onClick={() => setActiveView('tasks')}
+          onClick={() => setActiveView('smart-planner')}
           className="group relative quick-access-card bg-gradient-to-br from-green-500/20 to-teal-500/20 border-2 border-green-500/30 hover:border-green-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-green-500/0 to-teal-500/0 group-hover:from-green-500/10 group-hover:to-teal-500/10 transition-all duration-300" />
-          <CheckSquare className="relative w-12 h-12 mb-3 mx-auto text-green-500 group-hover:scale-110 transition-transform duration-300" />
-          <h3 className="relative font-semibold text-center">My Tasks</h3>
+          <CalendarClock className="relative w-12 h-12 mb-3 mx-auto text-green-500 group-hover:scale-110 transition-transform duration-300" />
+          <h3 className="relative font-semibold text-center">Smart Planner</h3>
         </button>
 
         <button
@@ -552,7 +551,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
     if (activeView === 'books') return 'Digital Books';
     if (activeView === 'messenger') return 'Messenger';
     if (activeView === 'quiz') return 'Quiz';
-    if (activeView === 'tasks') return 'My Tasks';
+    if (activeView === 'smart-planner') return 'Smart Planner';
     if (activeView === 'settings') return 'Settings';
     if (activeView === 'profile') return 'My Profile';
     if (activeView === 'about') return 'About Us';
