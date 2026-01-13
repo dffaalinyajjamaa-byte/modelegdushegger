@@ -48,6 +48,8 @@ const DigitalBooksLibrary = lazy(() => import('./DigitalBooksLibrary'));
 const Messenger = lazy(() => import('./Messenger'));
 const QuizFeature = lazy(() => import('./QuizFeature'));
 const RelaxTime = lazy(() => import('./RelaxTime'));
+const Afoola = lazy(() => import('./Afoola'));
+const Aadaa = lazy(() => import('./Aadaa'));
 
 interface DashboardProps {
   user: User;
@@ -81,7 +83,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets' | 'afoola' | 'aadaa';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -295,6 +297,18 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         return (
           <Suspense fallback={<LoadingFallback />}>
             <RelaxTime user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
+      case 'afoola':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <Afoola user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
+      case 'aadaa':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <Aadaa user={user} onBack={() => setActiveView('dashboard')} />
           </Suspense>
         );
       case 'national-exams':
@@ -537,6 +551,24 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
           <ClipboardList className="relative w-12 h-12 mb-3 mx-auto text-indigo-500 group-hover:scale-110 transition-transform duration-300" />
           <h3 className="relative font-semibold text-center">Worksheets</h3>
         </button>
+
+        <button
+          onClick={() => setActiveView('afoola')}
+          className="group relative quick-access-card bg-gradient-to-br from-violet-500/20 to-purple-500/20 border-2 border-violet-500/30 hover:border-violet-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-purple-500/0 group-hover:from-violet-500/10 group-hover:to-purple-500/10 transition-all duration-300" />
+          <BookOpen className="relative w-12 h-12 mb-3 mx-auto text-violet-500 group-hover:scale-110 transition-transform duration-300" />
+          <h3 className="relative font-semibold text-center">Afoola</h3>
+        </button>
+
+        <button
+          onClick={() => setActiveView('aadaa')}
+          className="group relative quick-access-card bg-gradient-to-br from-emerald-500/20 to-green-500/20 border-2 border-emerald-500/30 hover:border-emerald-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-green-500/0 group-hover:from-emerald-500/10 group-hover:to-green-500/10 transition-all duration-300" />
+          <FileText className="relative w-12 h-12 mb-3 mx-auto text-emerald-500 group-hover:scale-110 transition-transform duration-300" />
+          <h3 className="relative font-semibold text-center">Aadaa</h3>
+        </button>
       </div>
 
       {/* Daily Challenge Widget */}
@@ -562,6 +594,8 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
     if (activeView === 'science-experiments') return 'Science Experiments';
     if (activeView === 'competition') return 'Dorgaadorgee';
     if (activeView === 'worksheets') return 'Worksheets';
+    if (activeView === 'afoola') return 'Afoola';
+    if (activeView === 'aadaa') return 'Aadaa';
     return 'Dashboard';
   };
 

@@ -3,99 +3,101 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Play, Globe, Music, Sparkles } from 'lucide-react';
+import { ArrowLeft, Play, BookOpen, MessageSquare, Music, HelpCircle, Scroll, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import YouTube from 'react-youtube';
 import { getYouTubeThumbnail, getYouTubeVideoId } from '@/lib/youtube-utils';
 
-interface RelaxTimeProps {
+interface AfoolaProps {
   user: User;
   onBack: () => void;
 }
 
 interface Video {
   id: string;
-  language: string;
   category: string;
   title: string;
   youtube_url: string;
   thumbnail_url: string | null;
   duration: string | null;
+  display_order: number;
 }
 
-type Language = 'afaan_oromoo' | 'english' | 'amharic' | null;
-type Category = string | null;
+type Category = 'walaloo' | 'mammaaksa' | 'geerarsa' | 'hibboo' | 'oduu_durii' | null;
 
-const languages = [
+const categories = [
   { 
-    id: 'afaan_oromoo', 
-    name: 'Afaan Oromoo', 
-    flag: '🇪🇹',
-    color: 'from-green-500/20 to-emerald-500/20',
-    borderColor: 'border-green-500/30 hover:border-green-500/60'
+    id: 'walaloo' as Category, 
+    name: 'Walaloo', 
+    nameEn: 'Poetry',
+    icon: Scroll,
+    color: 'from-purple-500/20 to-violet-500/20',
+    borderColor: 'border-purple-500/30 hover:border-purple-500/60',
+    iconColor: 'text-purple-500'
   },
   { 
-    id: 'english', 
-    name: 'English', 
-    flag: '🇬🇧',
+    id: 'mammaaksa' as Category, 
+    name: 'Mammaaksa', 
+    nameEn: 'Proverbs',
+    icon: MessageSquare,
     color: 'from-blue-500/20 to-indigo-500/20',
-    borderColor: 'border-blue-500/30 hover:border-blue-500/60'
+    borderColor: 'border-blue-500/30 hover:border-blue-500/60',
+    iconColor: 'text-blue-500'
   },
   { 
-    id: 'amharic', 
-    name: 'Amharic', 
-    flag: '🇪🇹',
-    color: 'from-yellow-500/20 to-orange-500/20',
-    borderColor: 'border-yellow-500/30 hover:border-yellow-500/60'
+    id: 'geerarsa' as Category, 
+    name: 'Geerarsa', 
+    nameEn: 'Oral Songs',
+    icon: Music,
+    color: 'from-green-500/20 to-emerald-500/20',
+    borderColor: 'border-green-500/30 hover:border-green-500/60',
+    iconColor: 'text-green-500'
+  },
+  { 
+    id: 'hibboo' as Category, 
+    name: 'Hibboo', 
+    nameEn: 'Riddles',
+    icon: HelpCircle,
+    color: 'from-orange-500/20 to-amber-500/20',
+    borderColor: 'border-orange-500/30 hover:border-orange-500/60',
+    iconColor: 'text-orange-500'
+  },
+  { 
+    id: 'oduu_durii' as Category, 
+    name: 'Oduu Durii', 
+    nameEn: 'Folk Tales',
+    icon: BookOpen,
+    color: 'from-pink-500/20 to-rose-500/20',
+    borderColor: 'border-pink-500/30 hover:border-pink-500/60',
+    iconColor: 'text-pink-500'
   },
 ];
 
-const categories: Record<string, { id: string; name: string; nameLocal?: string; icon: string }[]> = {
-  afaan_oromoo: [
-    { id: 'history_country', name: 'History of Country', nameLocal: 'Seenaa Biyyaa', icon: '🏛️' },
-    { id: 'history_heroes', name: 'History of Heroes', nameLocal: 'Seenaa Gootota', icon: '⚔️' },
-    { id: 'history_gada', name: 'History of Gada System', nameLocal: 'Seenaa Sirna Gadaa', icon: '👑' },
-  ],
-  english: [
-    { id: 'history_country', name: 'History of Country', icon: '🏛️' },
-    { id: 'history_heroes', name: 'History of Heroes', icon: '⚔️' },
-    { id: 'life_teaching', name: 'Life Teaching Short Movies', icon: '🎬' },
-    { id: 'fairy_tales', name: 'Fairy Tales', icon: '📖' },
-  ],
-  amharic: [
-    { id: 'history_country', name: 'History of Country', nameLocal: 'የአገር ታሪክ', icon: '🏛️' },
-    { id: 'history_heroes', name: 'History of Heroes', nameLocal: 'የጀግኖች ታሪክ', icon: '⚔️' },
-    { id: 'fairy_tales', name: 'Fairy Tales', nameLocal: 'ተረቶች', icon: '📖' },
-  ],
-};
-
-export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState<Language>(null);
+export default function Afoola({ user, onBack }: AfoolaProps) {
   const [selectedCategory, setSelectedCategory] = useState<Category>(null);
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (selectedLanguage && selectedCategory) {
+    if (selectedCategory) {
       fetchVideos();
     }
-  }, [selectedLanguage, selectedCategory]);
+  }, [selectedCategory]);
 
   const fetchVideos = async () => {
-    if (!selectedLanguage || !selectedCategory) return;
+    if (!selectedCategory) return;
     
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('relax_time_videos')
+        .from('afoola_videos')
         .select('*')
-        .eq('language', selectedLanguage)
         .eq('category', selectedCategory)
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      setVideos(data || []);
+      setVideos((data as Video[]) || []);
     } catch (error) {
       console.error('Error fetching videos:', error);
     } finally {
@@ -103,15 +105,12 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
     }
   };
 
-
   const handleBack = () => {
     if (selectedVideo) {
       setSelectedVideo(null);
     } else if (selectedCategory) {
       setSelectedCategory(null);
       setVideos([]);
-    } else if (selectedLanguage) {
-      setSelectedLanguage(null);
     } else {
       onBack();
     }
@@ -120,14 +119,10 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
   const getTitle = () => {
     if (selectedVideo) return selectedVideo.title;
     if (selectedCategory) {
-      const cat = categories[selectedLanguage!]?.find(c => c.id === selectedCategory);
-      return cat?.nameLocal || cat?.name || 'Videos';
+      const cat = categories.find(c => c.id === selectedCategory);
+      return cat?.name || 'Videos';
     }
-    if (selectedLanguage) {
-      const lang = languages.find(l => l.id === selectedLanguage);
-      return lang?.name || 'Select Category';
-    }
-    return 'RELAX TIME';
+    return 'AFOOLA';
   };
 
   return (
@@ -140,7 +135,7 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-purple-500" />
+              <Scroll className="h-6 w-6 text-purple-500" />
               <h1 className="text-xl font-bold">{getTitle()}</h1>
             </div>
           </div>
@@ -149,78 +144,45 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
 
       <div className="p-4 space-y-6">
         <AnimatePresence mode="wait">
-          {/* Language Selection */}
-          {!selectedLanguage && (
+          {/* Category Selection */}
+          {!selectedCategory && (
             <motion.div
-              key="languages"
+              key="categories"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
               <div className="text-center mb-8">
-                <Music className="h-16 w-16 mx-auto text-purple-500 mb-4" />
-                <h2 className="text-2xl font-bold mb-2">Take a Break & Learn</h2>
-                <p className="text-muted-foreground">Choose your preferred language</p>
-              </div>
-
-              <div className="grid gap-4">
-                {languages.map((lang, index) => (
-                  <motion.button
-                    key={lang.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    onClick={() => setSelectedLanguage(lang.id as Language)}
-                    className={`group relative bg-gradient-to-br ${lang.color} border-2 ${lang.borderColor} p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-glow overflow-hidden text-left`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <span className="text-4xl">{lang.flag}</span>
-                      <div>
-                        <h3 className="text-xl font-bold">{lang.name}</h3>
-                        <p className="text-sm text-muted-foreground">Tap to explore content</p>
-                      </div>
-                      <Globe className="ml-auto h-8 w-8 opacity-50 group-hover:opacity-100 transition-opacity" />
-                    </div>
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Category Selection */}
-          {selectedLanguage && !selectedCategory && (
-            <motion.div
-              key="categories"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="space-y-4"
-            >
-              <div className="text-center mb-6">
-                <p className="text-muted-foreground">Select a category</p>
+                <Sparkles className="h-16 w-16 mx-auto text-purple-500 mb-4" />
+                <h2 className="text-2xl font-bold mb-2">Afoola Oromoo</h2>
+                <p className="text-muted-foreground">Oromo Oral Literature & Culture</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {categories[selectedLanguage]?.map((cat, index) => (
-                  <motion.button
-                    key={cat.id}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1 }}
-                    onClick={() => setSelectedCategory(cat.id)}
-                    className="group bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/30 hover:border-purple-500/60 p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-glow"
-                  >
-                    <span className="text-4xl block mb-3">{cat.icon}</span>
-                    <h3 className="font-semibold text-sm">{cat.nameLocal || cat.name}</h3>
-                  </motion.button>
-                ))}
+                {categories.map((cat, index) => {
+                  const Icon = cat.icon;
+                  return (
+                    <motion.button
+                      key={cat.id}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.1 }}
+                      onClick={() => setSelectedCategory(cat.id)}
+                      className={`group bg-gradient-to-br ${cat.color} border-2 ${cat.borderColor} p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-glow`}
+                    >
+                      <Icon className={`h-10 w-10 mx-auto mb-3 ${cat.iconColor}`} />
+                      <h3 className="font-semibold text-sm">{cat.name}</h3>
+                      <p className="text-xs text-muted-foreground">{cat.nameEn}</p>
+                    </motion.button>
+                  );
+                })}
               </div>
             </motion.div>
           )}
 
           {/* Video List */}
-          {selectedLanguage && selectedCategory && !selectedVideo && (
+          {selectedCategory && !selectedVideo && (
             <motion.div
               key="videos"
               initial={{ opacity: 0, y: 20 }}
@@ -314,7 +276,7 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
               <Card className="p-4">
                 <h3 className="text-lg font-bold mb-2">{selectedVideo.title}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Enjoy this educational content while relaxing!
+                  Learn about Oromo oral literature and cultural heritage!
                 </p>
               </Card>
             </motion.div>
