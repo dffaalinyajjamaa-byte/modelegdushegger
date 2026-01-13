@@ -4,12 +4,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, CheckCircle, Clock, Sparkles, BookOpen, Video, Brain, FileText, Coffee, ClipboardList } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Trophy, CheckCircle, Sparkles, BookOpen, Video, Brain, FileText, Coffee, ClipboardList } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
 interface DailyChallengeProps {
   user: User;
   onNavigate?: (view: string) => void;
 }
+
 interface Challenge {
   id: string;
   title: string;
@@ -19,15 +22,20 @@ interface Challenge {
   points: number;
   active_date: string;
   content_data: any;
+  grade_level: string;
 }
+
 interface ChallengeProgress {
   challenge_id: string;
   completed: boolean;
   points_earned: number;
 }
-const challengeTypeIcons: {
-  [key: string]: any;
-} = {
+
+interface Profile {
+  grade: string | null;
+}
+
+const challengeTypeIcons: { [key: string]: any } = {
   reading: BookOpen,
   video: Video,
   quiz: Brain,
@@ -36,9 +44,8 @@ const challengeTypeIcons: {
   relax: Coffee,
   practice: Brain
 };
-const challengeTypeColors: {
-  [key: string]: string;
-} = {
+
+const challengeTypeColors: { [key: string]: string } = {
   reading: 'from-blue-500/20 to-blue-900/30 border-blue-500/30',
   video: 'from-red-500/20 to-red-900/30 border-red-500/30',
   quiz: 'from-orange-500/20 to-orange-900/30 border-orange-500/30',
@@ -47,29 +54,53 @@ const challengeTypeColors: {
   relax: 'from-pink-500/20 to-pink-900/30 border-pink-500/30',
   practice: 'from-green-500/20 to-green-900/30 border-green-500/30'
 };
-export default function DailyChallenge({
-  user,
-  onNavigate
-}: DailyChallengeProps) {
+
+const gradeOptions = ['Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'];
+
+export default function DailyChallenge({ user, onNavigate }: DailyChallengeProps) {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [progress, setProgress] = useState<ChallengeProgress[]>([]);
   const [loading, setLoading] = useState(true);
-  const {
-    toast
-  } = useToast();
+  const [selectedGrade, setSelectedGrade] = useState<string>('Grade 8');
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const { toast } = useToast();
+
   useEffect(() => {
-    fetchDailyChallenges();
+    fetchUserProfile();
     fetchProgress();
   }, []);
+
+  useEffect(() => {
+    if (selectedGrade) {
+      fetchDailyChallenges();
+    }
+  }, [selectedGrade]);
+
+  const fetchUserProfile = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('grade')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    
+    if (data) {
+      setUserProfile(data);
+      setSelectedGrade(data.grade || 'Grade 8');
+    }
+  };
+
   const fetchDailyChallenges = async () => {
     try {
+      setLoading(true);
       const today = new Date().toISOString().split('T')[0];
-      const {
-        data,
-        error
-      } = await supabase.from('daily_challenges').select('*').eq('active_date', today);
+      const { data, error } = await supabase
+        .from('daily_challenges')
+        .select('*')
+        .eq('active_date', today)
+        .eq('grade_level', selectedGrade);
+      
       if (error) throw error;
-      setChallenges(data || []);
+      setChallenges((data as Challenge[]) || []);
     } catch (error) {
       console.error('Error fetching daily challenges:', error);
     } finally {
@@ -171,12 +202,22 @@ export default function DailyChallenge({
   }
   return <Card className="glass-card">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
             Daily Challenges
           </CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select value={selectedGrade} onValueChange={setSelectedGrade}>
+              <SelectTrigger className="w-[120px] h-8 text-xs">
+                <SelectValue placeholder="Grade" />
+              </SelectTrigger>
+              <SelectContent>
+                {gradeOptions.map(grade => (
+                  <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Badge variant="outline" className="text-xs">
               {completedCount}/{challenges.length} Done
             </Badge>

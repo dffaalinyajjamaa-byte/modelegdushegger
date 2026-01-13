@@ -12,10 +12,10 @@ interface StreakBadgeProps {
 
 export default function StreakBadge({ currentStreak, longestStreak, totalPoints, className }: StreakBadgeProps) {
   const getStreakMilestone = (streak: number) => {
-    if (streak >= 365) return { icon: '💎', name: 'Diamond', color: 'text-cyan-500' };
     if (streak >= 90) return { icon: '🥇', name: 'Gold', color: 'text-yellow-500' };
-    if (streak >= 30) return { icon: '🥈', name: 'Silver', color: 'text-gray-400' };
-    if (streak >= 7) return { icon: '🥉', name: 'Bronze', color: 'text-amber-700' };
+    if (streak >= 50) return { icon: '💚', name: 'Metal Green', color: 'text-emerald-500' };
+    if (streak >= 20) return { icon: '🥈', name: 'Silver', color: 'text-gray-400' };
+    if (streak >= 10) return { icon: '🥉', name: 'Bronze', color: 'text-amber-700' };
     return { icon: '🔥', name: 'Beginner', color: 'text-orange-500' };
   };
 
@@ -66,23 +66,23 @@ export default function StreakBadge({ currentStreak, longestStreak, totalPoints,
       {/* Progress to next milestone */}
       <div className="mt-4 pt-4 border-t">
         <div className="flex justify-between text-xs text-muted-foreground mb-1">
-          <span>Next: {currentStreak < 7 ? 'Bronze (7)' : currentStreak < 30 ? 'Silver (30)' : currentStreak < 90 ? 'Gold (90)' : 'Diamond (365)'}</span>
+          <span>Next: {currentStreak < 10 ? 'Bronze (10)' : currentStreak < 20 ? 'Silver (20)' : currentStreak < 50 ? 'Metal Green (50)' : currentStreak < 90 ? 'Gold (90)' : 'Max level!'}</span>
           <span>
-            {currentStreak < 7 && `${7 - currentStreak} days`}
-            {currentStreak >= 7 && currentStreak < 30 && `${30 - currentStreak} days`}
-            {currentStreak >= 30 && currentStreak < 90 && `${90 - currentStreak} days`}
-            {currentStreak >= 90 && currentStreak < 365 && `${365 - currentStreak} days`}
-            {currentStreak >= 365 && 'Max level!'}
+            {currentStreak < 10 && `${10 - currentStreak} days`}
+            {currentStreak >= 10 && currentStreak < 20 && `${20 - currentStreak} days`}
+            {currentStreak >= 20 && currentStreak < 50 && `${50 - currentStreak} days`}
+            {currentStreak >= 50 && currentStreak < 90 && `${90 - currentStreak} days`}
+            {currentStreak >= 90 && 'Max level!'}
           </span>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div 
             className="h-full bg-gradient-to-r from-orange-400 to-red-500 transition-all"
             style={{ 
-              width: `${currentStreak < 7 ? (currentStreak / 7) * 100 : 
-                       currentStreak < 30 ? ((currentStreak - 7) / 23) * 100 :
-                       currentStreak < 90 ? ((currentStreak - 30) / 60) * 100 :
-                       currentStreak < 365 ? ((currentStreak - 90) / 275) * 100 : 100}%` 
+              width: `${currentStreak < 10 ? (currentStreak / 10) * 100 : 
+                       currentStreak < 20 ? ((currentStreak - 10) / 10) * 100 :
+                       currentStreak < 50 ? ((currentStreak - 20) / 30) * 100 :
+                       currentStreak < 90 ? ((currentStreak - 50) / 40) * 100 : 100}%` 
             }}
           />
         </div>

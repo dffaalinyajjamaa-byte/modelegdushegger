@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      aadaa_videos: {
+        Row: {
+          category: string
+          created_at: string | null
+          display_order: number | null
+          duration: string | null
+          id: string
+          thumbnail_url: string | null
+          title: string
+          youtube_url: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          display_order?: number | null
+          duration?: string | null
+          id?: string
+          thumbnail_url?: string | null
+          title: string
+          youtube_url: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          display_order?: number | null
+          duration?: string | null
+          id?: string
+          thumbnail_url?: string | null
+          title?: string
+          youtube_url?: string
+        }
+        Relationships: []
+      }
       activities: {
         Row: {
           activity_type: string
@@ -38,6 +71,39 @@ export type Database = {
           id?: string
           metadata?: Json | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      afoola_videos: {
+        Row: {
+          category: string
+          created_at: string | null
+          display_order: number | null
+          duration: string | null
+          id: string
+          thumbnail_url: string | null
+          title: string
+          youtube_url: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          display_order?: number | null
+          duration?: string | null
+          id?: string
+          thumbnail_url?: string | null
+          title: string
+          youtube_url: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          display_order?: number | null
+          duration?: string | null
+          id?: string
+          thumbnail_url?: string | null
+          title?: string
+          youtube_url?: string
         }
         Relationships: []
       }
@@ -351,6 +417,7 @@ export type Database = {
           content_data: Json | null
           created_at: string | null
           description: string | null
+          grade_level: string | null
           id: string
           points: number | null
           subject: string
@@ -362,6 +429,7 @@ export type Database = {
           content_data?: Json | null
           created_at?: string | null
           description?: string | null
+          grade_level?: string | null
           id?: string
           points?: number | null
           subject: string
@@ -373,6 +441,7 @@ export type Database = {
           content_data?: Json | null
           created_at?: string | null
           description?: string | null
+          grade_level?: string | null
           id?: string
           points?: number | null
           subject?: string
@@ -1152,34 +1221,40 @@ export type Database = {
       }
       user_rankings: {
         Row: {
+          badge_tier: string | null
           created_at: string | null
           current_streak: number | null
           id: string
           last_activity_date: string | null
           longest_streak: number | null
           rank: number | null
+          signup_date: string | null
           total_points: number | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
+          badge_tier?: string | null
           created_at?: string | null
           current_streak?: number | null
           id?: string
           last_activity_date?: string | null
           longest_streak?: number | null
           rank?: number | null
+          signup_date?: string | null
           total_points?: number | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
+          badge_tier?: string | null
           created_at?: string | null
           current_streak?: number | null
           id?: string
           last_activity_date?: string | null
           longest_streak?: number | null
           rank?: number | null
+          signup_date?: string | null
           total_points?: number | null
           updated_at?: string | null
           user_id?: string

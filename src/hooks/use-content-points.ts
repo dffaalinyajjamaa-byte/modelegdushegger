@@ -6,8 +6,8 @@ export const useContentPoints = () => {
 
   const awardPointsForContent = async (userId: string, contentType: 'video' | 'book' | 'exam', contentId: string) => {
     const pointsMap = {
-      video: 50,
-      book: 30,
+      video: 5,
+      book: 5,
       exam: 60,
     };
 
