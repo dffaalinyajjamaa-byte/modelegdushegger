@@ -3,7 +3,7 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Play, Globe, Music, Sparkles } from 'lucide-react';
+import { ArrowLeft, Play, Globe, Music, Sparkles, BookOpen, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import YouTube from 'react-youtube';
 import { getYouTubeThumbnail, getYouTubeVideoId } from '@/lib/youtube-utils';
@@ -15,7 +15,7 @@ interface RelaxTimeProps {
 
 interface Video {
   id: string;
-  language: string;
+  language?: string;
   category: string;
   title: string;
   youtube_url: string;
@@ -25,6 +25,7 @@ interface Video {
 
 type Language = 'afaan_oromoo' | 'english' | 'amharic' | null;
 type Category = string | null;
+type SubCategory = string | null;
 
 const languages = [
   { 
@@ -50,11 +51,13 @@ const languages = [
   },
 ];
 
-const categories: Record<string, { id: string; name: string; nameLocal?: string; icon: string }[]> = {
+const categories: Record<string, { id: string; name: string; nameLocal?: string; icon: string; hasSubcategories?: boolean }[]> = {
   afaan_oromoo: [
     { id: 'history_country', name: 'History of Country', nameLocal: 'Seenaa Biyyaa', icon: '🏛️' },
     { id: 'history_heroes', name: 'History of Heroes', nameLocal: 'Seenaa Gootota', icon: '⚔️' },
     { id: 'history_gada', name: 'History of Gada System', nameLocal: 'Seenaa Sirna Gadaa', icon: '👑' },
+    { id: 'afoola', name: 'Afoola', nameLocal: 'Afoola', icon: '📜', hasSubcategories: true },
+    { id: 'aadaa', name: 'Aadaa', nameLocal: 'Aadaa', icon: '🎭', hasSubcategories: true },
   ],
   english: [
     { id: 'history_country', name: 'History of Country', icon: '🏛️' },
@@ -69,18 +72,42 @@ const categories: Record<string, { id: string; name: string; nameLocal?: string;
   ],
 };
 
+// Subcategories for Afoola and Aadaa
+const subcategories: Record<string, { id: string; name: string; nameLocal: string; icon: string }[]> = {
+  afoola: [
+    { id: 'walaloo', name: 'Poetry', nameLocal: 'Walaloo', icon: '📜' },
+    { id: 'mammaaksa', name: 'Proverbs', nameLocal: 'Mammaaksa', icon: '💬' },
+    { id: 'geerarsa', name: 'Oral Songs', nameLocal: 'Geerarsa', icon: '🎵' },
+    { id: 'hibboo', name: 'Riddles', nameLocal: 'Hibboo', icon: '❓' },
+    { id: 'oduu_durii', name: 'Folk Tales', nameLocal: 'Oduu Durii', icon: '📖' },
+  ],
+  aadaa: [
+    { id: 'irreecha', name: 'Thanksgiving Festival', nameLocal: 'Irreecha', icon: '🌸' },
+    { id: 'nyaata', name: 'Traditional Food', nameLocal: 'Nyaata', icon: '🍲' },
+    { id: 'uffannaa', name: 'Traditional Clothing', nameLocal: 'Uffannaa', icon: '👗' },
+    { id: 'shubbisa', name: 'Traditional Dance', nameLocal: 'Shubbisa', icon: '💃' },
+  ],
+};
+
 export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category>(null);
+  const [selectedSubCategory, setSelectedSubCategory] = useState<SubCategory>(null);
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (selectedLanguage && selectedCategory) {
-      fetchVideos();
+      // Check if category has subcategories
+      const cat = categories[selectedLanguage]?.find(c => c.id === selectedCategory);
+      if (cat?.hasSubcategories && selectedSubCategory) {
+        fetchSubCategoryVideos();
+      } else if (!cat?.hasSubcategories) {
+        fetchVideos();
+      }
     }
-  }, [selectedLanguage, selectedCategory]);
+  }, [selectedLanguage, selectedCategory, selectedSubCategory]);
 
   const fetchVideos = async () => {
     if (!selectedLanguage || !selectedCategory) return;
@@ -103,10 +130,35 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
     }
   };
 
+  const fetchSubCategoryVideos = async () => {
+    if (!selectedCategory || !selectedSubCategory) return;
+    
+    setLoading(true);
+    try {
+      // Determine which table to query based on category
+      const tableName = selectedCategory === 'afoola' ? 'afoola_videos' : 'aadaa_videos';
+      
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('category', selectedSubCategory)
+        .order('display_order', { ascending: true });
+
+      if (error) throw error;
+      setVideos(data || []);
+    } catch (error) {
+      console.error('Error fetching subcategory videos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBack = () => {
     if (selectedVideo) {
       setSelectedVideo(null);
+    } else if (selectedSubCategory) {
+      setSelectedSubCategory(null);
+      setVideos([]);
     } else if (selectedCategory) {
       setSelectedCategory(null);
       setVideos([]);
@@ -119,6 +171,11 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
 
   const getTitle = () => {
     if (selectedVideo) return selectedVideo.title;
+    if (selectedSubCategory) {
+      const subCats = subcategories[selectedCategory!];
+      const subCat = subCats?.find(s => s.id === selectedSubCategory);
+      return subCat?.nameLocal || subCat?.name || 'Videos';
+    }
     if (selectedCategory) {
       const cat = categories[selectedLanguage!]?.find(c => c.id === selectedCategory);
       return cat?.nameLocal || cat?.name || 'Videos';
@@ -129,6 +186,9 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
     }
     return 'RELAX TIME';
   };
+
+  const currentCategory = selectedLanguage ? categories[selectedLanguage]?.find(c => c.id === selectedCategory) : null;
+  const showSubcategories = currentCategory?.hasSubcategories && !selectedSubCategory;
 
   return (
     <div className="min-h-screen pb-20">
@@ -209,10 +269,67 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.1 }}
                     onClick={() => setSelectedCategory(cat.id)}
-                    className="group bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/30 hover:border-purple-500/60 p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-glow"
+                    className={`group p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-glow ${
+                      cat.hasSubcategories 
+                        ? 'bg-gradient-to-br from-violet-500/20 to-purple-500/20 border-2 border-violet-500/30 hover:border-violet-500/60'
+                        : 'bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/30 hover:border-purple-500/60'
+                    }`}
                   >
                     <span className="text-4xl block mb-3">{cat.icon}</span>
                     <h3 className="font-semibold text-sm">{cat.nameLocal || cat.name}</h3>
+                    {cat.hasSubcategories && (
+                      <p className="text-xs text-muted-foreground mt-1">Tap to explore</p>
+                    )}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Subcategory Selection (for Afoola and Aadaa) */}
+          {showSubcategories && (
+            <motion.div
+              key="subcategories"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-4"
+            >
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  {selectedCategory === 'afoola' ? (
+                    <BookOpen className="h-8 w-8 text-violet-500" />
+                  ) : (
+                    <Users className="h-8 w-8 text-emerald-500" />
+                  )}
+                  <h2 className="text-2xl font-bold">
+                    {selectedCategory === 'afoola' ? 'Afoola' : 'Aadaa'}
+                  </h2>
+                </div>
+                <p className="text-muted-foreground">
+                  {selectedCategory === 'afoola' 
+                    ? 'Explore Oromo Oral Literature' 
+                    : 'Discover Oromo Cultural Practices'}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {subcategories[selectedCategory!]?.map((subCat, index) => (
+                  <motion.button
+                    key={subCat.id}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                    onClick={() => setSelectedSubCategory(subCat.id)}
+                    className={`group p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-glow ${
+                      selectedCategory === 'afoola'
+                        ? 'bg-gradient-to-br from-violet-500/10 to-purple-500/10 border-2 border-violet-500/30 hover:border-violet-500/60'
+                        : 'bg-gradient-to-br from-emerald-500/10 to-green-500/10 border-2 border-emerald-500/30 hover:border-emerald-500/60'
+                    }`}
+                  >
+                    <span className="text-4xl block mb-3">{subCat.icon}</span>
+                    <h3 className="font-semibold text-sm">{subCat.nameLocal}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">{subCat.name}</p>
                   </motion.button>
                 ))}
               </div>
@@ -220,7 +337,8 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
           )}
 
           {/* Video List */}
-          {selectedLanguage && selectedCategory && !selectedVideo && (
+          {((selectedLanguage && selectedCategory && !currentCategory?.hasSubcategories) || 
+            (currentCategory?.hasSubcategories && selectedSubCategory)) && !selectedVideo && (
             <motion.div
               key="videos"
               initial={{ opacity: 0, y: 20 }}
