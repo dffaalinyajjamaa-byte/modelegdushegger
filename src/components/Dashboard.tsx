@@ -48,8 +48,7 @@ const DigitalBooksLibrary = lazy(() => import('./DigitalBooksLibrary'));
 const Messenger = lazy(() => import('./Messenger'));
 const QuizFeature = lazy(() => import('./QuizFeature'));
 const RelaxTime = lazy(() => import('./RelaxTime'));
-const Afoola = lazy(() => import('./Afoola'));
-const Aadaa = lazy(() => import('./Aadaa'));
+const TeacherStudios = lazy(() => import('./TeacherStudios'));
 
 interface DashboardProps {
   user: User;
@@ -83,7 +82,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets' | 'afoola' | 'aadaa';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets' | 'teacher-studios';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -299,16 +298,10 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
             <RelaxTime user={user} onBack={() => setActiveView('dashboard')} />
           </Suspense>
         );
-      case 'afoola':
+      case 'teacher-studios':
         return (
           <Suspense fallback={<LoadingFallback />}>
-            <Afoola user={user} onBack={() => setActiveView('dashboard')} />
-          </Suspense>
-        );
-      case 'aadaa':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <Aadaa user={user} onBack={() => setActiveView('dashboard')} />
+            <TeacherStudios user={user} onBack={() => setActiveView('dashboard')} />
           </Suspense>
         );
       case 'national-exams':
@@ -553,21 +546,12 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         </button>
 
         <button
-          onClick={() => setActiveView('afoola')}
-          className="group relative quick-access-card bg-gradient-to-br from-violet-500/20 to-purple-500/20 border-2 border-violet-500/30 hover:border-violet-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
+          onClick={() => setActiveView('teacher-studios')}
+          className="group relative quick-access-card bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border-2 border-yellow-500/30 hover:border-yellow-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-500/0 to-purple-500/0 group-hover:from-violet-500/10 group-hover:to-purple-500/10 transition-all duration-300" />
-          <BookOpen className="relative w-12 h-12 mb-3 mx-auto text-violet-500 group-hover:scale-110 transition-transform duration-300" />
-          <h3 className="relative font-semibold text-center">Afoola</h3>
-        </button>
-
-        <button
-          onClick={() => setActiveView('aadaa')}
-          className="group relative quick-access-card bg-gradient-to-br from-emerald-500/20 to-green-500/20 border-2 border-emerald-500/30 hover:border-emerald-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-green-500/0 group-hover:from-emerald-500/10 group-hover:to-green-500/10 transition-all duration-300" />
-          <FileText className="relative w-12 h-12 mb-3 mx-auto text-emerald-500 group-hover:scale-110 transition-transform duration-300" />
-          <h3 className="relative font-semibold text-center">Aadaa</h3>
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-500/0 to-orange-500/0 group-hover:from-yellow-500/10 group-hover:to-orange-500/10 transition-all duration-300" />
+          <GraduationCap className="relative w-12 h-12 mb-3 mx-auto text-yellow-500 group-hover:scale-110 transition-transform duration-300" />
+          <h3 className="relative font-semibold text-center">Teacher Studios</h3>
         </button>
       </div>
 
@@ -594,8 +578,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
     if (activeView === 'science-experiments') return 'Science Experiments';
     if (activeView === 'competition') return 'Dorgaadorgee';
     if (activeView === 'worksheets') return 'Worksheets';
-    if (activeView === 'afoola') return 'Afoola';
-    if (activeView === 'aadaa') return 'Aadaa';
+    if (activeView === 'teacher-studios') return 'Teacher Studios';
     return 'Dashboard';
   };
 

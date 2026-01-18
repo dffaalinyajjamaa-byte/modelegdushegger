@@ -3,11 +3,8 @@ import { User } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, FileText, ExternalLink, Download, Sparkles, Bookmark } from 'lucide-react';
-import { validateContentUrl } from '@/lib/content-utils';
-import { supabase } from '@/integrations/supabase/client';
-import BookAIChat from './BookAIChat';
+import { ArrowLeft, FileText, ExternalLink, Download, RefreshCw, AlertCircle } from 'lucide-react';
+import { validateContentUrl, extractGoogleDriveFileId } from '@/lib/content-utils';
 
 interface Content {
   id: string;
@@ -29,6 +26,10 @@ interface PDFViewerProps {
 
 export default function PDFViewer({ content, user, onBack, onLogActivity, onMaterialRead }: PDFViewerProps) {
   const [marked, setMarked] = useState(false);
+  const [readTime, setReadTime] = useState(0);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [iframeError, setIframeError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   const handleMarkRead = () => {
     if (!marked && onMaterialRead) {
@@ -37,7 +38,6 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
       onLogActivity('pdf', `Marked as read: ${content.title}`, { content_id: content.id });
     }
   };
-  const [readTime, setReadTime] = useState(0);
 
   useEffect(() => {
     // Log activity when component mounts
@@ -64,7 +64,46 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
     };
   }, []);
 
-  const embedUrl = validateContentUrl(content.url, 'pdf');
+  // Get embed URL with fallback options
+  const getEmbedUrl = () => {
+    const baseUrl = validateContentUrl(content.url, 'pdf');
+    
+    // If retry, try alternative methods
+    if (retryCount > 0) {
+      const fileId = extractGoogleDriveFileId(content.url);
+      if (fileId) {
+        // Alternative embed methods based on retry count
+        if (retryCount === 1) {
+          return `https://drive.google.com/file/d/${fileId}/preview`;
+        } else if (retryCount === 2) {
+          return `https://docs.google.com/viewer?srcid=${fileId}&pid=explorer&efh=false&a=v&chrome=false&embedded=true`;
+        }
+      }
+    }
+    
+    return baseUrl;
+  };
+
+  const embedUrl = getEmbedUrl();
+
+  const handleRetry = () => {
+    setIframeError(false);
+    setIframeLoaded(false);
+    setRetryCount(prev => prev + 1);
+  };
+
+  const handleOpenExternal = () => {
+    window.open(content.url, '_blank');
+  };
+
+  const handleDownload = () => {
+    const fileId = extractGoogleDriveFileId(content.url);
+    if (fileId) {
+      window.open(`https://drive.google.com/uc?export=download&id=${fileId}`, '_blank');
+    } else {
+      window.open(content.url.replace('/preview', '/export?format=pdf').replace('/view', '/export?format=pdf'), '_blank');
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -93,12 +132,54 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
           <div className="space-y-6">
             {/* PDF Viewer */}
             <div className="relative w-full">
-              <div className="bg-white rounded-lg overflow-hidden shadow-lg border" style={{ height: '70vh' }}>
+              {/* Loading State */}
+              {!iframeLoaded && !iframeError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg" style={{ height: '70vh' }}>
+                  <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading document...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Error State */}
+              {iframeError && (
+                <div className="flex items-center justify-center bg-muted rounded-lg" style={{ height: '70vh' }}>
+                  <div className="text-center p-6">
+                    <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Unable to load document</h3>
+                    <p className="text-muted-foreground mb-4">
+                      The document preview may not be available. Try opening it externally.
+                    </p>
+                    <div className="flex gap-2 justify-center">
+                      <Button onClick={handleRetry} variant="outline">
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        Retry
+                      </Button>
+                      <Button onClick={handleOpenExternal}>
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Open Externally
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Iframe */}
+              <div 
+                className={`bg-white rounded-lg overflow-hidden shadow-lg border ${iframeError ? 'hidden' : ''}`} 
+                style={{ height: '70vh' }}
+              >
                 <iframe
+                  key={retryCount} // Force re-render on retry
                   src={embedUrl}
                   title={content.title}
                   className="w-full h-full"
                   frameBorder="0"
+                  onLoad={() => setIframeLoaded(true)}
+                  onError={() => setIframeError(true)}
+                  allow="autoplay"
+                  sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
                   style={{
                     border: 'none'
                   }}
@@ -131,7 +212,7 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
                     <Button
                       variant="outline"
                       className="w-full"
-                      onClick={() => window.open(content.url, '_blank')}
+                      onClick={handleOpenExternal}
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
                       Open in Google Docs
@@ -139,14 +220,25 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
                     <Button
                       variant="outline"
                       className="w-full"
-                      onClick={() => {
-                        const downloadUrl = content.url.replace('/edit', '/export?format=pdf');
-                        window.open(downloadUrl, '_blank');
-                      }}
+                      onClick={handleDownload}
                     >
                       <Download className="w-4 h-4 mr-2" />
                       Download PDF
                     </Button>
+                    {!marked && (
+                      <Button
+                        className="w-full"
+                        onClick={handleMarkRead}
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        Mark as Read (+5 points)
+                      </Button>
+                    )}
+                    {marked && (
+                      <div className="text-center text-sm text-green-600 font-medium">
+                        ✓ Marked as Read
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

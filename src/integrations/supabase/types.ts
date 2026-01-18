@@ -1121,6 +1121,78 @@ export type Database = {
         }
         Relationships: []
       }
+      teacher_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          id: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
+      teacher_uploads: {
+        Row: {
+          content_data: Json | null
+          created_at: string | null
+          description: string | null
+          file_url: string | null
+          grade_level: string | null
+          id: string
+          school: string | null
+          subject: string | null
+          teacher_id: string
+          teacher_name: string
+          title: string
+          type: string
+          views_count: number | null
+        }
+        Insert: {
+          content_data?: Json | null
+          created_at?: string | null
+          description?: string | null
+          file_url?: string | null
+          grade_level?: string | null
+          id?: string
+          school?: string | null
+          subject?: string | null
+          teacher_id: string
+          teacher_name: string
+          title: string
+          type: string
+          views_count?: number | null
+        }
+        Update: {
+          content_data?: Json | null
+          created_at?: string | null
+          description?: string | null
+          file_url?: string | null
+          grade_level?: string | null
+          id?: string
+          school?: string | null
+          subject?: string | null
+          teacher_id?: string
+          teacher_name?: string
+          title?: string
+          type?: string
+          views_count?: number | null
+        }
+        Relationships: []
+      }
       typing_indicators: {
         Row: {
           chat_id: string
@@ -1261,6 +1333,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_stats: {
         Row: {
           created_at: string
@@ -1354,6 +1447,13 @@ export type Database = {
           thread_level: number
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       increment_daily_stat: {
         Args: { p_increment?: number; p_stat_type: string; p_user_id: string }
         Returns: undefined
@@ -1383,7 +1483,7 @@ export type Database = {
       update_user_streak: { Args: { p_user_id: string }; Returns: undefined }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "student" | "teacher" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1510,6 +1610,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["student", "teacher", "admin"],
+    },
   },
 } as const

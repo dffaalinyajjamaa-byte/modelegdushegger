@@ -25,34 +25,80 @@ export function getYouTubeEmbedUrl(url: string): string {
 }
 
 /**
+ * Extract Google Drive file ID from various URL formats
+ */
+export function extractGoogleDriveFileId(url: string): string | null {
+  if (!url) return null;
+
+  // Various patterns for Google Drive URLs
+  const patterns = [
+    /\/file\/d\/([a-zA-Z0-9_-]+)/,
+    /\/d\/([a-zA-Z0-9_-]+)/,
+    /id=([a-zA-Z0-9_-]+)/,
+    /open\?id=([a-zA-Z0-9_-]+)/,
+    /uc\?id=([a-zA-Z0-9_-]+)/,
+  ];
+
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+
+  return null;
+}
+
+/**
  * Convert Google Docs/Drive sharing URL to embeddable URL
+ * Improved version with better handling of various URL formats
  */
 export function getGoogleDocsEmbedUrl(url: string): string {
+  if (!url) return '';
+
   // Already an embed/preview URL
-  if (url.includes('/preview') || url.includes('/embed')) {
+  if (url.includes('/preview')) {
     return url;
   }
 
-  // Extract document ID from Google Docs URL
-  const docIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-  if (docIdMatch) {
-    const docId = docIdMatch[1];
-    
-    // Check if it's a Google Doc or Drive file
-    if (url.includes('docs.google.com/document')) {
-      return `https://docs.google.com/document/d/${docId}/preview`;
-    }
-    if (url.includes('drive.google.com')) {
-      return `https://drive.google.com/file/d/${docId}/preview`;
-    }
+  // Handle /view URLs - convert to /preview
+  if (url.includes('/view')) {
+    return url.replace('/view', '/preview');
   }
 
-  // Handle Google Drive sharing links
-  if (url.includes('drive.google.com/file/d/')) {
-    const fileIdMatch = url.match(/\/file\/d\/([^/]+)/);
-    if (fileIdMatch) {
-      return `https://drive.google.com/file/d/${fileIdMatch[1]}/preview`;
+  // Handle /edit URLs - convert to /preview
+  if (url.includes('/edit')) {
+    return url.replace('/edit', '/preview');
+  }
+
+  // Extract file ID and reconstruct URL
+  const fileId = extractGoogleDriveFileId(url);
+  
+  if (fileId) {
+    // Check if it's a Google Doc
+    if (url.includes('docs.google.com/document')) {
+      return `https://docs.google.com/document/d/${fileId}/preview`;
     }
+    
+    // Check if it's a Google Spreadsheet
+    if (url.includes('docs.google.com/spreadsheets')) {
+      return `https://docs.google.com/spreadsheets/d/${fileId}/preview`;
+    }
+    
+    // Check if it's a Google Presentation
+    if (url.includes('docs.google.com/presentation')) {
+      return `https://docs.google.com/presentation/d/${fileId}/preview`;
+    }
+    
+    // Default to Google Drive file preview
+    return `https://drive.google.com/file/d/${fileId}/preview`;
+  }
+
+  // If we can't extract file ID, try simple replacements
+  if (url.includes('drive.google.com')) {
+    // Handle sharing links like /file/d/ID/view
+    return url.replace(/\/view(\?.*)?$/, '/preview')
+              .replace(/\/edit(\?.*)?$/, '/preview');
   }
 
   return url;
@@ -84,9 +130,9 @@ export function validateContentUrl(url: string, type: 'video' | 'pdf'): string {
         return getGoogleDocsEmbedUrl(url);
       }
 
-      // Direct PDF URLs
+      // Direct PDF URLs - use Google Docs viewer for better compatibility
       if (url.endsWith('.pdf')) {
-        return url;
+        return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
       }
     }
 
@@ -125,22 +171,25 @@ export function isPDFUrl(url: string): boolean {
  * Extract Google Drive file ID and generate thumbnail URL
  */
 export function getGoogleDriveThumbnail(driveUrl: string, size: number = 400): string | null {
-  if (!driveUrl) return null;
+  const fileId = extractGoogleDriveFileId(driveUrl);
   
-  // Patterns to extract file ID from various Google Drive URL formats
-  const patterns = [
-    /\/file\/d\/([a-zA-Z0-9_-]+)/,
-    /id=([a-zA-Z0-9_-]+)/,
-    /\/d\/([a-zA-Z0-9_-]+)/,
-  ];
-  
-  for (const pattern of patterns) {
-    const match = driveUrl.match(pattern);
-    if (match && match[1]) {
-      const fileId = match[1];
-      // Generate thumbnail URL with specified size
-      return `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size}`;
-    }
+  if (fileId) {
+    // Generate thumbnail URL with specified size
+    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w${size}`;
   }
+  
+  return null;
+}
+
+/**
+ * Get a direct download link for a Google Drive file
+ */
+export function getGoogleDriveDirectLink(driveUrl: string): string | null {
+  const fileId = extractGoogleDriveFileId(driveUrl);
+  
+  if (fileId) {
+    return `https://drive.google.com/uc?export=download&id=${fileId}`;
+  }
+  
   return null;
 }
