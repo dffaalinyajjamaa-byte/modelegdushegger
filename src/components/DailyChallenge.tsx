@@ -55,7 +55,7 @@ const challengeTypeColors: { [key: string]: string } = {
   practice: 'from-green-500/20 to-green-900/30 border-green-500/30'
 };
 
-const gradeOptions = ['Grade 6', 'Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12'];
+const gradeOptions = ['Grade 6', 'Grade 8'];
 
 export default function DailyChallenge({ user, onNavigate }: DailyChallengeProps) {
   const [challenges, setChallenges] = useState<Challenge[]>([]);

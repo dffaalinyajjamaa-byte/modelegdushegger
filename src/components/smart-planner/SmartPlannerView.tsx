@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { RefreshCw, Settings, BookOpen, Lightbulb, Loader2 } from 'lucide-react';
 import { SmartPlan } from '../SmartPlanner';
-import SmartPlannerChart from './SmartPlannerChart';
 
 interface SmartPlannerViewProps {
   plan: SmartPlan | null;
@@ -93,8 +92,67 @@ export default function SmartPlannerView({
         </div>
       </div>
 
-      {/* Chart Visualization */}
-      <SmartPlannerChart plan={plan} />
+      {/* Colorful Table View */}
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-primary/10">
+                <th className="p-3 text-left font-semibold border-b">Day</th>
+                <th className="p-3 text-left font-semibold border-b">Time</th>
+                <th className="p-3 text-left font-semibold border-b">Subject</th>
+              </tr>
+            </thead>
+            <tbody>
+              {plan.days.map(day => 
+                day.study_sessions && day.study_sessions.length > 0 ? (
+                  day.study_sessions.map((session, i) => {
+                    // Convert to 12-hour format (Addis Ababa time)
+                    const formatTo12Hour = (time: string) => {
+                      const [hours, minutes] = time.split(':').map(Number);
+                      const period = hours >= 12 ? 'PM' : 'AM';
+                      const hour12 = hours % 12 || 12;
+                      return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+                    };
+                    
+                    return (
+                      <tr key={`${day.day}-${i}`} className="border-b hover:bg-muted/50 transition-colors">
+                        {i === 0 && (
+                          <td 
+                            className="p-3 font-medium border-r" 
+                            rowSpan={day.study_sessions.length}
+                          >
+                            {day.day}
+                          </td>
+                        )}
+                        <td className="p-3 text-sm font-mono">
+                          {formatTo12Hour(session.from)} - {formatTo12Hour(session.to)}
+                        </td>
+                        <td className="p-3">
+                          <span 
+                            className={`inline-block px-3 py-1 rounded-full text-sm font-medium text-white ${
+                              SUBJECT_COLORS[session.subject] || 'bg-gray-500'
+                            }`}
+                          >
+                            {session.subject}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr key={day.day} className="border-b">
+                    <td className="p-3 font-medium">{day.day}</td>
+                    <td className="p-3 text-muted-foreground italic" colSpan={2}>
+                      Free day - enjoy your rest!
+                    </td>
+                  </tr>
+                )
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
       {/* Weekly Summary */}
       {plan.weekly_summary && (
