@@ -5,8 +5,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trophy, Flame, Medal } from 'lucide-react';
+import { Trophy, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 interface Ranking {
   user_id: string;
@@ -15,6 +16,7 @@ interface Ranking {
   rank: number;
   full_name: string;
   avatar_url?: string;
+  isTeacher?: boolean;
 }
 
 interface LeaderboardProps {
@@ -70,13 +72,33 @@ export default function Leaderboard({ currentUserId }: LeaderboardProps) {
         .select('user_id, full_name, avatar_url')
         .in('user_id', userIds);
 
+      // Fetch user roles to identify teachers
+      const { data: userRoles } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', userIds)
+        .eq('role', 'teacher');
+
+      const teacherIds = new Set(userRoles?.map(r => r.user_id) || []);
+
+      // Calculate student rank (excluding teachers)
+      let studentRank = 0;
       const enrichedRankings = rankingsData?.map((ranking, index) => {
         const profile = profiles?.find(p => p.user_id === ranking.user_id);
+        const isTeacher = teacherIds.has(ranking.user_id);
+        
+        // Only increment student rank for non-teachers
+        if (!isTeacher) {
+          studentRank++;
+        }
+        
         return {
           ...ranking,
           rank: index + 1,
+          studentRank: isTeacher ? null : studentRank,
           full_name: profile?.full_name || 'Unknown',
-          avatar_url: profile?.avatar_url
+          avatar_url: profile?.avatar_url,
+          isTeacher
         };
       }) || [];
 
@@ -94,6 +116,12 @@ export default function Leaderboard({ currentUserId }: LeaderboardProps) {
     if (index === 2) return <span className="text-2xl">🥉</span>;
     return <span className="text-lg font-bold text-muted-foreground">{index + 1}</span>;
   };
+
+  // Get top 3 students (non-teachers) for blue badge
+  const topStudentIds = rankings
+    .filter(r => !r.isTeacher)
+    .slice(0, 3)
+    .map(r => r.user_id);
 
   return (
     <Card className="shadow-glow">
@@ -147,10 +175,18 @@ export default function Leaderboard({ currentUserId }: LeaderboardProps) {
 
                   {/* User Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">
+                    <p className="font-semibold truncate flex items-center gap-1.5">
                       {ranking.full_name}
+                      {/* Gold badge for teachers */}
+                      {ranking.isTeacher && (
+                        <VerifiedBadge type="gold" size="sm" />
+                      )}
+                      {/* Blue badge for top 3 students (non-teachers) */}
+                      {!ranking.isTeacher && topStudentIds.includes(ranking.user_id) && (
+                        <VerifiedBadge type="blue" size="sm" />
+                      )}
                       {ranking.user_id === currentUserId && (
-                        <Badge className="ml-2" variant="secondary">You</Badge>
+                        <Badge className="ml-1" variant="secondary">You</Badge>
                       )}
                     </p>
                     {ranking.current_streak > 0 && (
