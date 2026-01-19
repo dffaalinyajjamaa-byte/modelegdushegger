@@ -45,6 +45,15 @@ const GRADE_8_SUBJECTS = [
   { id: 'Herreega', name: 'Herreega', icon: Calculator, color: 'primary' },
 ];
 
+const GRADE_6_SUBJECTS = [
+  { id: 'Herrega', name: 'Herrega', icon: Calculator, color: 'primary' },
+  { id: 'Saayinsi Naannoo', name: 'Saayinsi Naannoo', icon: Beaker, color: 'secondary' },
+  { id: 'Afaan Oromoo', name: 'Afaan Oromoo', icon: BookOpen, color: 'accent' },
+  { id: 'Safuu', name: 'Safuu', icon: Shield, color: 'primary' },
+  { id: 'Amharic', name: 'Amharic', icon: Book, color: 'secondary' },
+  { id: 'English', name: 'English', icon: Globe, color: 'accent' },
+];
+
 export default function QuizFeature({ user, onBack }: QuizFeatureProps) {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
@@ -387,7 +396,7 @@ export default function QuizFeature({ user, onBack }: QuizFeatureProps) {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {GRADE_8_SUBJECTS.map((subject) => {
+          {(userGrade === 'Grade 6' ? GRADE_6_SUBJECTS : GRADE_8_SUBJECTS).map((subject) => {
             const Icon = subject.icon;
             const subjectQuizzes = quizzes.filter(e => e.subject === subject.id);
             return (
