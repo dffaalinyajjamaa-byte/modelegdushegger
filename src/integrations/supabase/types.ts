@@ -577,6 +577,33 @@ export type Database = {
         }
         Relationships: []
       }
+      friend_requests: {
+        Row: {
+          created_at: string | null
+          id: string
+          receiver_id: string
+          sender_id: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          receiver_id: string
+          sender_id: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          receiver_id?: string
+          sender_id?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       live_teacher_sessions: {
         Row: {
           created_at: string | null
@@ -1305,8 +1332,10 @@ export type Database = {
           id: string
           last_activity_date: string | null
           longest_streak: number | null
+          posts_count: number | null
           rank: number | null
           signup_date: string | null
+          teacher_points: number | null
           total_points: number | null
           updated_at: string | null
           user_id: string
@@ -1318,8 +1347,10 @@ export type Database = {
           id?: string
           last_activity_date?: string | null
           longest_streak?: number | null
+          posts_count?: number | null
           rank?: number | null
           signup_date?: string | null
+          teacher_points?: number | null
           total_points?: number | null
           updated_at?: string | null
           user_id: string
@@ -1331,8 +1362,10 @@ export type Database = {
           id?: string
           last_activity_date?: string | null
           longest_streak?: number | null
+          posts_count?: number | null
           rank?: number | null
           signup_date?: string | null
+          teacher_points?: number | null
           total_points?: number | null
           updated_at?: string | null
           user_id?: string
