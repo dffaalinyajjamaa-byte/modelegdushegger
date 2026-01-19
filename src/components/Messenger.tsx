@@ -1312,14 +1312,13 @@ export default function Messenger({ user, onBack }: MessengerProps) {
         {threadMessage && (
           <MessageThread
             open={isThreadOpen}
-            onClose={() => {
-              setIsThreadOpen(false);
-              setThreadMessage(null);
+            onOpenChange={(open) => {
+              setIsThreadOpen(open);
+              if (!open) setThreadMessage(null);
             }}
             rootMessage={threadMessage}
-            messages={messages}
+            currentUser={user}
             users={users}
-            currentUserId={user.id}
             onSendReply={handleSendReply}
           />
         )}
