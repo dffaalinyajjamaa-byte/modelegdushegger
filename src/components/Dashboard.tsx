@@ -355,9 +355,26 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
     }
   };
 
+  // Check if user is a teacher
+  const [isTeacherUser, setIsTeacherUser] = useState(false);
+  
+  useEffect(() => {
+    const checkTeacherRole = async () => {
+      if (!user?.id) return;
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'teacher')
+        .maybeSingle();
+      setIsTeacherUser(!!data);
+    };
+    checkTeacherRole();
+  }, [user?.id]);
+
   const renderDashboard = () => (
     <div className="space-y-6 sm:space-y-8">
-      {/* Hero Section - Simplified */}
+      {/* Hero Section - With role-based welcome */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-accent p-6 text-primary-foreground shadow-glow">
         <div className="relative z-10 flex flex-col items-center text-center">
           <img 
@@ -365,9 +382,18 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
             alt="Model Egdu" 
             className="w-20 h-20 mb-3 rounded-full shadow-glow"
           />
-          <h1 className="text-2xl font-bold mb-2">
-            Welcome, {profile?.full_name?.split(' ')[0] || 'Student'}! 👋
-          </h1>
+          <div className="flex items-center gap-2 mb-2">
+            <h1 className="text-2xl font-bold">
+              Welcome{isTeacherUser ? ' Teacher' : ''}, {profile?.full_name?.split(' ')[0] || 'User'}! 👋
+            </h1>
+            {isTeacherUser && (
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-yellow-400 shadow-lg">
+                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </span>
+            )}
+          </div>
           <AnimatedTagline />
         </div>
       </section>
