@@ -17,6 +17,7 @@ interface Ranking {
   full_name: string;
   avatar_url?: string;
   isTeacher?: boolean;
+  isVerified?: boolean;
 }
 
 interface LeaderboardProps {
@@ -69,7 +70,7 @@ export default function Leaderboard({ currentUserId }: LeaderboardProps) {
       const userIds = rankingsData?.map(r => r.user_id) || [];
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('user_id, full_name, avatar_url')
+        .select('user_id, full_name, avatar_url, is_verified')
         .in('user_id', userIds);
 
       // Fetch user roles to identify teachers
@@ -98,7 +99,8 @@ export default function Leaderboard({ currentUserId }: LeaderboardProps) {
           studentRank: isTeacher ? null : studentRank,
           full_name: profile?.full_name || 'Unknown',
           avatar_url: profile?.avatar_url,
-          isTeacher
+          isTeacher,
+          isVerified: profile?.is_verified || false
         };
       }) || [];
 
@@ -122,6 +124,22 @@ export default function Leaderboard({ currentUserId }: LeaderboardProps) {
     .filter(r => !r.isTeacher)
     .slice(0, 3)
     .map(r => r.user_id);
+
+  const renderBadge = (ranking: Ranking) => {
+    // Gold badge for teachers
+    if (ranking.isTeacher) {
+      return <VerifiedBadge type="gold" size="sm" />;
+    }
+    // Blue badge for top 3 students
+    if (topStudentIds.includes(ranking.user_id)) {
+      return <VerifiedBadge type="blue" size="sm" />;
+    }
+    // Black badge for verified students
+    if (ranking.isVerified) {
+      return <VerifiedBadge type="black" size="sm" />;
+    }
+    return null;
+  };
 
   return (
     <Card className="shadow-glow">
@@ -177,14 +195,7 @@ export default function Leaderboard({ currentUserId }: LeaderboardProps) {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold truncate flex items-center gap-1.5">
                       {ranking.full_name}
-                      {/* Gold badge for teachers */}
-                      {ranking.isTeacher && (
-                        <VerifiedBadge type="gold" size="sm" />
-                      )}
-                      {/* Blue badge for top 3 students (non-teachers) */}
-                      {!ranking.isTeacher && topStudentIds.includes(ranking.user_id) && (
-                        <VerifiedBadge type="blue" size="sm" />
-                      )}
+                      {renderBadge(ranking)}
                       {ranking.user_id === currentUserId && (
                         <Badge className="ml-1" variant="secondary">You</Badge>
                       )}

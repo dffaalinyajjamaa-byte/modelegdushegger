@@ -410,6 +410,27 @@ export type Database = {
         }
         Relationships: []
       }
+      content_likes: {
+        Row: {
+          content_id: string
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       daily_challenges: {
         Row: {
           active_date: string
@@ -804,12 +825,17 @@ export type Database = {
           created_at: string
           education_level: string | null
           email: string
+          emergency_contact: string | null
+          family_phone: string | null
           favorite_subject: string | null
           full_name: string
           goal: string | null
           grade: string | null
+          home_address: string | null
           id: string
+          is_verified: boolean | null
           last_seen: string | null
+          parent_name: string | null
           role: string
           school_name: string | null
           teaching_subject: string | null
@@ -823,12 +849,17 @@ export type Database = {
           created_at?: string
           education_level?: string | null
           email: string
+          emergency_contact?: string | null
+          family_phone?: string | null
           favorite_subject?: string | null
           full_name: string
           goal?: string | null
           grade?: string | null
+          home_address?: string | null
           id?: string
+          is_verified?: boolean | null
           last_seen?: string | null
+          parent_name?: string | null
           role?: string
           school_name?: string | null
           teaching_subject?: string | null
@@ -842,12 +873,17 @@ export type Database = {
           created_at?: string
           education_level?: string | null
           email?: string
+          emergency_contact?: string | null
+          family_phone?: string | null
           favorite_subject?: string | null
           full_name?: string
           goal?: string | null
           grade?: string | null
+          home_address?: string | null
           id?: string
+          is_verified?: boolean | null
           last_seen?: string | null
+          parent_name?: string | null
           role?: string
           school_name?: string | null
           teaching_subject?: string | null

@@ -8,7 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Camera, Save, School, Calendar, BookOpen, Target, Mail, User as UserIcon } from 'lucide-react';
+import { ArrowLeft, Camera, Save, School, Calendar, BookOpen, Target, Mail, User as UserIcon, Phone, Home, Users, ShieldCheck } from 'lucide-react';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 interface StudentProfileProps {
   user: User;
@@ -26,6 +27,14 @@ interface Profile {
   age: number | null;
   favorite_subject: string | null;
   goal: string | null;
+  role: string;
+  teaching_subject: string | null;
+  education_level: string | null;
+  home_address: string | null;
+  family_phone: string | null;
+  parent_name: string | null;
+  emergency_contact: string | null;
+  is_verified: boolean;
 }
 
 export default function StudentProfile({ user, onBack }: StudentProfileProps) {
@@ -34,13 +43,25 @@ export default function StudentProfile({ user, onBack }: StudentProfileProps) {
   const [saving, setSaving] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isTeacher, setIsTeacher] = useState(false);
   const { toast } = useToast();
 
   const grades = ['Grade 6', 'Grade 8'];
 
   useEffect(() => {
     fetchProfile();
+    checkTeacherRole();
   }, [user]);
+
+  const checkTeacherRole = async () => {
+    const { data } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'teacher')
+      .maybeSingle();
+    setIsTeacher(!!data);
+  };
 
   const fetchProfile = async () => {
     try {
@@ -107,12 +128,24 @@ export default function StudentProfile({ user, onBack }: StudentProfileProps) {
     }
   };
 
+  const checkVerificationStatus = () => {
+    if (!profile) return false;
+    // Check if all verification fields are filled
+    return !!(
+      profile.home_address?.trim() &&
+      profile.family_phone?.trim() &&
+      profile.parent_name?.trim() &&
+      profile.emergency_contact?.trim()
+    );
+  };
+
   const handleSave = async () => {
     if (!profile) return;
     setSaving(true);
 
     try {
       const avatarUrl = await uploadAvatar();
+      const isNowVerified = checkVerificationStatus();
 
       const { error } = await supabase
         .from('profiles')
@@ -124,14 +157,24 @@ export default function StudentProfile({ user, onBack }: StudentProfileProps) {
           favorite_subject: profile.favorite_subject,
           goal: profile.goal,
           avatar_url: avatarUrl,
+          home_address: profile.home_address,
+          family_phone: profile.family_phone,
+          parent_name: profile.parent_name,
+          emergency_contact: profile.emergency_contact,
+          is_verified: isNowVerified,
         })
         .eq('user_id', user.id);
 
       if (error) throw error;
 
+      // Update local state
+      setProfile(prev => prev ? { ...prev, is_verified: isNowVerified } : null);
+
       toast({
         title: "Profile Updated",
-        description: "Your profile has been saved successfully.",
+        description: isNowVerified 
+          ? "Your profile is now verified! You've earned the black badge." 
+          : "Your profile has been saved successfully.",
       });
     } catch (error) {
       toast({
@@ -162,7 +205,7 @@ export default function StudentProfile({ user, onBack }: StudentProfileProps) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-6 pb-20">
       <Card>
         <CardHeader className="text-center pb-2">
           <div className="flex flex-col items-center space-y-4">
@@ -189,11 +232,29 @@ export default function StudentProfile({ user, onBack }: StudentProfileProps) {
               className="hidden"
               onChange={handleAvatarChange}
             />
-            <CardTitle className="text-2xl">{profile.full_name}</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-2xl">{profile.full_name}</CardTitle>
+              {isTeacher && <VerifiedBadge type="gold" size="md" />}
+              {!isTeacher && profile.is_verified && <VerifiedBadge type="black" size="md" />}
+            </div>
             <p className="text-muted-foreground flex items-center gap-2">
               <Mail className="w-4 h-4" />
               {profile.email}
             </p>
+            {isTeacher && (
+              <div className="flex flex-wrap gap-2 justify-center">
+                {profile.teaching_subject && (
+                  <span className="px-3 py-1 bg-yellow-500/20 text-yellow-700 rounded-full text-sm">
+                    {profile.teaching_subject}
+                  </span>
+                )}
+                {profile.education_level && (
+                  <span className="px-3 py-1 bg-yellow-500/20 text-yellow-700 rounded-full text-sm">
+                    {profile.education_level}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </CardHeader>
 
@@ -227,24 +288,26 @@ export default function StudentProfile({ user, onBack }: StudentProfileProps) {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="grade">Grade Level</Label>
-                <Select 
-                  value={profile.grade || ''} 
-                  onValueChange={(value) => setProfile({ ...profile, grade: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select grade level" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {grades.map((g) => (
-                      <SelectItem key={g} value={g}>
-                        {g}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {!isTeacher && (
+                <div className="space-y-2">
+                  <Label htmlFor="grade">Grade Level</Label>
+                  <Select 
+                    value={profile.grade || ''} 
+                    onValueChange={(value) => setProfile({ ...profile, grade: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select grade level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {grades.map((g) => (
+                        <SelectItem key={g} value={g}>
+                          {g}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -260,20 +323,98 @@ export default function StudentProfile({ user, onBack }: StudentProfileProps) {
               />
             </div>
 
-
-            <div className="space-y-2">
-              <Label htmlFor="goal" className="flex items-center gap-2">
-                <Target className="w-4 h-4" />
-                Your Learning Goal
-              </Label>
-              <Input
-                id="goal"
-                value={profile.goal || ''}
-                onChange={(e) => setProfile({ ...profile, goal: e.target.value })}
-                placeholder="e.g., Pass national exam with high score"
-              />
-            </div>
+            {!isTeacher && (
+              <div className="space-y-2">
+                <Label htmlFor="goal" className="flex items-center gap-2">
+                  <Target className="w-4 h-4" />
+                  Your Learning Goal
+                </Label>
+                <Input
+                  id="goal"
+                  value={profile.goal || ''}
+                  onChange={(e) => setProfile({ ...profile, goal: e.target.value })}
+                  placeholder="e.g., Pass national exam with high score"
+                />
+              </div>
+            )}
           </div>
+
+          {/* Student Verification Section - Only for students */}
+          {!isTeacher && (
+            <Card className={`border-2 ${profile.is_verified ? 'border-green-500/50 bg-green-500/5' : 'border-muted'}`}>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <ShieldCheck className={`w-5 h-5 ${profile.is_verified ? 'text-green-500' : 'text-muted-foreground'}`} />
+                  Student Verification
+                  {profile.is_verified && <VerifiedBadge type="black" size="sm" />}
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {profile.is_verified 
+                    ? "You're verified! Your black badge is displayed across the app."
+                    : "Complete all fields below to earn your verified black badge."}
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="homeAddress" className="flex items-center gap-2">
+                    <Home className="w-4 h-4" />
+                    Home Address *
+                  </Label>
+                  <Input
+                    id="homeAddress"
+                    value={profile.home_address || ''}
+                    onChange={(e) => setProfile({ ...profile, home_address: e.target.value })}
+                    placeholder="Enter your home address"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="familyPhone" className="flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    Family Phone Number *
+                  </Label>
+                  <Input
+                    id="familyPhone"
+                    value={profile.family_phone || ''}
+                    onChange={(e) => setProfile({ ...profile, family_phone: e.target.value })}
+                    placeholder="Enter family phone number"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="parentName" className="flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    Parent/Guardian Name *
+                  </Label>
+                  <Input
+                    id="parentName"
+                    value={profile.parent_name || ''}
+                    onChange={(e) => setProfile({ ...profile, parent_name: e.target.value })}
+                    placeholder="Enter parent or guardian name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="emergencyContact" className="flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    Emergency Contact *
+                  </Label>
+                  <Input
+                    id="emergencyContact"
+                    value={profile.emergency_contact || ''}
+                    onChange={(e) => setProfile({ ...profile, emergency_contact: e.target.value })}
+                    placeholder="Enter emergency contact number"
+                  />
+                </div>
+
+                {!profile.is_verified && (
+                  <p className="text-xs text-muted-foreground text-center">
+                    Fill all fields above and save to get verified
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           <Button onClick={handleSave} disabled={saving} className="w-full" size="lg">
             {saving ? (
