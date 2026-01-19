@@ -13,6 +13,7 @@ import { ArrowLeft, Upload, FileText, Video, Bell, ClipboardList, Crown, Star, E
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 interface TeacherStudiosProps {
   user: User;
@@ -258,10 +259,10 @@ export default function TeacherStudios({ user, onBack }: TeacherStudiosProps) {
             </div>
           </div>
           {isTeacher && (
-            <Badge className="bg-yellow-500/20 text-yellow-600 border-yellow-500/30">
-              <Crown className="w-3 h-3 mr-1" />
-              Verified Teacher
-            </Badge>
+            <div className="flex items-center gap-2 bg-yellow-500/20 text-yellow-600 px-3 py-1.5 rounded-full">
+              <VerifiedBadge type="gold" size="sm" />
+              <span className="text-sm font-medium">Verified Teacher</span>
+            </div>
           )}
         </div>
       </header>
@@ -282,11 +283,9 @@ export default function TeacherStudios({ user, onBack }: TeacherStudiosProps) {
                       {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
                     </span>
                     <div>
-                      <p className="font-medium text-sm flex items-center gap-1">
+                      <p className="font-medium text-sm flex items-center gap-1.5">
                         {student.full_name}
-                        <Badge variant="outline" className="text-blue-500 border-blue-500/30 text-xs">
-                          💙
-                        </Badge>
+                        <VerifiedBadge type="blue" size="sm" />
                       </p>
                       <p className="text-xs text-muted-foreground">{student.total_points} points</p>
                     </div>
@@ -449,9 +448,10 @@ export default function TeacherStudios({ user, onBack }: TeacherStudiosProps) {
                                   {upload.description || 'No description'}
                                 </p>
                                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                  <span className="flex items-center gap-1">
+                                    <span className="flex items-center gap-1.5">
                                     <UserIcon className="w-3 h-3" />
                                     {upload.teacher_name}
+                                    <VerifiedBadge type="gold" size="sm" />
                                     <Crown className="w-3 h-3 text-yellow-500" />
                                   </span>
                                   {upload.grade_level && (

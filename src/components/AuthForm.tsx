@@ -7,9 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Camera, Mail, RefreshCw, WifiOff, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, Camera, Mail, RefreshCw, WifiOff, ArrowLeft, GraduationCap, BookOpen } from 'lucide-react';
 import logo from '@/assets/model-egdu-logo.png';
 import { motion } from 'framer-motion';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 interface AuthFormProps {
   onAuthChange: () => void;
@@ -90,7 +91,57 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [showRetry, setShowRetry] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  // Teacher-specific state
+  const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
+  const [teacherCode, setTeacherCode] = useState('');
+  const [teachingSubject, setTeachingSubject] = useState('');
+  const [educationLevel, setEducationLevel] = useState('');
+  const [verifyingCode, setVerifyingCode] = useState(false);
   const { toast } = useToast();
+
+  const teachingSubjects = [
+    'Herrega (Mathematics)',
+    'Afaan Oromoo',
+    'English',
+    'Amharic',
+    'Saayinsi Naannoo',
+    'Safuu (Ethics)',
+    'Other'
+  ];
+
+  const educationLevels = ['MA', 'BA', 'DIPLOMA'];
+
+  // Verify teacher code
+  const verifyTeacherCode = async (code: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('teacher_codes')
+        .select('id, code, used_by')
+        .eq('code', code.toUpperCase().trim())
+        .maybeSingle();
+      
+      if (error || !data) return false;
+      if (data.used_by) return false; // Already used
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // Mark teacher code as used
+  const markTeacherCodeUsed = async (code: string, userId: string) => {
+    await supabase
+      .from('teacher_codes')
+      .update({ used_by: userId, used_at: new Date().toISOString() })
+      .eq('code', code.toUpperCase().trim());
+  };
+
+  // Add teacher role
+  const addTeacherRole = async (userId: string) => {
+    await supabase
+      .from('user_roles')
+      .insert({ user_id: userId, role: 'teacher' });
+  };
 
   // Check network status - FIXED: was useState, now useEffect
   useEffect(() => {
@@ -291,7 +342,21 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
           description: "Successfully logged in to Model Egdu.",
         });
       } else {
-        // Signup
+        // Signup - Verify teacher code if applicable
+        if (userRole === 'teacher') {
+          if (!teacherCode || !teachingSubject || !educationLevel) {
+            throw new Error('Please fill in all teacher fields (code, subject, and education level).');
+          }
+          
+          setVerifyingCode(true);
+          const isValidCode = await verifyTeacherCode(teacherCode);
+          setVerifyingCode(false);
+          
+          if (!isValidCode) {
+            throw new Error('Invalid or already used teacher code. Please contact administration for a valid code.');
+          }
+        }
+
         const { data: authData, error } = await supabase.auth.signUp({
           email,
           password,
@@ -299,8 +364,8 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
             emailRedirectTo: `${window.location.origin}/`,
             data: {
               full_name: fullName,
-              role: 'student',
-              grade: grade
+              role: userRole,
+              grade: userRole === 'student' ? grade : null
             }
           }
         });
@@ -328,24 +393,35 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                 .from('profiles')
                 .update({
                   full_name: fullName,
-                  grade: grade,
+                  grade: userRole === 'student' ? grade : null,
                   avatar_url: avatarUrl,
                   school_name: schoolName || null,
                   age: age ? parseInt(age) : null,
-                  goal: goal || null
+                  goal: userRole === 'student' ? (goal || null) : null,
+                  teaching_subject: userRole === 'teacher' ? teachingSubject : null,
+                  education_level: userRole === 'teacher' ? educationLevel : null,
+                  role: userRole
                 })
                 .eq('user_id', authData.user!.id);
               
               if (updateError) throw updateError;
             });
+
+            // If teacher, mark code as used and add role
+            if (userRole === 'teacher') {
+              await markTeacherCodeUsed(teacherCode, authData.user.id);
+              await addTeacherRole(authData.user.id);
+            }
           } else {
             console.warn('Profile not created by trigger, account created but profile incomplete');
           }
         }
         
         toast({
-          title: "Account Created Successfully!",
-          description: "Welcome to Model Egdu! You can now start learning.",
+          title: userRole === 'teacher' ? "Teacher Account Created!" : "Account Created Successfully!",
+          description: userRole === 'teacher' 
+            ? "Welcome to Model Egdu! You can now share content with students." 
+            : "Welcome to Model Egdu! You can now start learning.",
         });
       }
       
@@ -578,6 +654,42 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                   </p>
                 </div>
 
+                {/* Role Selection */}
+                <div className="space-y-2">
+                  <Label>I am a *</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setUserRole('student')}
+                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                        userRole === 'student' 
+                          ? 'border-primary bg-primary/10' 
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <BookOpen className={`w-8 h-8 ${userRole === 'student' ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <span className={`font-medium ${userRole === 'student' ? 'text-primary' : ''}`}>Student</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUserRole('teacher')}
+                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                        userRole === 'teacher' 
+                          ? 'border-yellow-500 bg-yellow-500/10' 
+                          : 'border-border hover:border-yellow-500/50'
+                      }`}
+                    >
+                      <div className="relative">
+                        <GraduationCap className={`w-8 h-8 ${userRole === 'teacher' ? 'text-yellow-500' : 'text-muted-foreground'}`} />
+                        {userRole === 'teacher' && (
+                          <VerifiedBadge type="gold" size="sm" className="absolute -top-1 -right-1" />
+                        )}
+                      </div>
+                      <span className={`font-medium ${userRole === 'teacher' ? 'text-yellow-600' : ''}`}>Teacher</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Full Name *</Label>
                   <Input
@@ -591,36 +703,118 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="age">Age</Label>
-                    <Input
-                      id="age"
-                      type="number"
-                      placeholder="Your age"
-                      value={age}
-                      onChange={(e) => setAge(e.target.value)}
-                      min={5}
-                      max={100}
-                      className="h-11"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="grade">Grade Level *</Label>
-                    <Select value={grade} onValueChange={setGrade} required>
-                      <SelectTrigger className="h-11">
-                        <SelectValue placeholder="Select grade" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {grades.map((g) => (
-                          <SelectItem key={g} value={g}>
-                            {g}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                {/* Teacher-specific fields */}
+                {userRole === 'teacher' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-4 p-4 bg-yellow-500/5 rounded-xl border border-yellow-500/20"
+                  >
+                    <div className="flex items-center gap-2 text-yellow-600 mb-2">
+                      <VerifiedBadge type="gold" size="sm" />
+                      <span className="text-sm font-medium">Teacher Verification</span>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="teacherCode">Teacher Code * (MODEL-XXXX)</Label>
+                      <Input
+                        id="teacherCode"
+                        type="text"
+                        placeholder="Enter your teacher code"
+                        value={teacherCode}
+                        onChange={(e) => setTeacherCode(e.target.value.toUpperCase())}
+                        className="h-11 font-mono"
+                        required={userRole === 'teacher'}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Contact school administration to get your teacher code
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="teachingSubject">Subject You Teach *</Label>
+                      <Select value={teachingSubject} onValueChange={setTeachingSubject}>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Select subject" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teachingSubjects.map((subj) => (
+                            <SelectItem key={subj} value={subj}>
+                              {subj}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="educationLevel">Education Level *</Label>
+                      <Select value={educationLevel} onValueChange={setEducationLevel}>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Select level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {educationLevels.map((level) => (
+                            <SelectItem key={level} value={level}>
+                              {level === 'MA' ? "Master's Degree (MA)" : 
+                               level === 'BA' ? "Bachelor's Degree (BA)" : 
+                               "Diploma"}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Student-specific fields */}
+                {userRole === 'student' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="age">Age</Label>
+                        <Input
+                          id="age"
+                          type="number"
+                          placeholder="Your age"
+                          value={age}
+                          onChange={(e) => setAge(e.target.value)}
+                          min={5}
+                          max={100}
+                          className="h-11"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="grade">Grade Level *</Label>
+                        <Select value={grade} onValueChange={setGrade} required>
+                          <SelectTrigger className="h-11">
+                            <SelectValue placeholder="Select grade" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {grades.map((g) => (
+                              <SelectItem key={g} value={g}>
+                                {g}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="goal">Your Learning Goal</Label>
+                      <Input
+                        id="goal"
+                        type="text"
+                        placeholder="e.g., Pass national exam with high score"
+                        value={goal}
+                        onChange={(e) => setGoal(e.target.value)}
+                        className="h-11"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="schoolName">School Name</Label>
@@ -630,18 +824,6 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                     placeholder="Enter your school name"
                     value={schoolName}
                     onChange={(e) => setSchoolName(e.target.value)}
-                    className="h-11"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="goal">Your Learning Goal</Label>
-                  <Input
-                    id="goal"
-                    type="text"
-                    placeholder="e.g., Pass national exam with high score"
-                    value={goal}
-                    onChange={(e) => setGoal(e.target.value)}
                     className="h-11"
                   />
                 </div>
@@ -706,15 +888,15 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
               variant="hero"
               size="lg"
               className="w-full"
-              disabled={loading || isOffline}
+              disabled={loading || isOffline || verifyingCode}
             >
-              {loading ? (
+              {loading || verifyingCode ? (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
+                  {verifyingCode ? 'Verifying Code...' : 'Processing...'}
                 </>
               ) : (
-                isLogin ? 'Sign In' : 'Create Account'
+                isLogin ? 'Sign In' : (userRole === 'teacher' ? 'Create Teacher Account' : 'Create Account')
               )}
             </Button>
 
