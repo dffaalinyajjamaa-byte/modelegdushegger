@@ -775,6 +775,7 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string
+          education_level: string | null
           email: string
           favorite_subject: string | null
           full_name: string
@@ -784,6 +785,7 @@ export type Database = {
           last_seen: string | null
           role: string
           school_name: string | null
+          teaching_subject: string | null
           updated_at: string
           user_id: string
         }
@@ -792,6 +794,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          education_level?: string | null
           email: string
           favorite_subject?: string | null
           full_name: string
@@ -801,6 +804,7 @@ export type Database = {
           last_seen?: string | null
           role?: string
           school_name?: string | null
+          teaching_subject?: string | null
           updated_at?: string
           user_id: string
         }
@@ -809,6 +813,7 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string
+          education_level?: string | null
           email?: string
           favorite_subject?: string | null
           full_name?: string
@@ -818,6 +823,7 @@ export type Database = {
           last_seen?: string | null
           role?: string
           school_name?: string | null
+          teaching_subject?: string | null
           updated_at?: string
           user_id?: string
         }
