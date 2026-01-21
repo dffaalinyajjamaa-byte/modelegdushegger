@@ -32,3 +32,18 @@ verify_jwt = false
 
 [functions.seed-daily-challenges]
 verify_jwt = false
+
+[functions.extract-pdf-text]
+verify_jwt = false
+
+[functions.generate-study-lyrics]
+verify_jwt = false
+
+[functions.generate-study-music]
+verify_jwt = false
+
+[functions.check-music-status]
+verify_jwt = false
+
+[functions.generate-study-suggestions]
+verify_jwt = false
