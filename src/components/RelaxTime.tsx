@@ -7,7 +7,6 @@ import { ArrowLeft, Play, Globe, Music, Sparkles, BookOpen, Users } from 'lucide
 import { motion, AnimatePresence } from 'framer-motion';
 import YouTube from 'react-youtube';
 import { getYouTubeThumbnail, getYouTubeVideoId } from '@/lib/youtube-utils';
-import StudyByMusic from './study-music/StudyByMusic';
 
 interface RelaxTimeProps {
   user: User;
@@ -27,7 +26,6 @@ interface Video {
 type Language = 'afaan_oromoo' | 'english' | 'amharic' | null;
 type Category = string | null;
 type SubCategory = string | null;
-type MainView = 'main' | 'study_music' | 'videos';
 
 const languages = [
   { 
@@ -92,18 +90,12 @@ const subcategories: Record<string, { id: string; name: string; nameLocal: strin
 };
 
 export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
-  const [mainView, setMainView] = useState<MainView>('main');
   const [selectedLanguage, setSelectedLanguage] = useState<Language>(null);
   const [selectedCategory, setSelectedCategory] = useState<Category>(null);
   const [selectedSubCategory, setSelectedSubCategory] = useState<SubCategory>(null);
   const [videos, setVideos] = useState<Video[]>([]);
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(false);
-
-  // Show Study by Music view
-  if (mainView === 'study_music') {
-    return <StudyByMusic user={user} onBack={() => setMainView('main')} />;
-  }
 
   useEffect(() => {
     if (selectedLanguage && selectedCategory) {
@@ -229,33 +221,7 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
               <div className="text-center mb-8">
                 <Music className="h-16 w-16 mx-auto text-purple-500 mb-4" />
                 <h2 className="text-2xl font-bold mb-2">Take a Break & Learn</h2>
-                <p className="text-muted-foreground">Choose your preferred option</p>
-              </div>
-
-              {/* Study by Music - Featured Card */}
-              <motion.button
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                onClick={() => setMainView('study_music')}
-                className="w-full group relative bg-gradient-to-br from-pink-500/20 to-purple-500/20 border-2 border-pink-500/30 hover:border-pink-500/60 p-6 rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-glow overflow-hidden text-left"
-              >
-                <div className="absolute top-2 right-2 bg-pink-500 text-white text-xs px-2 py-0.5 rounded-full font-medium">
-                  NEW
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-4xl">🎵</span>
-                  <div>
-                    <h3 className="text-xl font-bold">Study by Music</h3>
-                    <p className="text-sm text-muted-foreground">Turn your textbooks into songs!</p>
-                  </div>
-                  <Sparkles className="ml-auto h-8 w-8 opacity-50 group-hover:opacity-100 transition-opacity text-pink-500" />
-                </div>
-              </motion.button>
-
-              <div className="relative flex items-center py-2">
-                <div className="flex-1 border-t border-border"></div>
-                <span className="px-4 text-sm text-muted-foreground">or watch videos</span>
-                <div className="flex-1 border-t border-border"></div>
+                <p className="text-muted-foreground">Choose your preferred language</p>
               </div>
 
               <div className="grid gap-4">

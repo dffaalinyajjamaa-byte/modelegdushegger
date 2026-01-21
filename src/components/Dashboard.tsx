@@ -3,7 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { LogOut, Settings, Video, BookOpen, Bot, FileText, Brain, MessageCircle, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee, FlaskConical, Trophy, ClipboardList, GraduationCap, CalendarClock } from 'lucide-react';
+import { LogOut, Settings, Video, BookOpen, Bot, FileText, Brain, MessageCircle, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee, FlaskConical, Trophy, ClipboardList, GraduationCap, CalendarClock, Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SmartPlanner from './SmartPlanner';
 import VideoViewer from './VideoViewer';
@@ -49,6 +49,7 @@ const Messenger = lazy(() => import('./Messenger'));
 const QuizFeature = lazy(() => import('./QuizFeature'));
 const RelaxTime = lazy(() => import('./RelaxTime'));
 const TeacherStudios = lazy(() => import('./TeacherStudios'));
+const StudyByMusic = lazy(() => import('./study-music/StudyByMusic'));
 
 interface DashboardProps {
   user: User;
@@ -82,7 +83,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets' | 'teacher-studios';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets' | 'teacher-studios' | 'study-music';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -302,6 +303,12 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         return (
           <Suspense fallback={<LoadingFallback />}>
             <TeacherStudios user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
+      case 'study-music':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <StudyByMusic user={user} onBack={() => setActiveView('dashboard')} />
           </Suspense>
         );
       case 'national-exams':
@@ -551,6 +558,18 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
           <div className="absolute inset-0 bg-gradient-to-br from-orange-500/0 to-yellow-500/0 group-hover:from-orange-500/10 group-hover:to-yellow-500/10 transition-all duration-300" />
           <Brain className="relative w-12 h-12 mb-3 mx-auto text-orange-500 group-hover:scale-110 transition-transform duration-300" />
           <h3 className="relative font-semibold text-center">Quiz</h3>
+        </button>
+
+        <button
+          onClick={() => setActiveView('study-music')}
+          className="group relative quick-access-card bg-gradient-to-br from-pink-500/20 to-purple-500/20 border-2 border-pink-500/30 hover:border-pink-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
+        >
+          <div className="absolute top-2 right-2 bg-pink-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium z-10">
+            NEW
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-br from-pink-500/0 to-purple-500/0 group-hover:from-pink-500/10 group-hover:to-purple-500/10 transition-all duration-300" />
+          <Music className="relative w-12 h-12 mb-3 mx-auto text-pink-500 group-hover:scale-110 transition-transform duration-300" />
+          <h3 className="relative font-semibold text-center">Study Music</h3>
         </button>
 
         <button
