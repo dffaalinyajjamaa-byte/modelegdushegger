@@ -53,7 +53,6 @@ export default function StudyByMusic({ user, onBack }: StudyByMusicProps) {
   const [generationStep, setGenerationStep] = useState<'idle' | 'extracting' | 'lyrics' | 'music' | 'suggestions'>('idle');
   const [generatedTrack, setGeneratedTrack] = useState<GeneratedTrack | null>(null);
   const [taskId, setTaskId] = useState<string | null>(null);
-  const [pollingInterval, setPollingInterval] = useState<number | null>(null);
 
   // Load user profile for grade
   useEffect(() => {
@@ -71,62 +70,81 @@ export default function StudyByMusic({ user, onBack }: StudyByMusicProps) {
     loadProfile();
   }, [user.id]);
 
-  // Poll for music status
+  // Poll for music status with proper cleanup
   useEffect(() => {
-    if (taskId && pollingInterval) {
-      const interval = setInterval(async () => {
-        try {
-          const { data, error } = await supabase.functions.invoke('check-music-status', {
-            body: { taskId, trackId: generatedTrack?.id }
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    let isMounted = true;
+
+    const pollStatus = async () => {
+      if (!taskId || !generatedTrack?.id) return;
+
+      try {
+        console.log('Polling music status for taskId:', taskId);
+        const { data, error } = await supabase.functions.invoke('check-music-status', {
+          body: { taskId, trackId: generatedTrack.id }
+        });
+
+        if (error) throw error;
+        if (!isMounted) return;
+
+        console.log('Poll result:', data.status);
+
+        if (data.status === 'completed' && data.audioUrl) {
+          // Clear interval and reset task
+          if (intervalId) clearInterval(intervalId);
+          setTaskId(null);
+          setGenerationStep('suggestions');
+          
+          // Generate AI suggestions
+          const { data: suggestionsData } = await supabase.functions.invoke('generate-study-suggestions', {
+            body: {
+              trackId: generatedTrack.id,
+              lyricsText: generatedTrack.lyricsText,
+              subject,
+              language: selectedLanguage
+            }
           });
 
-          if (error) throw error;
-
-          if (data.status === 'completed' && data.audioUrl) {
-            clearInterval(interval);
-            setPollingInterval(null);
-            setTaskId(null);
-            setGenerationStep('suggestions');
-            
-            // Generate AI suggestions
-            if (generatedTrack) {
-              const { data: suggestionsData } = await supabase.functions.invoke('generate-study-suggestions', {
-                body: {
-                  trackId: generatedTrack.id,
-                  lyricsText: generatedTrack.lyricsText,
-                  subject,
-                  language: selectedLanguage
-                }
-              });
-
-              setGeneratedTrack(prev => prev ? {
-                ...prev,
-                audioUrl: data.audioUrl,
-                status: 'completed',
-                suggestions: suggestionsData?.suggestions
-              } : null);
-            }
+          if (isMounted) {
+            setGeneratedTrack(prev => prev ? {
+              ...prev,
+              audioUrl: data.audioUrl,
+              status: 'completed',
+              suggestions: suggestionsData?.suggestions
+            } : null);
             
             setIsGenerating(false);
             setGenerationStep('idle');
             toast.success('Your study music is ready! 🎵');
-          } else if (data.status === 'failed') {
-            clearInterval(interval);
-            setPollingInterval(null);
+          }
+        } else if (data.status === 'failed') {
+          if (intervalId) clearInterval(intervalId);
+          if (isMounted) {
             setTaskId(null);
             setIsGenerating(false);
             setGenerationStep('idle');
             toast.error('Music generation failed. Please try again.');
           }
-        } catch (err) {
-          console.error('Error polling status:', err);
         }
-      }, 5000);
+      } catch (err) {
+        console.error('Error polling status:', err);
+      }
+    };
 
-      setPollingInterval(interval as unknown as number);
-      return () => clearInterval(interval);
+    if (taskId && generatedTrack?.id) {
+      // Initial poll after a short delay
+      const initialTimeout = setTimeout(pollStatus, 5000);
+      
+      // Then poll every 30 seconds (Suno takes time to generate)
+      intervalId = setInterval(pollStatus, 30000);
+
+      return () => {
+        isMounted = false;
+        clearTimeout(initialTimeout);
+        if (intervalId) clearInterval(intervalId);
+      };
     }
-  }, [taskId, generatedTrack?.id]);
+  }, [taskId, generatedTrack?.id, generatedTrack?.lyricsText, subject, selectedLanguage]);
 
   const handleGenerate = async () => {
     if (!uploadedFile) {

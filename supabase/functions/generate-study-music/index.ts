@@ -30,6 +30,7 @@ serve(async (req) => {
     }
 
     console.log('Generating music with style:', musicStyle, 'title:', title);
+    console.log('Lyrics length:', lyricsText.length, 'characters');
 
     const sunoApiKey = Deno.env.get('SUNO_API_KEY');
     if (!sunoApiKey) {
@@ -44,7 +45,7 @@ serve(async (req) => {
     const sunoStyle = musicStyleMap[musicStyle] || musicStyleMap['calm'];
     const isInstrumental = musicStyle === 'instrumental';
 
-    // Call Suno API
+    // Call Suno API with correct parameters
     const sunoResponse = await fetch('https://api.sunoapi.org/api/v1/generate', {
       method: 'POST',
       headers: {
@@ -54,25 +55,22 @@ serve(async (req) => {
       body: JSON.stringify({
         customMode: true,
         instrumental: isInstrumental,
-        model: 'V4_5ALL',
+        model: 'V4_5',
         prompt: lyricsText,
         style: sunoStyle,
         title: title || 'Study Music',
-        vocalGender: 'f',
-        styleWeight: 0.6,
-        weirdnessConstraint: 0.3,
-        audioWeight: 0.5
+        vocalGender: 'f'
       })
     });
 
     if (!sunoResponse.ok) {
       const errorText = await sunoResponse.text();
       console.error('Suno API error:', errorText);
-      throw new Error(`Suno API error: ${sunoResponse.status}`);
+      throw new Error(`Suno API error: ${sunoResponse.status} - ${errorText}`);
     }
 
     const sunoData = await sunoResponse.json();
-    console.log('Suno API response:', sunoData);
+    console.log('Suno API response:', JSON.stringify(sunoData));
 
     if (sunoData.code !== 200 || !sunoData.data?.taskId) {
       throw new Error(sunoData.msg || 'Failed to start music generation');
@@ -92,16 +90,18 @@ serve(async (req) => {
 
       if (updateError) {
         console.error('Error updating track:', updateError);
+      } else {
+        console.log('Track updated with taskId:', taskId);
       }
     }
 
-    console.log('Music generation started, taskId:', taskId);
+    console.log('Music generation started successfully, taskId:', taskId);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         taskId,
-        message: 'Music generation started. Check status using the task ID.'
+        message: 'Music generation started. This may take 1-5 minutes.'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
