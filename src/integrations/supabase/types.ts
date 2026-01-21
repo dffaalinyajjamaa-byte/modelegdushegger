@@ -1154,6 +1154,174 @@ export type Database = {
           },
         ]
       }
+      study_music_lyrics: {
+        Row: {
+          created_at: string | null
+          generated_by: string | null
+          id: string
+          language: string
+          lyrics_text: string
+          upload_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          generated_by?: string | null
+          id?: string
+          language: string
+          lyrics_text: string
+          upload_id: string
+        }
+        Update: {
+          created_at?: string | null
+          generated_by?: string | null
+          id?: string
+          language?: string
+          lyrics_text?: string
+          upload_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_music_lyrics_upload_id_fkey"
+            columns: ["upload_id"]
+            isOneToOne: false
+            referencedRelation: "study_music_uploads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_music_suggestions: {
+        Row: {
+          best_listening_time: string | null
+          created_at: string | null
+          id: string
+          memory_tip: string | null
+          next_action: string | null
+          quiz_suggestion: string | null
+          recommended_repeats: number | null
+          track_id: string
+        }
+        Insert: {
+          best_listening_time?: string | null
+          created_at?: string | null
+          id?: string
+          memory_tip?: string | null
+          next_action?: string | null
+          quiz_suggestion?: string | null
+          recommended_repeats?: number | null
+          track_id: string
+        }
+        Update: {
+          best_listening_time?: string | null
+          created_at?: string | null
+          id?: string
+          memory_tip?: string | null
+          next_action?: string | null
+          quiz_suggestion?: string | null
+          recommended_repeats?: number | null
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_music_suggestions_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "study_music_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_music_tracks: {
+        Row: {
+          audio_url: string | null
+          created_at: string | null
+          duration_seconds: number | null
+          grade: string | null
+          id: string
+          lyrics_id: string
+          music_style: string
+          status: string | null
+          subject: string | null
+          task_id: string | null
+          times_played: number | null
+          title: string | null
+          total_listen_time_seconds: number | null
+          user_id: string
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          grade?: string | null
+          id?: string
+          lyrics_id: string
+          music_style: string
+          status?: string | null
+          subject?: string | null
+          task_id?: string | null
+          times_played?: number | null
+          title?: string | null
+          total_listen_time_seconds?: number | null
+          user_id: string
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          grade?: string | null
+          id?: string
+          lyrics_id?: string
+          music_style?: string
+          status?: string | null
+          subject?: string | null
+          task_id?: string | null
+          times_played?: number | null
+          title?: string | null
+          total_listen_time_seconds?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_music_tracks_lyrics_id_fkey"
+            columns: ["lyrics_id"]
+            isOneToOne: false
+            referencedRelation: "study_music_lyrics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_music_uploads: {
+        Row: {
+          created_at: string | null
+          extracted_text: string | null
+          file_name: string
+          file_url: string
+          grade: string | null
+          id: string
+          subject: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          extracted_text?: string | null
+          file_name: string
+          file_url: string
+          grade?: string | null
+          id?: string
+          subject?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          extracted_text?: string | null
+          file_name?: string
+          file_url?: string
+          grade?: string | null
+          id?: string
+          subject?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       tasks: {
         Row: {
           completed: boolean
