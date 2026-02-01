@@ -28,11 +28,12 @@ serve(async (req) => {
       throw new Error('SUNO_API_KEY not configured');
     }
 
-    // Use correct endpoint: /generate/record-info
-    const statusResponse = await fetch(`https://api.sunoapi.org/api/v1/generate/record-info?taskId=${taskId}`, {
+    // Check status with Suno API
+    const statusResponse = await fetch(`https://api.sunoapi.org/api/v1/query?taskId=${taskId}`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${sunoApiKey}`
+        'Authorization': `Bearer ${sunoApiKey}`,
+        'Content-Type': 'application/json'
       }
     });
 
@@ -49,25 +50,25 @@ serve(async (req) => {
     let audioUrl = null;
     let duration = null;
 
-    // Parse the response based on correct Suno API structure
+    // Parse the response based on Suno API structure
     if (statusData.code === 200 && statusData.data) {
       const data = statusData.data;
       
-      // Check status field for completion
-      if (data.status === 'SUCCESS') {
+      // Check if generation is complete
+      if (data.status === 'SUCCESS' || data.status === 'complete') {
         status = 'completed';
-        // Get the audio URL from the response data array
+        // Get the audio URL from the response
         if (data.data && Array.isArray(data.data) && data.data.length > 0) {
-          audioUrl = data.data[0].audio_url;
+          audioUrl = data.data[0].audio_url || data.data[0].audioUrl;
           duration = data.data[0].duration;
-          console.log('Music ready! Audio URL:', audioUrl);
+        } else if (data.audio_url || data.audioUrl) {
+          audioUrl = data.audio_url || data.audioUrl;
+          duration = data.duration;
         }
-      } else if (data.status === 'FAILED') {
+      } else if (data.status === 'FAILED' || data.status === 'failed') {
         status = 'failed';
-        console.error('Music generation failed:', data.errorMessage || 'Unknown error');
-      } else if (data.status === 'PENDING' || data.status === 'PROCESSING' || data.status === 'QUEUED') {
+      } else if (data.status === 'PENDING' || data.status === 'PROCESSING') {
         status = 'processing';
-        console.log('Still processing...');
       }
     }
 
@@ -77,7 +78,7 @@ serve(async (req) => {
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
       const supabase = createClient(supabaseUrl, supabaseKey);
 
-      const updateData: Record<string, unknown> = { status };
+      const updateData: any = { status };
       if (audioUrl) {
         updateData.audio_url = audioUrl;
       }
@@ -93,7 +94,7 @@ serve(async (req) => {
       if (updateError) {
         console.error('Error updating track:', updateError);
       } else {
-        console.log('Track updated successfully with status:', status);
+        console.log('Track updated successfully');
       }
     }
 
