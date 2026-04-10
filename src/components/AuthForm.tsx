@@ -699,35 +699,36 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                 {/* Role Selection */}
                 <div className="space-y-2">
                   <Label>I am a *</Label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <button
                       type="button"
                       onClick={() => setUserRole('student')}
-                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                        userRole === 'student' 
-                          ? 'border-primary bg-primary/10' 
-                          : 'border-border hover:border-primary/50'
+                      className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                        userRole === 'student' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
                       }`}
                     >
-                      <BookOpen className={`w-8 h-8 ${userRole === 'student' ? 'text-primary' : 'text-muted-foreground'}`} />
-                      <span className={`font-medium ${userRole === 'student' ? 'text-primary' : ''}`}>Student</span>
+                      <BookOpen className={`w-7 h-7 ${userRole === 'student' ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <span className={`font-medium text-sm ${userRole === 'student' ? 'text-primary' : ''}`}>Student</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setUserRole('teacher')}
-                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                        userRole === 'teacher' 
-                          ? 'border-yellow-500 bg-yellow-500/10' 
-                          : 'border-border hover:border-yellow-500/50'
+                      className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                        userRole === 'teacher' ? 'border-yellow-500 bg-yellow-500/10' : 'border-border hover:border-yellow-500/50'
                       }`}
                     >
-                      <div className="relative">
-                        <GraduationCap className={`w-8 h-8 ${userRole === 'teacher' ? 'text-yellow-500' : 'text-muted-foreground'}`} />
-                        {userRole === 'teacher' && (
-                          <VerifiedBadge type="gold" size="sm" className="absolute -top-1 -right-1" />
-                        )}
-                      </div>
-                      <span className={`font-medium ${userRole === 'teacher' ? 'text-yellow-600' : ''}`}>Teacher</span>
+                      <GraduationCap className={`w-7 h-7 ${userRole === 'teacher' ? 'text-yellow-500' : 'text-muted-foreground'}`} />
+                      <span className={`font-medium text-sm ${userRole === 'teacher' ? 'text-yellow-600' : ''}`}>Teacher</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUserRole('admin')}
+                      className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                        userRole === 'admin' ? 'border-red-500 bg-red-500/10' : 'border-border hover:border-red-500/50'
+                      }`}
+                    >
+                      <GraduationCap className={`w-7 h-7 ${userRole === 'admin' ? 'text-red-500' : 'text-muted-foreground'}`} />
+                      <span className={`font-medium text-sm ${userRole === 'admin' ? 'text-red-600' : ''}`}>Admin</span>
                     </button>
                   </div>
                 </div>
