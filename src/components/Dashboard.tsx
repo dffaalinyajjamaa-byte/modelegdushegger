@@ -313,6 +313,18 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
             <StudyByMusic user={user} onBack={() => setActiveView('dashboard')} />
           </Suspense>
         );
+      case 'auto-quiz':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <AutoQuiz user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
+      case 'admin':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminDashboard user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
       case 'national-exams':
         return (
           <Suspense fallback={<LoadingFallback />}>
