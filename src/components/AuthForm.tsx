@@ -375,13 +375,23 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
           if (!teacherCode || !teachingSubject || !educationLevel) {
             throw new Error('Please fill in all teacher fields (code, subject, and education level).');
           }
-          
           setVerifyingCode(true);
           const isValidCode = await verifyTeacherCode(teacherCode);
           setVerifyingCode(false);
-          
           if (!isValidCode) {
             throw new Error('Invalid or already used teacher code. Please contact administration for a valid code.');
+          }
+        }
+
+        if (userRole === 'admin') {
+          if (!adminCode) {
+            throw new Error('Please enter your admin code.');
+          }
+          setVerifyingCode(true);
+          const isValidAdmin = await verifyAdminCode(adminCode);
+          setVerifyingCode(false);
+          if (!isValidAdmin) {
+            throw new Error('Invalid or already used admin code.');
           }
         }
 
