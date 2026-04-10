@@ -74,6 +74,30 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          id: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          id?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       afoola_videos: {
         Row: {
           category: string
@@ -106,6 +130,169 @@ export type Database = {
           youtube_url?: string
         }
         Relationships: []
+      }
+      auto_quiz_books: {
+        Row: {
+          created_at: string | null
+          grade: string
+          id: string
+          language: string
+          pdf_url: string
+          processing_status: string | null
+          subject: string
+          title: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string | null
+          grade: string
+          id?: string
+          language?: string
+          pdf_url: string
+          processing_status?: string | null
+          subject: string
+          title: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string | null
+          grade?: string
+          id?: string
+          language?: string
+          pdf_url?: string
+          processing_status?: string | null
+          subject?: string
+          title?: string
+          uploaded_by?: string
+        }
+        Relationships: []
+      }
+      auto_quiz_chunks: {
+        Row: {
+          book_id: string
+          chunk_index: number | null
+          content: string
+          created_at: string | null
+          id: string
+          unit_id: string | null
+        }
+        Insert: {
+          book_id: string
+          chunk_index?: number | null
+          content: string
+          created_at?: string | null
+          id?: string
+          unit_id?: string | null
+        }
+        Update: {
+          book_id?: string
+          chunk_index?: number | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          unit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_quiz_chunks_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "auto_quiz_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "auto_quiz_chunks_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "auto_quiz_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auto_quiz_results: {
+        Row: {
+          answers: Json | null
+          book_id: string
+          created_at: string | null
+          id: string
+          passed: boolean | null
+          percentage: number
+          score: number
+          subject: string
+          time_taken: number | null
+          total: number
+          user_id: string
+        }
+        Insert: {
+          answers?: Json | null
+          book_id: string
+          created_at?: string | null
+          id?: string
+          passed?: boolean | null
+          percentage: number
+          score: number
+          subject: string
+          time_taken?: number | null
+          total: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json | null
+          book_id?: string
+          created_at?: string | null
+          id?: string
+          passed?: boolean | null
+          percentage?: number
+          score?: number
+          subject?: string
+          time_taken?: number | null
+          total?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_quiz_results_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "auto_quiz_books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      auto_quiz_units: {
+        Row: {
+          book_id: string
+          created_at: string | null
+          display_order: number | null
+          id: string
+          unit_number: number
+          unit_title: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          unit_number: number
+          unit_title: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          unit_number?: number
+          unit_title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auto_quiz_units_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "auto_quiz_books"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       blocked_users: {
         Row: {
@@ -215,6 +402,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      certificates: {
+        Row: {
+          certificate_url: string | null
+          grade: string
+          id: string
+          issued_at: string | null
+          subjects_completed: Json | null
+          user_id: string
+        }
+        Insert: {
+          certificate_url?: string | null
+          grade: string
+          id?: string
+          issued_at?: string | null
+          subjects_completed?: Json | null
+          user_id: string
+        }
+        Update: {
+          certificate_url?: string | null
+          grade?: string
+          id?: string
+          issued_at?: string | null
+          subjects_completed?: Json | null
+          user_id?: string
+        }
+        Relationships: []
       }
       channel_posts: {
         Row: {
