@@ -811,6 +811,35 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                   </motion.div>
                 )}
 
+                {/* Admin-specific fields */}
+                {userRole === 'admin' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-4 p-4 bg-red-500/5 rounded-xl border border-red-500/20"
+                  >
+                    <div className="flex items-center gap-2 text-red-600 mb-2">
+                      <span className="text-sm font-medium">🔐 Admin Verification</span>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="adminCode">Admin Code *</Label>
+                      <Input
+                        id="adminCode"
+                        type="password"
+                        placeholder="Enter your admin code"
+                        value={adminCode}
+                        onChange={(e) => setAdminCode(e.target.value.toUpperCase())}
+                        className="h-11 font-mono"
+                        required={userRole === 'admin'}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Contact system administration for your admin code
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+
                 {/* Student-specific fields */}
                 {userRole === 'student' && (
                   <>
