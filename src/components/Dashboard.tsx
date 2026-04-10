@@ -50,6 +50,8 @@ const QuizFeature = lazy(() => import('./QuizFeature'));
 const RelaxTime = lazy(() => import('./RelaxTime'));
 const TeacherStudios = lazy(() => import('./TeacherStudios'));
 const StudyByMusic = lazy(() => import('./study-music/StudyByMusic'));
+const AutoQuiz = lazy(() => import('./auto-quiz/AutoQuiz'));
+const AdminDashboard = lazy(() => import('./admin/AdminDashboard'));
 
 interface DashboardProps {
   user: User;
@@ -83,7 +85,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets' | 'teacher-studios' | 'study-music';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets' | 'teacher-studios' | 'study-music' | 'auto-quiz' | 'admin';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
