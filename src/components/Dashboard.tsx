@@ -378,19 +378,21 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
 
   // Check if user is a teacher
   const [isTeacherUser, setIsTeacherUser] = useState(false);
+  const [isAdminUser, setIsAdminUser] = useState(false);
   
   useEffect(() => {
-    const checkTeacherRole = async () => {
+    const checkRoles = async () => {
       if (!user?.id) return;
       const { data } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'teacher')
-        .maybeSingle();
-      setIsTeacherUser(!!data);
+        .eq('user_id', user.id);
+      if (data) {
+        setIsTeacherUser(data.some(r => r.role === 'teacher'));
+        setIsAdminUser(data.some(r => r.role === 'admin'));
+      }
     };
-    checkTeacherRole();
+    checkRoles();
   }, [user?.id]);
 
   const renderDashboard = () => (
