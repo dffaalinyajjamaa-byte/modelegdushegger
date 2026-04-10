@@ -50,6 +50,8 @@ const QuizFeature = lazy(() => import('./QuizFeature'));
 const RelaxTime = lazy(() => import('./RelaxTime'));
 const TeacherStudios = lazy(() => import('./TeacherStudios'));
 const StudyByMusic = lazy(() => import('./study-music/StudyByMusic'));
+const AutoQuiz = lazy(() => import('./auto-quiz/AutoQuiz'));
+const AdminDashboard = lazy(() => import('./admin/AdminDashboard'));
 
 interface DashboardProps {
   user: User;
@@ -83,7 +85,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets' | 'teacher-studios' | 'study-music';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets' | 'teacher-studios' | 'study-music' | 'auto-quiz' | 'admin';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -311,6 +313,18 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
             <StudyByMusic user={user} onBack={() => setActiveView('dashboard')} />
           </Suspense>
         );
+      case 'auto-quiz':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <AutoQuiz user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
+      case 'admin':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminDashboard user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
       case 'national-exams':
         return (
           <Suspense fallback={<LoadingFallback />}>
@@ -364,19 +378,21 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
 
   // Check if user is a teacher
   const [isTeacherUser, setIsTeacherUser] = useState(false);
+  const [isAdminUser, setIsAdminUser] = useState(false);
   
   useEffect(() => {
-    const checkTeacherRole = async () => {
+    const checkRoles = async () => {
       if (!user?.id) return;
       const { data } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'teacher')
-        .maybeSingle();
-      setIsTeacherUser(!!data);
+        .eq('user_id', user.id);
+      if (data) {
+        setIsTeacherUser(data.some(r => r.role === 'teacher'));
+        setIsAdminUser(data.some(r => r.role === 'admin'));
+      }
     };
-    checkTeacherRole();
+    checkRoles();
   }, [user?.id]);
 
   const renderDashboard = () => (
@@ -598,6 +614,29 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
           <GraduationCap className="relative w-12 h-12 mb-3 mx-auto text-yellow-500 group-hover:scale-110 transition-transform duration-300" />
           <h3 className="relative font-semibold text-center">Teacher Studios</h3>
         </button>
+
+        <button
+          onClick={() => setActiveView('auto-quiz')}
+          className="group relative quick-access-card bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border-2 border-emerald-500/30 hover:border-emerald-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
+        >
+          <div className="absolute top-2 right-2 bg-emerald-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium z-10">
+            NEW
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-teal-500/0 group-hover:from-emerald-500/10 group-hover:to-teal-500/10 transition-all duration-300" />
+          <Brain className="relative w-12 h-12 mb-3 mx-auto text-emerald-500 group-hover:scale-110 transition-transform duration-300" />
+          <h3 className="relative font-semibold text-center">Auto Quiz</h3>
+        </button>
+
+        {isAdminUser && (
+          <button
+            onClick={() => setActiveView('admin')}
+            className="group relative quick-access-card bg-gradient-to-br from-red-500/20 to-rose-500/20 border-2 border-red-500/30 hover:border-red-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/0 to-rose-500/0 group-hover:from-red-500/10 group-hover:to-rose-500/10 transition-all duration-300" />
+            <Settings className="relative w-12 h-12 mb-3 mx-auto text-red-500 group-hover:scale-110 transition-transform duration-300" />
+            <h3 className="relative font-semibold text-center">Admin Portal</h3>
+          </button>
+        )}
       </div>
 
       {/* Daily Challenge Widget */}
@@ -624,6 +663,8 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
     if (activeView === 'competition') return 'Dorgaadorgee';
     if (activeView === 'worksheets') return 'Worksheets';
     if (activeView === 'teacher-studios') return 'Teacher Studios';
+    if (activeView === 'auto-quiz') return 'Auto Quiz';
+    if (activeView === 'admin') return 'Admin Portal';
     return 'Dashboard';
   };
 

@@ -92,10 +92,11 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
   const [showRetry, setShowRetry] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   // Teacher-specific state
-  const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
+  const [userRole, setUserRole] = useState<'student' | 'teacher' | 'admin'>('student');
   const [teacherCode, setTeacherCode] = useState('');
   const [teachingSubject, setTeachingSubject] = useState('');
   const [educationLevel, setEducationLevel] = useState('');
+  const [adminCode, setAdminCode] = useState('');
   const [verifyingCode, setVerifyingCode] = useState(false);
   const { toast } = useToast();
 
@@ -141,6 +142,33 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
     await supabase
       .from('user_roles')
       .insert({ user_id: userId, role: 'teacher' });
+  };
+
+  // Verify admin code
+  const verifyAdminCode = async (code: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_codes')
+        .select('id, code, used_by')
+        .eq('code', code.toUpperCase().trim())
+        .maybeSingle();
+      if (error || !data) return false;
+      if (data.used_by) return false;
+      return true;
+    } catch { return false; }
+  };
+
+  const markAdminCodeUsed = async (code: string, userId: string) => {
+    await supabase
+      .from('admin_codes')
+      .update({ used_by: userId, used_at: new Date().toISOString() })
+      .eq('code', code.toUpperCase().trim());
+  };
+
+  const addAdminRole = async (userId: string) => {
+    await supabase
+      .from('user_roles')
+      .insert({ user_id: userId, role: 'admin' });
   };
 
   // Check network status - FIXED: was useState, now useEffect
@@ -347,13 +375,23 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
           if (!teacherCode || !teachingSubject || !educationLevel) {
             throw new Error('Please fill in all teacher fields (code, subject, and education level).');
           }
-          
           setVerifyingCode(true);
           const isValidCode = await verifyTeacherCode(teacherCode);
           setVerifyingCode(false);
-          
           if (!isValidCode) {
             throw new Error('Invalid or already used teacher code. Please contact administration for a valid code.');
+          }
+        }
+
+        if (userRole === 'admin') {
+          if (!adminCode) {
+            throw new Error('Please enter your admin code.');
+          }
+          setVerifyingCode(true);
+          const isValidAdmin = await verifyAdminCode(adminCode);
+          setVerifyingCode(false);
+          if (!isValidAdmin) {
+            throw new Error('Invalid or already used admin code.');
           }
         }
 
@@ -412,16 +450,20 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
               await markTeacherCodeUsed(teacherCode, authData.user.id);
               await addTeacherRole(authData.user.id);
             }
+
+            // If admin, mark code as used and add role
+            if (userRole === 'admin') {
+              await markAdminCodeUsed(adminCode, authData.user.id);
+              await addAdminRole(authData.user.id);
+            }
           } else {
             console.warn('Profile not created by trigger, account created but profile incomplete');
           }
         }
         
         toast({
-          title: userRole === 'teacher' ? "Teacher Account Created!" : "Account Created Successfully!",
-          description: userRole === 'teacher' 
-            ? "Welcome to Model Egdu! You can now share content with students." 
-            : "Welcome to Model Egdu! You can now start learning.",
+          title: userRole === 'admin' ? "Admin Account Created!" : userRole === 'teacher' ? "Teacher Account Created!" : "Account Created Successfully!",
+          description: "Welcome to Model Egdu!",
         });
       }
       
@@ -657,35 +699,36 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                 {/* Role Selection */}
                 <div className="space-y-2">
                   <Label>I am a *</Label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <button
                       type="button"
                       onClick={() => setUserRole('student')}
-                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                        userRole === 'student' 
-                          ? 'border-primary bg-primary/10' 
-                          : 'border-border hover:border-primary/50'
+                      className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                        userRole === 'student' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50'
                       }`}
                     >
-                      <BookOpen className={`w-8 h-8 ${userRole === 'student' ? 'text-primary' : 'text-muted-foreground'}`} />
-                      <span className={`font-medium ${userRole === 'student' ? 'text-primary' : ''}`}>Student</span>
+                      <BookOpen className={`w-7 h-7 ${userRole === 'student' ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <span className={`font-medium text-sm ${userRole === 'student' ? 'text-primary' : ''}`}>Student</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setUserRole('teacher')}
-                      className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                        userRole === 'teacher' 
-                          ? 'border-yellow-500 bg-yellow-500/10' 
-                          : 'border-border hover:border-yellow-500/50'
+                      className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                        userRole === 'teacher' ? 'border-yellow-500 bg-yellow-500/10' : 'border-border hover:border-yellow-500/50'
                       }`}
                     >
-                      <div className="relative">
-                        <GraduationCap className={`w-8 h-8 ${userRole === 'teacher' ? 'text-yellow-500' : 'text-muted-foreground'}`} />
-                        {userRole === 'teacher' && (
-                          <VerifiedBadge type="gold" size="sm" className="absolute -top-1 -right-1" />
-                        )}
-                      </div>
-                      <span className={`font-medium ${userRole === 'teacher' ? 'text-yellow-600' : ''}`}>Teacher</span>
+                      <GraduationCap className={`w-7 h-7 ${userRole === 'teacher' ? 'text-yellow-500' : 'text-muted-foreground'}`} />
+                      <span className={`font-medium text-sm ${userRole === 'teacher' ? 'text-yellow-600' : ''}`}>Teacher</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUserRole('admin')}
+                      className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                        userRole === 'admin' ? 'border-red-500 bg-red-500/10' : 'border-border hover:border-red-500/50'
+                      }`}
+                    >
+                      <GraduationCap className={`w-7 h-7 ${userRole === 'admin' ? 'text-red-500' : 'text-muted-foreground'}`} />
+                      <span className={`font-medium text-sm ${userRole === 'admin' ? 'text-red-600' : ''}`}>Admin</span>
                     </button>
                   </div>
                 </div>
@@ -764,6 +807,35 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Admin-specific fields */}
+                {userRole === 'admin' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-4 p-4 bg-red-500/5 rounded-xl border border-red-500/20"
+                  >
+                    <div className="flex items-center gap-2 text-red-600 mb-2">
+                      <span className="text-sm font-medium">🔐 Admin Verification</span>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="adminCode">Admin Code *</Label>
+                      <Input
+                        id="adminCode"
+                        type="password"
+                        placeholder="Enter your admin code"
+                        value={adminCode}
+                        onChange={(e) => setAdminCode(e.target.value.toUpperCase())}
+                        className="h-11 font-mono"
+                        required={userRole === 'admin'}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Contact system administration for your admin code
+                      </p>
                     </div>
                   </motion.div>
                 )}

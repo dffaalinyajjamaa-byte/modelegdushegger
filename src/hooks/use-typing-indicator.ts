@@ -8,7 +8,7 @@ interface TypingUser {
 
 export function useTypingIndicator(chatId: string | null, currentUserId: string) {
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTypingRef = useRef(false);
 
   // Subscribe to typing indicators

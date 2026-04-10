@@ -19,7 +19,7 @@ export const useVoiceActivityDetection = ({
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number>();
-  const speechTimeoutRef = useRef<NodeJS.Timeout>();
+  const speechTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     if (enabled) {
