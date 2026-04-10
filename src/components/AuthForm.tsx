@@ -450,16 +450,20 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
               await markTeacherCodeUsed(teacherCode, authData.user.id);
               await addTeacherRole(authData.user.id);
             }
+
+            // If admin, mark code as used and add role
+            if (userRole === 'admin') {
+              await markAdminCodeUsed(adminCode, authData.user.id);
+              await addAdminRole(authData.user.id);
+            }
           } else {
             console.warn('Profile not created by trigger, account created but profile incomplete');
           }
         }
         
         toast({
-          title: userRole === 'teacher' ? "Teacher Account Created!" : "Account Created Successfully!",
-          description: userRole === 'teacher' 
-            ? "Welcome to Model Egdu! You can now share content with students." 
-            : "Welcome to Model Egdu! You can now start learning.",
+          title: userRole === 'admin' ? "Admin Account Created!" : userRole === 'teacher' ? "Teacher Account Created!" : "Account Created Successfully!",
+          description: "Welcome to Model Egdu!",
         });
       }
       
