@@ -92,10 +92,11 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
   const [showRetry, setShowRetry] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   // Teacher-specific state
-  const [userRole, setUserRole] = useState<'student' | 'teacher'>('student');
+  const [userRole, setUserRole] = useState<'student' | 'teacher' | 'admin'>('student');
   const [teacherCode, setTeacherCode] = useState('');
   const [teachingSubject, setTeachingSubject] = useState('');
   const [educationLevel, setEducationLevel] = useState('');
+  const [adminCode, setAdminCode] = useState('');
   const [verifyingCode, setVerifyingCode] = useState(false);
   const { toast } = useToast();
 
@@ -141,6 +142,33 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
     await supabase
       .from('user_roles')
       .insert({ user_id: userId, role: 'teacher' });
+  };
+
+  // Verify admin code
+  const verifyAdminCode = async (code: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_codes')
+        .select('id, code, used_by')
+        .eq('code', code.toUpperCase().trim())
+        .maybeSingle();
+      if (error || !data) return false;
+      if (data.used_by) return false;
+      return true;
+    } catch { return false; }
+  };
+
+  const markAdminCodeUsed = async (code: string, userId: string) => {
+    await supabase
+      .from('admin_codes')
+      .update({ used_by: userId, used_at: new Date().toISOString() })
+      .eq('code', code.toUpperCase().trim());
+  };
+
+  const addAdminRole = async (userId: string) => {
+    await supabase
+      .from('user_roles')
+      .insert({ user_id: userId, role: 'admin' });
   };
 
   // Check network status - FIXED: was useState, now useEffect
