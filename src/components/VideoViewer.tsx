@@ -31,7 +31,7 @@ export default function VideoViewer({ content, user, onBack, onLogActivity, onVi
   const [watchTime, setWatchTime] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const playerRef = useRef<any>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const { progress, loading: progressLoading, updateProgress } = useVideoProgress(
     user.id,
