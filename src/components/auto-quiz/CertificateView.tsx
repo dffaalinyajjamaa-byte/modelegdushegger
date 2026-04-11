@@ -23,31 +23,14 @@ export default function CertificateView({
     year: 'numeric', month: 'long', day: 'numeric'
   });
 
-  const handleDownload = useCallback(async () => {
-    if (!certRef.current) return;
+  const handleDownload = useCallback(() => {
     setDownloading(true);
     try {
-      const { default: html2canvas } = await import('html2canvas' as string).catch(() => {
-        // Fallback: create a simple downloadable image via canvas
-        return { default: null };
-      });
-
-      if (html2canvas) {
-        const canvas = await html2canvas(certRef.current, { scale: 2, useCORS: true });
-        const link = document.createElement('a');
-        link.download = `Certificate_${userName.replace(/\s/g, '_')}_${grade}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      } else {
-        // Fallback: print the certificate
-        window.print();
-      }
-    } catch {
       window.print();
     } finally {
       setDownloading(false);
     }
-  }, [userName, grade]);
+  }, []);
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
