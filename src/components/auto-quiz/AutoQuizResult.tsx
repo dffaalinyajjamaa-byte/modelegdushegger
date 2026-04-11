@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, XCircle, RotateCcw, ArrowLeft, Trophy, Award } from 'lucide-react';
+import CertificateView from './CertificateView';
 import type { QuizQuestion } from './AutoQuiz';
 
 interface AutoQuizResultProps {
@@ -22,16 +23,20 @@ export default function AutoQuizResult({
 }: AutoQuizResultProps) {
   const [saved, setSaved] = useState(false);
   const [showExplanations, setShowExplanations] = useState(false);
+  const [showCertificate, setShowCertificate] = useState(false);
+  const [certificateData, setCertificateData] = useState<{
+    grade: string; subjects: string[]; issuedAt: string;
+  } | null>(null);
 
   const score = questions.reduce((acc, q, i) => acc + (answers[i] === q.answer ? 1 : 0), 0);
   const total = questions.length;
   const percentage = Math.round((score / total) * 100);
   const passed = percentage >= 50;
 
-  // Save result
   useEffect(() => {
     if (saved) return;
-    const saveResult = async () => {
+    const saveAndCheck = async () => {
+      // Save result
       await supabase.from('auto_quiz_results').insert({
         user_id: user.id,
         book_id: bookId,
@@ -44,15 +49,93 @@ export default function AutoQuizResult({
         time_taken: timeTaken
       });
       setSaved(true);
+
+      // Check certificate eligibility
+      if (passed) {
+        await checkCertificateEligibility();
+      }
     };
-    saveResult();
+    saveAndCheck();
   }, []);
+
+  const checkCertificateEligibility = async () => {
+    // Get user's grade from profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('grade')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!profile?.grade) return;
+
+    // Get all subjects for this grade
+    const { data: books } = await supabase
+      .from('auto_quiz_books')
+      .select('subject')
+      .eq('grade', profile.grade);
+
+    if (!books || books.length === 0) return;
+
+    const allSubjects = [...new Set(books.map(b => b.subject))];
+
+    // Get user's best results per subject
+    const { data: results } = await supabase
+      .from('auto_quiz_results')
+      .select('subject, percentage, passed')
+      .eq('user_id', user.id);
+
+    if (!results) return;
+
+    // Check if passed all subjects
+    const passedSubjects = allSubjects.filter(subj =>
+      results.some(r => r.subject === subj && r.passed)
+    );
+
+    if (passedSubjects.length === allSubjects.length) {
+      // Check if certificate already exists
+      const { data: existing } = await supabase
+        .from('certificates')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('grade', profile.grade)
+        .maybeSingle();
+
+      const issuedAt = new Date().toISOString();
+
+      if (!existing) {
+        await supabase.from('certificates').insert({
+          user_id: user.id,
+          grade: profile.grade,
+          subjects_completed: passedSubjects,
+          issued_at: issuedAt,
+        });
+      }
+
+      setCertificateData({
+        grade: profile.grade,
+        subjects: passedSubjects,
+        issuedAt: existing ? issuedAt : issuedAt,
+      });
+    }
+  };
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}m ${s}s`;
   };
+
+  if (showCertificate && certificateData) {
+    return (
+      <CertificateView
+        user={user}
+        grade={certificateData.grade}
+        subjectsCompleted={certificateData.subjects}
+        issuedAt={certificateData.issuedAt}
+        onBack={() => setShowCertificate(false)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -79,6 +162,37 @@ export default function AutoQuizResult({
           </p>
         </CardContent>
       </Card>
+
+      {/* Certificate Banner */}
+      {certificateData && (
+        <Card
+          className="cursor-pointer border-2 overflow-hidden"
+          style={{
+            borderColor: 'rgba(201, 168, 76, 0.5)',
+            background: 'linear-gradient(135deg, rgba(201, 168, 76, 0.1), rgba(240, 215, 140, 0.05))',
+          }}
+          onClick={() => setShowCertificate(true)}
+        >
+          <CardContent className="pt-4 pb-4 flex items-center gap-4">
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{
+                background: 'linear-gradient(135deg, #c9a84c, #f0d78c)',
+              }}
+            >
+              <Award className="w-7 h-7 text-black" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold" style={{ color: '#c9a84c' }}>
+                🎓 Certificate Earned!
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                You passed all subjects in {certificateData.grade}. Tap to view your certificate.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Actions */}
       <div className="flex gap-3">

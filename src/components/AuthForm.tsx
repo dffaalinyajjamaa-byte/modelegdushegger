@@ -346,12 +346,6 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
         throw new Error('NETWORK_ERROR');
       }
 
-      // Test connection before attempting auth (helps Windows 10)
-      const isConnected = await testConnection();
-      if (!isConnected) {
-        throw new Error('NETWORK_ERROR');
-      }
-
       if (isLogin) {
         // Login with retry for Windows 10 compatibility
         const { error } = await retryWithDelay(async () => {
@@ -968,7 +962,7 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                   {verifyingCode ? 'Verifying Code...' : 'Processing...'}
                 </>
               ) : (
-                isLogin ? 'Sign In' : (userRole === 'teacher' ? 'Create Teacher Account' : 'Create Account')
+                isLogin ? 'Sign In' : (userRole === 'admin' ? 'Create Admin Account' : userRole === 'teacher' ? 'Create Teacher Account' : 'Create Account')
               )}
             </Button>
 
