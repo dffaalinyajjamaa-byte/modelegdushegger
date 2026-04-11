@@ -1,17 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart3, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
-
-interface Result {
-  id: string;
-  subject: string;
-  score: number;
-  total: number;
-  percentage: number;
-  passed: boolean;
-  created_at: string;
-}
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, TrendingUp, TrendingDown, BarChart3, Target, Award } from 'lucide-react';
 
 interface SubjectStats {
   subject: string;
@@ -21,27 +12,32 @@ interface SubjectStats {
 }
 
 export default function AdminResults() {
-  const [results, setResults] = useState<Result[]>([]);
   const [subjectStats, setSubjectStats] = useState<SubjectStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalQuizzes, setTotalQuizzes] = useState(0);
+  const [overallAvg, setOverallAvg] = useState(0);
+  const [overallPass, setOverallPass] = useState(0);
 
   useEffect(() => {
     const fetchResults = async () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('auto_quiz_results')
-        .select('id, subject, score, total, percentage, passed, created_at')
-        .order('created_at', { ascending: false })
-        .limit(500);
+        .select('subject, score, total, percentage, passed')
+        .limit(1000);
 
       if (!error && data) {
-        setResults(data as Result[]);
+        setTotalQuizzes(data.length);
 
-        // Calculate subject stats
-        const bySubject: Record<string, Result[]> = {};
+        if (data.length > 0) {
+          setOverallAvg(Math.round(data.reduce((s, r) => s + Number(r.percentage), 0) / data.length));
+          setOverallPass(Math.round((data.filter(r => r.passed).length / data.length) * 100));
+        }
+
+        const bySubject: Record<string, typeof data> = {};
         data.forEach(r => {
           if (!bySubject[r.subject]) bySubject[r.subject] = [];
-          bySubject[r.subject].push(r as Result);
+          bySubject[r.subject].push(r);
         });
 
         const stats = Object.entries(bySubject).map(([subject, items]) => ({
@@ -61,56 +57,84 @@ export default function AdminResults() {
   if (loading) {
     return (
       <div className="flex justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin" />
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <BarChart3 className="w-5 h-5" />
-            Performance by Subject
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {subjectStats.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">No quiz results yet</p>
-          ) : (
-            <div className="space-y-3">
-              {subjectStats.map(stat => (
-                <div key={stat.subject} className="p-3 rounded-lg border">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{stat.subject}</span>
-                    <span className="text-xs text-muted-foreground">{stat.count} quizzes</span>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-3 gap-2">
+        <Card>
+          <CardContent className="p-3 text-center">
+            <BarChart3 className="w-5 h-5 mx-auto text-primary mb-1" />
+            <p className="text-lg font-bold">{totalQuizzes}</p>
+            <p className="text-[10px] text-muted-foreground">Total Quizzes</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 text-center">
+            <Target className="w-5 h-5 mx-auto text-orange-500 mb-1" />
+            <p className="text-lg font-bold">{overallAvg}%</p>
+            <p className="text-[10px] text-muted-foreground">Avg Score</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 text-center">
+            <Award className="w-5 h-5 mx-auto text-green-500 mb-1" />
+            <p className="text-lg font-bold">{overallPass}%</p>
+            <p className="text-[10px] text-muted-foreground">Pass Rate</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Subject Breakdown */}
+      <div className="space-y-2">
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider px-1">
+          By Subject
+        </h3>
+        {subjectStats.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center">
+              <p className="text-sm text-muted-foreground">No quiz data yet</p>
+            </CardContent>
+          </Card>
+        ) : (
+          subjectStats.map(stat => (
+            <Card key={stat.subject}>
+              <CardContent className="p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {stat.avgScore >= 50 ? (
+                      <TrendingUp className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4 text-red-500" />
+                    )}
+                    <span className="text-sm font-medium">{stat.subject}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-1">
-                      {stat.avgScore >= 50 ? (
-                        <TrendingUp className="w-3 h-3 text-green-500" />
-                      ) : (
-                        <TrendingDown className="w-3 h-3 text-red-500" />
-                      )}
-                      <span>Avg: {stat.avgScore}%</span>
-                    </div>
-                    <div className="text-muted-foreground">
-                      Pass rate: {stat.passRate}%
-                    </div>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-2 mt-2">
-                    <div
-                      className={`h-2 rounded-full ${stat.avgScore >= 50 ? 'bg-green-500' : 'bg-red-500'}`}
-                      style={{ width: `${stat.avgScore}%` }}
-                    />
-                  </div>
+                  <Badge variant="outline" className="text-[10px]">
+                    {stat.count} quizzes
+                  </Badge>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <div className="flex gap-4 text-xs text-muted-foreground mb-2">
+                  <span>Avg: <strong className={stat.avgScore >= 50 ? 'text-green-600' : 'text-red-500'}>{stat.avgScore}%</strong></span>
+                  <span>Pass: <strong className={stat.passRate >= 50 ? 'text-green-600' : 'text-red-500'}>{stat.passRate}%</strong></span>
+                </div>
+                <div className="w-full rounded-full h-1.5" style={{ background: 'hsl(var(--muted))' }}>
+                  <div
+                    className="h-1.5 rounded-full transition-all"
+                    style={{
+                      width: `${stat.avgScore}%`,
+                      background: stat.avgScore >= 50 ? '#22c55e' : '#ef4444',
+                    }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 }
