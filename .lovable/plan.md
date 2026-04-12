@@ -1,92 +1,179 @@
 
 
-## Fix Admin Auth + Add Certificate System
+## Full Admin Portal Rebuild + National Exams + RLS Fix
 
-### Findings
-
-**Backend URL:** The frontend uses `VITE_SUPABASE_URL` (`https://asqxdhqcqexoxodrnjal.supabase.co`) everywhere — no localhost or hardcoded URLs. The configuration is correct.
-
-**Root cause of "Unable to connect to server":** The `testConnection()` function in `AuthForm.tsx` (line 55-73) makes a HEAD request to `/rest/v1/` before every login/signup. In the Lovable preview environment, this fetch can be intercepted by the preview proxy, causing a false `TypeError: Failed to fetch`, which triggers the `NETWORK_ERROR` path and blocks auth entirely. This is a known preview-environment issue.
-
-**Missing admin codes:** The migration file `20260410094838` creates the `admin_codes` table but does NOT insert the 35 ODA codes — there's no `INSERT INTO admin_codes` in any migration. The codes were never actually added to the database.
-
-**Admin login flow:** Currently admin code is only required during signup (correct per user preference). But the submit button says "Create Account" for admin too (should say "Create Admin Account").
+This plan covers three areas: (1) fixing the storage RLS error blocking admin uploads, (2) inserting all national exam data, and (3) rebuilding the admin dashboard into a comprehensive management portal.
 
 ---
 
-### Plan
+### Part 1: Fix Storage RLS — Root Cause of Upload Error
 
-#### 1. Fix the `testConnection` false-positive network error
+**Problem:** The `books-for-grade-6-auto-quiz` and `books-for-grade-8-auto-quiz` storage buckets exist but have **zero RLS policies on `storage.objects`**. When an admin uploads a PDF, the INSERT is blocked by default-deny RLS.
 
-Remove the aggressive `testConnection()` gate that blocks auth. Instead, let auth requests go through directly and handle actual errors gracefully. The `navigator.onLine` check is sufficient as a pre-check.
-
-**File:** `src/components/AuthForm.tsx`
-- Remove lines 349-353 (the `testConnection` call before auth)
-- Keep the `testConnection` function available only for the manual "Retry Connection" button
-- Update error handling to distinguish real auth errors from network errors more precisely
-
-#### 2. Insert the 35 admin codes via migration
-
-Create a new database migration to insert all 35 ODA codes into `admin_codes`:
-
+**Fix (Migration):**
 ```sql
-INSERT INTO public.admin_codes (code) VALUES
-('ODA-A2A3S3S8A3'), ('ODA-B7K9D2P4L1'), ... (all 35 codes)
-ON CONFLICT (code) DO NOTHING;
+-- Allow admins to upload to auto-quiz book buckets
+CREATE POLICY "Admins can upload quiz books"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    (bucket_id = 'books-for-grade-6-auto-quiz' OR bucket_id = 'books-for-grade-8-auto-quiz')
+    AND public.has_role(auth.uid(), 'admin')
+  );
+
+-- Allow public read (buckets are already public)
+CREATE POLICY "Public read quiz books"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'books-for-grade-6-auto-quiz' OR bucket_id = 'books-for-grade-8-auto-quiz');
+
+-- Allow admins to delete from quiz book buckets
+CREATE POLICY "Admins can delete quiz books"
+  ON storage.objects FOR DELETE
+  USING (
+    (bucket_id = 'books-for-grade-6-auto-quiz' OR bucket_id = 'books-for-grade-8-auto-quiz')
+    AND public.has_role(auth.uid(), 'admin')
+  );
 ```
 
-#### 3. Fix submit button text for admin
+Also add a `grade_level` column to `national_exams` for proper grade filtering (currently relies on parsing `description` text, which is fragile):
 
-**File:** `src/components/AuthForm.tsx` line 971
-- Change from: `userRole === 'teacher' ? 'Create Teacher Account' : 'Create Account'`
-- To: `userRole === 'admin' ? 'Create Admin Account' : userRole === 'teacher' ? 'Create Teacher Account' : 'Create Account'`
+```sql
+ALTER TABLE public.national_exams ADD COLUMN IF NOT EXISTS grade_level TEXT;
+UPDATE public.national_exams SET grade_level = 'Grade 8' WHERE description LIKE '%Grade 8%';
+```
 
-#### 4. Add Certificate Generation System
+And add admin INSERT/UPDATE/DELETE policies for `national_exams` (currently only has SELECT):
 
-Create a luxury premium certificate with:
-- Logo on top left
-- AI signature with name "Hope, CEO of J-Hope Technologies"
-- Student name from signup info, grade, completed subjects, date
-- Premium gold/dark design
+```sql
+CREATE POLICY "Admins can insert national exams" ON public.national_exams
+  FOR INSERT TO authenticated WITH CHECK (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can update national exams" ON public.national_exams
+  FOR UPDATE TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can delete national exams" ON public.national_exams
+  FOR DELETE TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+```
 
-**New files:**
-- `src/components/auto-quiz/CertificateView.tsx` — Certificate viewer/generator component
-- Edge function or client-side PDF generation using canvas/HTML-to-image approach
-
-**Certificate logic** (in `AutoQuizResult.tsx`):
-- After saving a quiz result, check if user has passed ALL subjects for their grade
-- If yes, generate certificate and store URL in `certificates` table
-- Show certificate download/view button
-
-**Certificate design:**
-- Dark background with gold accents and border
-- School logo top-left
-- "Certificate of Excellence" heading
-- Student name, grade, all passed subjects listed
-- Date of completion
-- AI signature: "Hope, CEO of J-Hope Technologies"
-- Downloadable as image/PDF
+Similarly for `content` table (videos, books) — add admin write policies:
+```sql
+CREATE POLICY "Admins can update content" ON public.content
+  FOR UPDATE TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can delete content" ON public.content
+  FOR DELETE TO authenticated USING (public.has_role(auth.uid(), 'admin'));
+```
 
 ---
 
-### Files to Modify
+### Part 2: Insert National Exam Data
 
-| File | Change |
-|------|--------|
-| `src/components/AuthForm.tsx` | Remove testConnection gate, fix admin button text |
-| `src/components/auto-quiz/AutoQuizResult.tsx` | Add certificate check after saving result |
-| New migration | Insert 35 ODA admin codes |
+Insert all provided exams using the data insert tool. Two batches:
 
-### Files to Create
+**Grade 8 exams (11 new records):**
+| Subject | Year | URL |
+|---------|------|-----|
+| Afaan Ingiliffaa | 2016 | 1434dJQ9-... |
+| Herreega | 2016 | 11OXzhvc7... |
+| Afaan Amaara | 2016 | 1rSnxB4p... |
+| Lammummaa | 2016 | 1ZbaudVlk... |
+| Saayinsii Waliigalaa | 2015 | 1TNniMwos... |
+| Afaan Oromoo | 2016 | 1T5EMc2c... |
+| Herreega | 2015 | 1lMnMncn... |
+| Hawaasa | 2015 | 1chVmZMg... |
+| Afaan Ingiliffaa | 2015 | 16YSeq2j... |
+| Afaan Oromoo | 2015 | 1vlmDr_q... |
+| Lammummaa | 2015 | 1zrPPrqE... |
+
+**Grade 6 exams (10 new records):**
+| Subject | Year | URL |
+|---------|------|-----|
+| Afaan Oromoo | 2016 | 1wsenl0Z... |
+| Afaan Oromoo | 2017 | 1zmsfVuF... |
+| Afaan Ingiliffaa | 2016 | 1Q8T97f8... |
+| Herreega | 2016 | 1eHhTap3... |
+| Saayinsi naannoo | 2016 | 13sIbhFI... |
+| Saayinsi naannoo | 2017 | 1sOnL10R... |
+| Gadaa fi Safuu | 2017 | 1jTxn8jM... |
+| Gadaa fi Safuu | 2016 | 1lXJ5EZu... |
+
+(Skipping Afaan Ingiliffaa 2017 Grade 6 — no URL provided)
+
+All will use the `grade_level` column for proper filtering.
+
+---
+
+### Part 3: Rebuild Admin Dashboard — Full Academic Admin
+
+The current admin panel only has: Overview stats, Book Manager, Users list, Analytics. 
+
+**New admin panel structure with 7 tabs:**
+
+| Tab | Purpose |
+|-----|---------|
+| Overview | Stats dashboard (users, books, exams, quizzes, certificates) |
+| National Exams | Upload/manage national exam PDFs by grade, subject, year |
+| Auto Quiz Books | Current book upload + processing (keep existing) |
+| Videos & Content | Upload/manage video lessons and digital books |
+| Quiz Editor | View quiz results, edit quiz answers from backend |
+| Users | User management with role badges and activity |
+| Analytics | Performance reports by subject, pass rate, weak areas |
+
+**New admin components:**
 
 | File | Purpose |
 |------|---------|
-| `src/components/auto-quiz/CertificateView.tsx` | Luxury certificate component with download |
+| `src/components/admin/AdminNationalExams.tsx` | CRUD for national exams: upload PDF, set subject/year/grade |
+| `src/components/admin/AdminContentManager.tsx` | Manage videos and digital books (edit, delete, add) |
+| `src/components/admin/AdminQuizEditor.tsx` | View auto-quiz results, edit quiz answers stored in results |
+
+**Modified files:**
+
+| File | Changes |
+|------|---------|
+| `src/components/admin/AdminDashboard.tsx` | Add new tabs, import new components, remove student-style UI |
+| `src/components/NationalExams.tsx` | Use `grade_level` column instead of parsing `description` |
+
+**AdminNationalExams.tsx features:**
+- Form: title, subject (dropdown), year, grade (6/8), PDF file upload
+- Uploads PDF to a new `national-exam-pdfs` storage bucket (public)
+- Inserts record into `national_exams` table
+- Lists all exams grouped by grade, filterable by subject
+- Edit/delete capability
+
+**AdminContentManager.tsx features:**
+- View all content (videos + books) from `content` table
+- Add new content: title, URL, type (video/pdf), subject, grade
+- Edit existing content metadata
+- Delete content
+
+**AdminQuizEditor.tsx features:**
+- View all `auto_quiz_results` with user name, score, subject
+- Drill into individual results to see answers
+- Ability to override/correct quiz answers
+
+---
+
+### Part 4: Storage Bucket for National Exam PDFs
+
+Create a new public bucket `national-exam-pdfs` with admin-only upload policies:
+
+```sql
+INSERT INTO storage.buckets (id, name, public) VALUES ('national-exam-pdfs', 'national-exam-pdfs', true) ON CONFLICT DO NOTHING;
+
+CREATE POLICY "Public read national exam pdfs" ON storage.objects
+  FOR SELECT USING (bucket_id = 'national-exam-pdfs');
+CREATE POLICY "Admins can upload national exam pdfs" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'national-exam-pdfs' AND public.has_role(auth.uid(), 'admin'));
+CREATE POLICY "Admins can delete national exam pdfs" ON storage.objects
+  FOR DELETE USING (bucket_id = 'national-exam-pdfs' AND public.has_role(auth.uid(), 'admin'));
+```
+
+---
 
 ### Implementation Order
 
-1. Database migration — insert admin codes
-2. Fix AuthForm — remove testConnection gate + fix button text
-3. Build CertificateView component
-4. Integrate certificate check into AutoQuizResult
+1. **Migration** — Storage RLS policies for quiz book buckets + national exam admin policies + grade_level column + national exam PDF bucket
+2. **Data insert** — All 21 national exam records (Grade 6 + Grade 8)
+3. **AdminNationalExams.tsx** — New component for national exam management
+4. **AdminContentManager.tsx** — New component for video/book content management
+5. **AdminQuizEditor.tsx** — New component for quiz result viewing/editing
+6. **AdminDashboard.tsx** — Rebuild with 7 tabs, professional admin-only design
+7. **NationalExams.tsx** — Update to use `grade_level` column for filtering
 
