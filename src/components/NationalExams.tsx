@@ -97,18 +97,14 @@ export default function NationalExams({ user, onBack }: NationalExamsProps) {
     try {
       setLoading(true);
       
-      let query = supabase
+      const { data, error } = await (supabase
         .from('national_exams')
         .select('subject')
-        .order('subject');
+        .order('subject') as any)
+        .eq('grade_level', userGrade || undefined);
 
-      // Filter by grade_level column if user has a grade
-      if (userGrade) {
-        query = query.eq('grade_level' as any, userGrade);
-      }
-
-      const { data, error } = await query;
-      if (error) throw error;
+      // If no grade, fetch all
+      const finalData = userGrade ? data : (await supabase.from('national_exams').select('subject').order('subject')).data;
       
       const uniqueSubjects = Array.from(new Set((data as any[])?.map(e => e.subject) || []));
       setSubjects(uniqueSubjects);
