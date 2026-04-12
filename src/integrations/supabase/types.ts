@@ -1003,6 +1003,7 @@ export type Database = {
           cover_image_url: string | null
           created_at: string | null
           description: string | null
+          grade_level: string | null
           id: string
           pdf_url: string
           subject: string
@@ -1013,6 +1014,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string | null
           description?: string | null
+          grade_level?: string | null
           id?: string
           pdf_url: string
           subject: string
@@ -1023,6 +1025,7 @@ export type Database = {
           cover_image_url?: string | null
           created_at?: string | null
           description?: string | null
+          grade_level?: string | null
           id?: string
           pdf_url?: string
           subject?: string

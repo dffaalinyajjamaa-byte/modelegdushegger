@@ -96,41 +96,15 @@ export default function NationalExams({ user, onBack }: NationalExamsProps) {
   const fetchSubjects = async () => {
     try {
       setLoading(true);
-      
-      // Build query - filter by grade if user has a grade set
-      let query = supabase
-        .from('national_exams')
-        .select('subject, description')
-        .order('subject');
-
-      const { data, error } = await query;
-
+      let rpc: any = supabase.from('national_exams').select('subject').order('subject');
+      if (userGrade) rpc = rpc.eq('grade_level', userGrade);
+      const { data, error } = await rpc;
       if (error) throw error;
-      
-      // Filter exams by user's grade level (e.g., "Grade 6" users shouldn't see "Grade 8" exams)
-      const filteredData = data?.filter(exam => {
-        if (!userGrade) return true; // Show all if no grade set
-        
-        const gradeNum = userGrade.replace(/\D/g, ''); // Extract number from "Grade 6"
-        const examDesc = exam.description?.toLowerCase() || '';
-        
-        // If exam description mentions a specific grade, check if it matches user's grade
-        if (examDesc.includes('grade 8') && gradeNum !== '8') return false;
-        if (examDesc.includes('grade 6') && gradeNum !== '6') return false;
-        
-        return true;
-      });
-      
-      // Get unique subjects from filtered exams
-      const uniqueSubjects = Array.from(new Set(filteredData?.map(e => e.subject) || []));
+      const uniqueSubjects = Array.from(new Set((data as any[])?.map((e: any) => e.subject) || []));
       setSubjects(uniqueSubjects);
     } catch (error) {
       console.error('Error fetching subjects:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load subjects',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to load subjects', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -138,38 +112,16 @@ export default function NationalExams({ user, onBack }: NationalExamsProps) {
 
   const fetchExamsBySubject = async () => {
     if (!selectedSubject) return;
-    
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('national_exams')
-        .select('*')
-        .eq('subject', selectedSubject)
-        .order('year', { ascending: false });
-
+      let rpc: any = supabase.from('national_exams').select('*').eq('subject', selectedSubject).order('year', { ascending: false });
+      if (userGrade) rpc = rpc.eq('grade_level', userGrade);
+      const { data, error } = await rpc;
       if (error) throw error;
-      
-      // Filter exams by user's grade level
-      const filteredExams = data?.filter(exam => {
-        if (!userGrade) return true;
-        
-        const gradeNum = userGrade.replace(/\D/g, '');
-        const examDesc = exam.description?.toLowerCase() || '';
-        
-        if (examDesc.includes('grade 8') && gradeNum !== '8') return false;
-        if (examDesc.includes('grade 6') && gradeNum !== '6') return false;
-        
-        return true;
-      });
-      
-      setExams(filteredExams || []);
+      setExams(data || []);
     } catch (error) {
       console.error('Error fetching exams:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load exams',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to load exams', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
