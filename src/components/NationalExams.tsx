@@ -96,17 +96,11 @@ export default function NationalExams({ user, onBack }: NationalExamsProps) {
   const fetchSubjects = async () => {
     try {
       setLoading(true);
-      
-      const { data, error } = await (supabase
-        .from('national_exams')
-        .select('subject')
-        .order('subject') as any)
-        .eq('grade_level', userGrade || undefined);
-
-      // If no grade, fetch all
-      const finalData = userGrade ? data : (await supabase.from('national_exams').select('subject').order('subject')).data;
-      
-      const uniqueSubjects = Array.from(new Set((data as any[])?.map(e => e.subject) || []));
+      let rpc: any = supabase.from('national_exams').select('subject').order('subject');
+      if (userGrade) rpc = rpc.eq('grade_level', userGrade);
+      const { data, error } = await rpc;
+      if (error) throw error;
+      const uniqueSubjects = Array.from(new Set((data as any[])?.map((e: any) => e.subject) || []));
       setSubjects(uniqueSubjects);
     } catch (error) {
       console.error('Error fetching subjects:', error);
@@ -118,20 +112,11 @@ export default function NationalExams({ user, onBack }: NationalExamsProps) {
 
   const fetchExamsBySubject = async () => {
     if (!selectedSubject) return;
-    
     try {
       setLoading(true);
-      let query = supabase
-        .from('national_exams')
-        .select('*')
-        .eq('subject', selectedSubject)
-        .order('year', { ascending: false });
-
-      if (userGrade) {
-        query = query.eq('grade_level' as any, userGrade);
-      }
-
-      const { data, error } = await query;
+      let rpc: any = supabase.from('national_exams').select('*').eq('subject', selectedSubject).order('year', { ascending: false });
+      if (userGrade) rpc = rpc.eq('grade_level', userGrade);
+      const { data, error } = await rpc;
       if (error) throw error;
       setExams(data || []);
     } catch (error) {
