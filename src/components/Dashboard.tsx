@@ -52,6 +52,7 @@ const TeacherStudios = lazy(() => import('./TeacherStudios'));
 const StudyByMusic = lazy(() => import('./study-music/StudyByMusic'));
 const AutoQuiz = lazy(() => import('./auto-quiz/AutoQuiz'));
 const AdminDashboard = lazy(() => import('./admin/AdminDashboard'));
+const Marketplace = lazy(() => import('./marketplace/Marketplace'));
 
 interface DashboardProps {
   user: User;
@@ -85,7 +86,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets' | 'teacher-studios' | 'study-music' | 'auto-quiz' | 'admin';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets' | 'teacher-studios' | 'study-music' | 'auto-quiz' | 'admin' | 'marketplace';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -317,6 +318,12 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         return (
           <Suspense fallback={<LoadingFallback />}>
             <AutoQuiz user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
+      case 'marketplace':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <Marketplace user={user} onBack={() => setActiveView('dashboard')} />
           </Suspense>
         );
       case 'admin':
