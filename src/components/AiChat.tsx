@@ -107,15 +107,17 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
       }
 
       const response = await generateTeacherResponse(userMessage, language);
+      const responseText = typeof response === 'string' ? response : response.text;
+      const groundingUrls = typeof response === 'string' ? undefined : response.groundingChunks?.filter(c => c.web).map(c => ({ uri: c.web!.uri, title: c.web!.title || '' }));
       const newMessage: ChatMessage = {
         role: 'system',
-        content: response.text || response,
+        content: responseText,
         timestamp: Date.now(),
         image: imageUrl,
-        groundingUrls: response.groundingUrls
+        groundingUrls
       };
       setMessages(prev => [...prev, newMessage]);
-      await saveChatMessage(userMessage, response.text || response);
+      await saveChatMessage(userMessage, responseText);
       onLogActivity('ai_chat', `AI Chat in ${language}: ${userMessage.slice(0, 50)}...`);
     } catch (error) {
       console.error('Error:', error);
