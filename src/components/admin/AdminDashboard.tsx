@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   ArrowLeft, BookOpen, Users, Brain, BarChart3,
-  Shield, Award, FileText, Video, Edit3
+  Shield, Award, FileText, Video, Edit3, ClipboardList,
+  ShoppingBag, BadgeCheck
 } from 'lucide-react';
 import AdminBookManager from './AdminBookManager';
 import AdminUserManager from './AdminUserManager';
@@ -13,13 +14,16 @@ import AdminResults from './AdminResults';
 import AdminNationalExams from './AdminNationalExams';
 import AdminContentManager from './AdminContentManager';
 import AdminQuizEditor from './AdminQuizEditor';
+import AdminWorksheetManager from './AdminWorksheetManager';
+import AdminBadgeVerification from './AdminBadgeVerification';
+import AdminMarketplace from './AdminMarketplace';
 
 interface AdminDashboardProps {
   user: User;
   onBack: () => void;
 }
 
-type AdminSection = 'overview' | 'national-exams' | 'books' | 'content' | 'quiz-editor' | 'users' | 'analytics';
+type AdminSection = 'overview' | 'national-exams' | 'books' | 'content' | 'quiz-editor' | 'users' | 'analytics' | 'worksheets' | 'badges' | 'marketplace';
 
 interface Stats {
   totalUsers: number;
@@ -30,24 +34,28 @@ interface Stats {
   certificates: number;
   nationalExams: number;
   contentItems: number;
+  worksheets: number;
+  marketplaceProducts: number;
 }
 
 export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
   const [stats, setStats] = useState<Stats>({
     totalUsers: 0, totalBooks: 0, totalQuizzes: 0, avgScore: 0, passRate: 0,
-    certificates: 0, nationalExams: 0, contentItems: 0
+    certificates: 0, nationalExams: 0, contentItems: 0, worksheets: 0, marketplaceProducts: 0
   });
   const [activeSection, setActiveSection] = useState<AdminSection>('overview');
 
   useEffect(() => {
     const fetchStats = async () => {
-      const [profilesRes, booksRes, resultsRes, certsRes, examsRes, contentRes] = await Promise.all([
+      const [profilesRes, booksRes, resultsRes, certsRes, examsRes, contentRes, worksheetsRes, productsRes] = await Promise.all([
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
         supabase.from('auto_quiz_books').select('id', { count: 'exact', head: true }),
         supabase.from('auto_quiz_results').select('percentage, passed'),
         supabase.from('certificates').select('id', { count: 'exact', head: true }),
         supabase.from('national_exams').select('id', { count: 'exact', head: true }),
         supabase.from('content').select('id', { count: 'exact', head: true }),
+        supabase.from('worksheets').select('id', { count: 'exact', head: true }),
+        supabase.from('marketplace_products').select('id', { count: 'exact', head: true }),
       ]);
       const results = resultsRes.data || [];
       const avg = results.length ? Math.round(results.reduce((s, r) => s + Number(r.percentage), 0) / results.length) : 0;
@@ -61,6 +69,8 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
         certificates: certsRes.count || 0,
         nationalExams: examsRes.count || 0,
         contentItems: contentRes.count || 0,
+        worksheets: worksheetsRes.count || 0,
+        marketplaceProducts: productsRes.count || 0,
       });
     };
     fetchStats();
@@ -70,8 +80,11 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'national-exams', label: 'Exams', icon: FileText },
     { id: 'books', label: 'Quiz Books', icon: BookOpen },
+    { id: 'worksheets', label: 'Worksheets', icon: ClipboardList },
     { id: 'content', label: 'Content', icon: Video },
-    { id: 'quiz-editor', label: 'Quiz Results', icon: Edit3 },
+    { id: 'marketplace', label: 'Market', icon: ShoppingBag },
+    { id: 'badges', label: 'Badges', icon: BadgeCheck },
+    { id: 'quiz-editor', label: 'Results', icon: Edit3 },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'analytics', label: 'Analytics', icon: Brain },
   ];
@@ -85,6 +98,8 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
     { label: 'Certificates', value: stats.certificates, icon: Award, color: '#06b6d4' },
     { label: 'National Exams', value: stats.nationalExams, icon: FileText, color: '#ec4899' },
     { label: 'Content', value: stats.contentItems, icon: Video, color: '#8b5cf6' },
+    { label: 'Worksheets', value: stats.worksheets, icon: ClipboardList, color: '#14b8a6' },
+    { label: 'Marketplace', value: stats.marketplaceProducts, icon: ShoppingBag, color: '#f43f5e' },
   ];
 
   return (
@@ -151,7 +166,10 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
         )}
         {activeSection === 'national-exams' && <AdminNationalExams user={user} />}
         {activeSection === 'books' && <AdminBookManager user={user} />}
+        {activeSection === 'worksheets' && <AdminWorksheetManager user={user} />}
         {activeSection === 'content' && <AdminContentManager user={user} />}
+        {activeSection === 'marketplace' && <AdminMarketplace />}
+        {activeSection === 'badges' && <AdminBadgeVerification />}
         {activeSection === 'quiz-editor' && <AdminQuizEditor />}
         {activeSection === 'users' && <AdminUserManager />}
         {activeSection === 'analytics' && <AdminResults />}
