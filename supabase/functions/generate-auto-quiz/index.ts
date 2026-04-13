@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { GoogleGenerativeAI } from "https://esm.sh/@google/generative-ai@0.21.0";
 
 const corsHeaders = {
@@ -13,41 +12,23 @@ serve(async (req) => {
   }
 
   try {
-    const { bookId, unitIds, questionCount, language } = await req.json();
+    const { pdfUrl, questionCount, language } = await req.json();
 
-    if (!bookId || !questionCount) {
+    if (!pdfUrl || !questionCount) {
       return new Response(
-        JSON.stringify({ error: 'bookId and questionCount are required' }),
+        JSON.stringify({ error: 'pdfUrl and questionCount are required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Fetch chunks based on selection
-    let query = supabase.from('auto_quiz_chunks').select('content, unit_id').eq('book_id', bookId);
-    
-    if (unitIds && unitIds.length > 0) {
-      query = query.in('unit_id', unitIds);
-    }
-
-    const { data: chunks, error: chunksError } = await query.order('chunk_index');
-    if (chunksError) throw chunksError;
-
-    if (!chunks || chunks.length === 0) {
-      return new Response(
-        JSON.stringify({ error: 'No content found for selected book/units' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Combine chunks (limit to avoid token overflow)
-    const combinedContent = chunks.map(c => c.content).join('\n\n').slice(0, 100000);
 
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
     if (!geminiApiKey) throw new Error('GEMINI_API_KEY not configured');
+
+    // Download PDF
+    const pdfResponse = await fetch(pdfUrl);
+    if (!pdfResponse.ok) throw new Error('Failed to download PDF');
+    const pdfBuffer = await pdfResponse.arrayBuffer();
+    const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
 
     const genAI = new GoogleGenerativeAI(geminiApiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
@@ -56,7 +37,13 @@ serve(async (req) => {
 
     const result = await model.generateContent([
       {
-        text: `You are a quiz generator for Ethiopian students. Generate exactly ${questionCount} multiple-choice questions based STRICTLY on the following textbook content.
+        inlineData: {
+          mimeType: "application/pdf",
+          data: pdfBase64
+        }
+      },
+      {
+        text: `You are a quiz generator for Ethiopian students. Generate exactly ${questionCount} multiple-choice questions based STRICTLY on this textbook PDF.
 
 RULES:
 - 90% of questions MUST come directly from the provided text
@@ -69,9 +56,6 @@ RULES:
 - Vary difficulty: 30% easy, 50% medium, 20% hard
 - NO duplicate questions
 - Clear, unambiguous wording
-
-TEXTBOOK CONTENT:
-${combinedContent}
 
 Return ONLY a valid JSON array with this structure:
 [
@@ -102,11 +86,6 @@ Generate exactly ${questionCount} questions. Return ONLY the JSON array, no mark
     } catch (e) {
       console.error('Failed to parse quiz response:', e);
       throw new Error('Failed to generate quiz questions');
-    }
-
-    // Validate question count
-    if (questions.length < questionCount) {
-      console.warn(`Generated ${questions.length} questions instead of ${questionCount}`);
     }
 
     return new Response(
