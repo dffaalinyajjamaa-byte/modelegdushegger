@@ -905,6 +905,101 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_products: {
+        Row: {
+          address: string | null
+          category: string
+          condition: string | null
+          created_at: string | null
+          description: string | null
+          file_url: string | null
+          id: string
+          images: string[] | null
+          latitude: number | null
+          longitude: number | null
+          price: number
+          rent_duration_days: number | null
+          status: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          category: string
+          condition?: string | null
+          created_at?: string | null
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          images?: string[] | null
+          latitude?: number | null
+          longitude?: number | null
+          price?: number
+          rent_duration_days?: number | null
+          status?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          category?: string
+          condition?: string | null
+          created_at?: string | null
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          images?: string[] | null
+          latitude?: number | null
+          longitude?: number | null
+          price?: number
+          rent_duration_days?: number | null
+          status?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      marketplace_reviews: {
+        Row: {
+          buyer_id: string
+          comment: string | null
+          created_at: string | null
+          id: string
+          product_id: string | null
+          rating: number
+          seller_id: string
+        }
+        Insert: {
+          buyer_id: string
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          rating: number
+          seller_id: string
+        }
+        Update: {
+          buyer_id?: string
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          rating?: number
+          seller_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "marketplace_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           chat_id: string
@@ -1880,6 +1975,36 @@ export type Database = {
         }
         Relationships: []
       }
+      worksheets: {
+        Row: {
+          created_at: string | null
+          grade_level: string
+          id: string
+          pdf_url: string
+          subject: string
+          title: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          grade_level: string
+          id?: string
+          pdf_url: string
+          subject: string
+          title: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          grade_level?: string
+          id?: string
+          pdf_url?: string
+          subject?: string
+          title?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1913,6 +2038,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      haversine_distance: {
+        Args: { lat1: number; lat2: number; lng1: number; lng2: number }
+        Returns: number
       }
       increment_daily_stat: {
         Args: { p_increment?: number; p_stat_type: string; p_user_id: string }
