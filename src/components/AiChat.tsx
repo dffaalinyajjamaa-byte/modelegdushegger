@@ -49,13 +49,16 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
           .limit(50);
 
         if (error) throw error;
-        
+
         if (data && data.length > 0) {
-          const loadedMessages: ChatMessage[] = data.flatMap(msg => [
-            { role: 'user' as const, content: msg.message, timestamp: new Date(msg.created_at).getTime() },
-            { role: 'model' as const, content: msg.response, timestamp: new Date(msg.created_at).getTime() + 1 }
-          ]);
-          setMessages(prev => [...prev, ...loadedMessages]);
+          const loadedMessages: ChatMessage[] = [];
+          data.forEach((msg) => {
+            loadedMessages.push({ role: 'user', content: msg.message, timestamp: new Date(msg.created_at).getTime() });
+            if (msg.response) {
+              loadedMessages.push({ role: 'system', content: msg.response, timestamp: new Date(msg.created_at).getTime() + 1 });
+            }
+          });
+          setMessages(prev => [prev[0], ...loadedMessages]);
         }
       } catch (error) {
         console.error('Error fetching chat history:', error);
@@ -69,82 +72,78 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, isLoading]);
+  }, [messages]);
+
+  const saveChatMessage = async (message: string, response: string) => {
+    try {
+      await supabase.from('chat_messages').insert({
+        user_id: user.id,
+        message,
+        response,
+        language
+      });
+    } catch (error) {
+      console.error('Error saving chat message:', error);
+    }
+  };
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
-
-    const userMsg: ChatMessage = { role: 'user', content: input, timestamp: Date.now() };
-    setMessages(prev => [...prev, userMsg]);
+    const userMessage = input.trim();
     setInput('');
+    setMessages(prev => [...prev, { role: 'user', content: userMessage, timestamp: Date.now() }]);
     setIsLoading(true);
 
     try {
-      // Detect image request purely by keyword
-      if (input.toLowerCase().includes('generate image') || input.toLowerCase().includes('draw')) {
-        const imageUrl = await generateEducationalImage(input);
-        setMessages(prev => [...prev, { role: 'model', content: 'Here is the image:', image: imageUrl, timestamp: Date.now() }]);
-      } else {
-        // Pass selected language for real-time translation/response generation
-        const response = await generateTeacherResponse(userMsg.content, language, true, false);
-        setMessages(prev => [...prev, { 
-          role: 'model', 
-          content: response.text, 
-          timestamp: Date.now(),
-          groundingUrls: response.groundingChunks?.flatMap(c => 
-            c.web ? [{ uri: c.web.uri, title: c.web.title || 'Source Link' }] : 
-            c.maps ? [{ uri: c.maps.uri, title: c.maps.title || 'Map Location' }] : []
-          ) 
-        }]);
+      const shouldGenerateImage = userMessage.toLowerCase().includes('draw') || 
+        userMessage.toLowerCase().includes('image') ||
+        userMessage.toLowerCase().includes('picture') ||
+        userMessage.toLowerCase().includes('show me') ||
+        userMessage.toLowerCase().includes('fakkii');
 
-        // Save to Supabase
-        await supabase.from('chat_messages').insert({
-          user_id: user.id,
-          message: userMsg.content,
-          response: response.text,
-          language: LANG_CODES[language]?.split('-')[0] || 'om',
-        });
-
-        onLogActivity('ai_chat', `AI Chat: ${userMsg.content}`, { language });
+      let imageUrl: string | undefined;
+      if (shouldGenerateImage) {
+        try { imageUrl = await generateEducationalImage(userMessage); } catch (e) { console.error('Image gen error:', e); }
       }
+
+      const response = await generateTeacherResponse(userMessage, language);
+      const responseText = typeof response === 'string' ? response : response.text;
+      const groundingUrls = typeof response === 'string' ? undefined : response.groundingChunks?.filter(c => c.web).map(c => ({ uri: c.web!.uri, title: c.web!.title || '' }));
+      const newMessage: ChatMessage = {
+        role: 'system',
+        content: responseText,
+        timestamp: Date.now(),
+        image: imageUrl,
+        groundingUrls
+      };
+      setMessages(prev => [...prev, newMessage]);
+      await saveChatMessage(userMessage, responseText);
+      onLogActivity('ai_chat', `AI Chat in ${language}: ${userMessage.slice(0, 50)}...`);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'model', content: 'Sorry, network error. Please try again.', isError: true, timestamp: Date.now() }]);
+      console.error('Error:', error);
+      setMessages(prev => [...prev, { role: 'system', content: 'Sorry, I encountered an error. Please try again.', timestamp: Date.now() }]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const startListening = () => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      
-      recognition.continuous = false;
-      recognition.interimResults = true;
-      recognition.lang = LANG_CODES[language] || 'en-US';
-
-      recognition.onstart = () => setIsListening(true);
-
-      recognition.onresult = (event: any) => {
-        let finalTranscript = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          }
-        }
-        if (finalTranscript) {
-          setInput((prev) => prev + (prev ? ' ' : '') + finalTranscript);
-        }
-      };
-
-      recognition.onerror = () => setIsListening(false);
-      recognition.onend = () => setIsListening(false);
-
-      recognitionRef.current = recognition;
-      recognition.start();
-    } else {
-      alert("Voice input is not supported in this browser.");
-    }
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+    const recognition = new SpeechRecognition();
+    recognition.lang = LANG_CODES[language] || 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
+      setIsListening(false);
+    };
+    recognition.onerror = () => setIsListening(false);
+    recognition.onend = () => setIsListening(false);
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
   };
 
   const stopListening = () => {
@@ -161,9 +160,9 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
   const languages = ['Afaan Oromoo', 'English', 'Amharic'];
 
   return (
-    <div className="flex flex-col h-full bg-[#0b141a] overflow-hidden relative">
+    <div className="flex flex-col h-[calc(100vh-8rem)] md:h-[calc(100vh-6rem)] bg-[#0b141a] overflow-hidden relative rounded-xl">
       {/* WhatsApp-style Header */}
-      <div className="bg-[#202c33] p-3 flex items-center justify-between px-4 shadow-md z-10 border-b border-gray-700/30">
+      <div className="bg-[#202c33] p-3 flex items-center justify-between px-4 shadow-md z-10 border-b border-gray-700/30 shrink-0">
         <div className="flex items-center gap-3">
           <div className="relative w-10 h-10 rounded-full overflow-hidden border border-gray-600 bg-black">
             <HologramAvatar state={isLoading ? 'thinking' : 'idle'} className="w-full h-full" />
@@ -215,9 +214,9 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
         </div>
       </div>
 
-      {/* Chat Area */}
+      {/* Chat Area - scrollable */}
       <div 
-        className="flex-1 bg-[#0b141a] overflow-y-auto p-4 relative scroll-smooth" 
+        className="flex-1 overflow-y-auto p-4 relative scroll-smooth min-h-0" 
         ref={scrollRef} 
         style={{ backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")', backgroundBlendMode: 'overlay', backgroundSize: '400px', backgroundColor: '#0b141a' }}
       >
@@ -258,132 +257,76 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
                           href={url.uri} 
                           target="_blank" 
                           rel="noopener noreferrer" 
-                          className="flex items-center gap-3 bg-[#111b21] hover:bg-[#182229] p-2.5 rounded-md transition-colors group border border-gray-800 hover:border-gray-600"
+                          className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors border border-gray-700/40"
                         >
-                          <div className="bg-blue-900/30 p-1.5 rounded shrink-0">
-                            <Globe size={12} className="text-blue-400" />
-                          </div>
-                          <span className="text-xs text-gray-300 group-hover:text-blue-300 font-medium truncate">
-                            {url.title || 'Visit Reference'}
-                          </span>
+                          <Globe size={12} className="text-blue-400 shrink-0" />
+                          <span className="text-[11px] text-blue-300 truncate">{url.title || url.uri}</span>
                         </a>
                       ))}
                     </div>
                   </div>
                 )}
                 
-                {/* Metadata */}
-                <div className="flex justify-end items-center gap-1 mt-1">
-                  <span className="text-[10px] text-gray-400">{formatTime(msg.timestamp)}</span>
+                <div className={`flex items-center gap-1 mt-1 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <span className="text-[10px] text-gray-500">{formatTime(msg.timestamp)}</span>
                   {msg.role === 'user' && <CheckCheck size={14} className="text-blue-400" />}
                 </div>
               </div>
             </motion.div>
           ))}
-
-          {/* Typing Indicator */}
+          
           {isLoading && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex justify-start"
-            >
-              <div className="bg-[#202c33] rounded-xl p-4 px-5 rounded-tl-none shadow-sm flex items-center gap-1.5 w-fit">
-                <motion.span 
-                  animate={{ y: [0, -5, 0] }} 
-                  transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
-                  className="w-2 h-2 bg-gray-400 rounded-full"
-                ></motion.span>
-                <motion.span 
-                  animate={{ y: [0, -5, 0] }} 
-                  transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }}
-                  className="w-2 h-2 bg-gray-400 rounded-full"
-                ></motion.span>
-                <motion.span 
-                  animate={{ y: [0, -5, 0] }} 
-                  transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }}
-                  className="w-2 h-2 bg-gray-400 rounded-full"
-                ></motion.span>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+              <div className="bg-[#202c33] rounded-xl rounded-tl-sm p-3 px-4 shadow-md">
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    {[0, 1, 2].map(i => (
+                      <motion.div key={i} className="w-2 h-2 bg-gray-500 rounded-full"
+                        animate={{ y: [0, -6, 0] }}
+                        transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
         </div>
       </div>
 
-      {/* Input Area - with mobile navigation padding */}
-      <div className="bg-[#202c33] p-3 pb-20 md:pb-3 flex items-end gap-2 z-20 border-t border-[#2a3942]">
-        {/* Tools */}
-        {!isListening && (
-          <div className="flex gap-1 pb-1">
-            <button 
-              type="button"
-              className="p-2 text-gray-400 hover:text-[#FCDD09] transition-colors rounded-full hover:bg-white/5" 
-              aria-label="Add Emoji"
-            >
-              <Smile size={24} />
-            </button>
-          </div>
+      {/* Input Area */}
+      <div className="bg-[#202c33] p-3 flex items-center gap-2 border-t border-gray-700/30 shrink-0">
+        <button className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-white/5 transition-colors" aria-label="Emoji">
+          <Smile size={22} />
+        </button>
+        <input
+          type="text"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSend()}
+          placeholder={`Type a message in ${language}...`}
+          className="flex-1 bg-[#2a3942] text-white text-sm rounded-full px-4 py-2.5 placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-[#00a884] transition-all"
+        />
+        {input.trim() ? (
+          <button
+            onClick={handleSend}
+            disabled={isLoading}
+            className="w-10 h-10 rounded-full bg-[#00a884] text-white flex items-center justify-center hover:bg-[#00a884]/90 transition-all active:scale-90 disabled:opacity-50"
+            aria-label="Send"
+          >
+            <Send size={18} />
+          </button>
+        ) : (
+          <button
+            onClick={isListening ? stopListening : startListening}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all active:scale-90 ${
+              isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-[#00a884] text-white hover:bg-[#00a884]/90'
+            }`}
+            aria-label={isListening ? 'Stop' : 'Voice'}
+          >
+            {isListening ? <Square size={18} /> : <Mic size={18} />}
+          </button>
         )}
-
-        {/* Input Field / Recording Visualization */}
-        <div className={`flex-1 rounded-2xl px-4 py-3 flex items-center gap-2 border transition-all ${isListening ? 'bg-red-900/20 border-red-500/50' : 'bg-[#2a3942] border-transparent focus-within:border-[#008751]'}`}>
-          {isListening ? (
-            <div className="flex items-center justify-between w-full h-6">
-              <div className="flex items-center gap-3 text-red-400 animate-pulse">
-                <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                <span className="text-sm font-mono font-bold">Listening ({LANG_LABELS[language]})...</span>
-              </div>
-              <div className="flex items-center gap-1 h-full">
-                {[1,2,3,4,5,4,3,2].map((h, i) => (
-                  <motion.div 
-                    key={i}
-                    animate={{ height: [10, h*4, 10] }}
-                    transition={{ repeat: Infinity, duration: 0.5, delay: i * 0.1 }}
-                    className="w-1 bg-red-500 rounded-full"
-                    style={{ height: 10 }}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <input 
-              type="text" 
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Type a message..."
-              className="bg-transparent border-none outline-none text-white w-full placeholder-gray-400 text-[16px]"
-              aria-label="Type a message to the AI Teacher"
-            />
-          )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="pb-0.5 flex items-center gap-2">
-          {input.trim() && !isListening ? (
-            <button 
-              type="button"
-              onClick={handleSend}
-              className="p-3.5 bg-[#008751] rounded-full text-white hover:bg-[#00a86b] transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center"
-              aria-label="Send Message"
-            >
-              <Send size={20} />
-            </button>
-          ) : (
-            <button 
-              type="button"
-              onClick={isListening ? stopListening : startListening}
-              className={`p-3.5 rounded-full transition-all shadow-lg hover:scale-105 active:scale-95 flex items-center justify-center ${
-                isListening 
-                  ? 'bg-red-500 text-white animate-pulse' 
-                  : 'bg-[#008751] text-white hover:bg-[#00a86b]'
-              }`}
-              aria-label={isListening ? "Stop Recording" : "Start Voice Input"}
-            >
-              {isListening ? <Square size={20} /> : <Mic size={20} />}
-            </button>
-          )}
-        </div>
       </div>
     </div>
   );

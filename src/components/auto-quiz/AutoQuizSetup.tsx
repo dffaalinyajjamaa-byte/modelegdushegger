@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { BookOpen, Loader2, ArrowLeft, Brain } from 'lucide-react';
 import type { QuizQuestion } from './AutoQuiz';
@@ -21,27 +20,19 @@ interface Book {
   grade: string;
   subject: string;
   language: string;
+  pdf_url: string;
   processing_status: string;
-}
-
-interface Unit {
-  id: string;
-  unit_number: number;
-  unit_title: string;
 }
 
 export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSetupProps) {
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedBook, setSelectedBook] = useState<string>('');
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [selectedUnits, setSelectedUnits] = useState<string[]>([]);
   const [questionCount, setQuestionCount] = useState<string>('20');
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [userGrade, setUserGrade] = useState<string>('');
   const { toast } = useToast();
 
-  // Fetch user grade
   useEffect(() => {
     const fetchGrade = async () => {
       const { data } = await supabase
@@ -54,7 +45,7 @@ export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSet
     fetchGrade();
   }, [user.id]);
 
-  // Fetch books filtered by user grade
+  // Fetch books — now looking for 'ready' status (no processing needed)
   useEffect(() => {
     if (!userGrade) return;
     const fetchBooks = async () => {
@@ -64,54 +55,13 @@ export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSet
         .from('auto_quiz_books')
         .select('*')
         .eq('grade', gradeFilter)
-        .eq('processing_status', 'completed');
+        .in('processing_status', ['completed', 'ready']);
       
-      if (error) {
-        console.error('Error fetching books:', error);
-      } else {
-        setBooks((data || []) as Book[]);
-      }
+      if (!error) setBooks((data || []) as Book[]);
       setLoading(false);
     };
     fetchBooks();
   }, [userGrade]);
-
-  // Fetch units when book is selected
-  useEffect(() => {
-    if (!selectedBook) {
-      setUnits([]);
-      setSelectedUnits([]);
-      return;
-    }
-    const fetchUnits = async () => {
-      const { data, error } = await supabase
-        .from('auto_quiz_units')
-        .select('*')
-        .eq('book_id', selectedBook)
-        .order('display_order');
-      
-      if (error) {
-        console.error('Error fetching units:', error);
-      } else {
-        setUnits((data || []) as Unit[]);
-      }
-    };
-    fetchUnits();
-  }, [selectedBook]);
-
-  const toggleUnit = (unitId: string) => {
-    setSelectedUnits(prev =>
-      prev.includes(unitId) ? prev.filter(id => id !== unitId) : [...prev, unitId]
-    );
-  };
-
-  const selectAllUnits = () => {
-    if (selectedUnits.length === units.length) {
-      setSelectedUnits([]);
-    } else {
-      setSelectedUnits(units.map(u => u.id));
-    }
-  };
 
   const handleGenerate = async () => {
     if (!selectedBook) {
@@ -127,7 +77,7 @@ export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSet
       const { data, error } = await supabase.functions.invoke('generate-auto-quiz', {
         body: {
           bookId: selectedBook,
-          unitIds: selectedUnits.length > 0 ? selectedUnits : null,
+          pdfUrl: book.pdf_url,
           questionCount: parseInt(questionCount),
           language: book.language
         }
@@ -195,47 +145,13 @@ export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSet
                 <SelectContent>
                   {books.map(book => (
                     <SelectItem key={book.id} value={book.id}>
-                      {book.title} ({book.subject}) - {book.language.toUpperCase()}
+                      {book.title} ({book.subject})
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </CardContent>
           </Card>
-
-          {/* Unit Selection */}
-          {selectedBook && units.length > 0 && (
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Select Units</CardTitle>
-                  <Button variant="outline" size="sm" onClick={selectAllUnits}>
-                    {selectedUnits.length === units.length ? 'Deselect All' : 'Select All'}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {units.map(unit => (
-                  <label
-                    key={unit.id}
-                    className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors"
-                  >
-                    <Checkbox
-                      checked={selectedUnits.includes(unit.id)}
-                      onCheckedChange={() => toggleUnit(unit.id)}
-                    />
-                    <span className="font-medium">Unit {unit.unit_number}:</span>
-                    <span className="text-muted-foreground">{unit.unit_title}</span>
-                  </label>
-                ))}
-                {selectedUnits.length === 0 && (
-                  <p className="text-sm text-muted-foreground italic">
-                    No units selected — quiz will use all units
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          )}
 
           {/* Question Count */}
           <Card>

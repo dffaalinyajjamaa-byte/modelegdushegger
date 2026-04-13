@@ -3,7 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { LogOut, Settings, Video, BookOpen, Bot, FileText, Brain, MessageCircle, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee, FlaskConical, Trophy, ClipboardList, GraduationCap, CalendarClock, Music } from 'lucide-react';
+import { LogOut, Settings, Video, BookOpen, Bot, FileText, Brain, MessageCircle, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee, FlaskConical, Trophy, ClipboardList, GraduationCap, CalendarClock, Music, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SmartPlanner from './SmartPlanner';
 import VideoViewer from './VideoViewer';
@@ -52,6 +52,7 @@ const TeacherStudios = lazy(() => import('./TeacherStudios'));
 const StudyByMusic = lazy(() => import('./study-music/StudyByMusic'));
 const AutoQuiz = lazy(() => import('./auto-quiz/AutoQuiz'));
 const AdminDashboard = lazy(() => import('./admin/AdminDashboard'));
+const Marketplace = lazy(() => import('./marketplace/Marketplace'));
 
 interface DashboardProps {
   user: User;
@@ -85,7 +86,7 @@ interface Content {
   subject: string;
 }
 
-type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets' | 'teacher-studios' | 'study-music' | 'auto-quiz' | 'admin';
+type ActiveView = 'dashboard' | 'ai-teacher' | 'smart-planner' | 'videos' | 'books' | 'video' | 'pdf' | 'settings' | 'messenger' | 'quiz' | 'national-exams' | 'profile' | 'about' | 'relax-time' | 'science-experiments' | 'competition' | 'worksheets' | 'teacher-studios' | 'study-music' | 'auto-quiz' | 'admin' | 'marketplace';
 
 export default function Dashboard({ user, session, onSignOut }: DashboardProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -317,6 +318,12 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         return (
           <Suspense fallback={<LoadingFallback />}>
             <AutoQuiz user={user} onBack={() => setActiveView('dashboard')} />
+          </Suspense>
+        );
+      case 'marketplace':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <Marketplace user={user} onBack={() => setActiveView('dashboard')} />
           </Suspense>
         );
       case 'admin':
@@ -627,6 +634,18 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
           <h3 className="relative font-semibold text-center">Auto Quiz</h3>
         </button>
 
+        <button
+          onClick={() => setActiveView('marketplace')}
+          className="group relative quick-access-card bg-gradient-to-br from-amber-500/20 to-orange-500/20 border-2 border-amber-500/30 hover:border-amber-500/60 p-8 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-glow overflow-hidden"
+        >
+          <div className="absolute top-2 right-2 bg-amber-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium z-10">
+            NEW
+          </div>
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/0 to-orange-500/0 group-hover:from-amber-500/10 group-hover:to-orange-500/10 transition-all duration-300" />
+          <ShoppingBag className="relative w-12 h-12 mb-3 mx-auto text-amber-500 group-hover:scale-110 transition-transform duration-300" />
+          <h3 className="relative font-semibold text-center">Marketplace</h3>
+        </button>
+
         {isAdminUser && (
           <button
             onClick={() => setActiveView('admin')}
@@ -664,6 +683,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
     if (activeView === 'worksheets') return 'Worksheets';
     if (activeView === 'teacher-studios') return 'Teacher Studios';
     if (activeView === 'auto-quiz') return 'Auto Quiz';
+    if (activeView === 'marketplace') return 'Marketplace';
     if (activeView === 'admin') return 'Admin Portal';
     return 'Dashboard';
   };
