@@ -1,7 +1,5 @@
 import { useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import MarketplaceHome from './MarketplaceHome';
 import ProductUpload from './ProductUpload';
 import ProductDetail from './ProductDetail';

@@ -379,6 +379,14 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
           />
         ) : null;
       default:
+        // Admin users see admin panel by default instead of student dashboard
+        if (isAdminUser) {
+          return (
+            <Suspense fallback={<LoadingFallback />}>
+              <AdminDashboard user={user} onBack={() => {}} />
+            </Suspense>
+          );
+        }
         return renderDashboard();
     }
   };
@@ -708,7 +716,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
           
           {/* Center: Title */}
           <h2 className="flex-1 text-center text-xl font-bold text-foreground">
-            {getViewTitle()}
+            {isAdminUser && activeView === 'dashboard' ? 'Admin Portal' : getViewTitle()}
           </h2>
           
           {/* Right: Menu */}
@@ -749,8 +757,8 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
         {renderActiveView()}
       </main>
 
-      {/* Bottom Navigation */}
-      <BottomNav />
+      {/* Bottom Navigation - Hidden for admin users */}
+      {!isAdminUser && <BottomNav />}
     </div>
   );
 }
