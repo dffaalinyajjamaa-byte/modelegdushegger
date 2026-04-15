@@ -98,6 +98,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_quizzes: {
+        Row: {
+          created_at: string | null
+          created_by: string
+          grade_level: string
+          id: string
+          questions: Json
+          subject: string
+          title: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by: string
+          grade_level: string
+          id?: string
+          questions?: Json
+          subject: string
+          title: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string
+          grade_level?: string
+          id?: string
+          questions?: Json
+          subject?: string
+          title?: string
+        }
+        Relationships: []
+      }
       afoola_videos: {
         Row: {
           category: string
