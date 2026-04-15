@@ -1,163 +1,112 @@
 
 
-## Phased Implementation Plan
+## Fix AI Chat Scroll + Admin Dashboard Overhaul + Marketplace Enhancement
 
-This request contains many features. To avoid breaking the app, I'll implement in focused phases. Here's what's needed:
+### Part 1: Fix AI Chat Scroll (Mobile + Desktop)
 
----
+**Problem:** The chat container uses `h-[calc(100vh-8rem)]` but on mobile, the BottomNav (h-16 + margins) eats into viewport. The scroll area works but the container height calculation is wrong.
 
-### Phase 1: Fix Bugs + Admin Dashboard Overhaul
+**Fix in `AiChat.tsx`:**
+- Change outer div to `h-[calc(100dvh-12rem)] md:h-[calc(100vh-6rem)]` using `100dvh` for mobile
+- Ensure `min-h-0` is on the flex container so `flex-1 overflow-y-auto` works correctly
+- Add `pb-4` to the scrollable messages area so last message isn't hidden behind input
 
-**1.1 Fix AI Chat scroll issue (PC + Phone)**
-- File: `src/components/AiChat.tsx`
-- The chat container at line 164 uses `h-full` but the scroll container likely lacks proper `overflow-y-auto` and flex constraints
-- Fix: Ensure the messages area has `flex-1 overflow-y-auto` and the outer container uses `h-[calc(100vh-...)]` or proper flex layout
+### Part 2: Admin Gets Dedicated Dashboard (No Student UI)
 
-**1.2 Mobile navbar — liquid glassmorphism**
-- File: `src/components/BottomNav.tsx`
-- Add stronger glassmorphism: `backdrop-blur-2xl`, `bg-white/10 dark:bg-black/20`, subtle gradient border, and a liquid blob animation behind active item
+**Problem:** When an admin logs in, they see the same student dashboard with all cards (AI Teacher, Books, Videos, etc.). Admin should see ONLY the admin control panel.
 
-**1.3 Admin Dashboard — complete overhaul**
-- File: `src/components/admin/AdminDashboard.tsx`
-- Remove any student-UI patterns, build a professional admin-only control panel
-- Add new tabs: **Worksheets**, **Marketplace Admin**, **Badge Verification**
-- New admin sections:
-  - **Worksheet Upload** — admin uploads PDF worksheets with subject/grade metadata
-  - **Badge Verification** — admin can toggle `is_verified` on user profiles (blue badge)
-  - **Marketplace Admin** — approve/reject/delete marketplace listings
+**Fix in `Dashboard.tsx`:**
+- When `isAdminUser === true`, skip `renderDashboard()` entirely and auto-redirect to `activeView = 'admin'`
+- In the `renderActiveView` switch, when admin is on `'dashboard'`, render AdminDashboard directly instead of the student grid
+- Hide BottomNav for admin users (they don't need student navigation)
+
+### Part 3: Expand Admin Dashboard to 10+ Features
+
+Current tabs: Overview, Exams, Quiz Books, Worksheets, Content, Market, Badges, Results, Users, Analytics (10 tabs already).
+
+**Add these new capabilities within existing tabs:**
+
+1. **Quiz Editor tab** — Add ability to CREATE new quizzes (not just view results). Admin can write questions with 4 options + correct answer, assign to subject/grade.
+2. **Quiz Editor tab** — Add ability to EDIT existing quiz answers from `auto_quiz_results`
+3. **Worksheets tab** — Already has upload; ensure read/list/delete works
+4. **Content tab** — Add video lesson upload (YouTube URL + metadata) — already exists but verify it works
+5. **Overview** — Add recent activity feed, system health metrics
+6. **Users** — Add ability to ban/suspend users
+7. **Exams** — Add inline exam answer editing
+8. **Marketplace** — Product approval workflow already exists
+9. **New: Reports tab** — View reported messages and handle moderation
+10. **New: Settings tab** — Admin platform settings (announcement banner, maintenance mode)
 
 **Migration needed:**
 ```sql
--- Worksheets table for admin-uploaded worksheets
-CREATE TABLE public.worksheets (
+-- Admin-created quizzes table (manual quiz creation)
+CREATE TABLE public.admin_quizzes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   title TEXT NOT NULL,
   subject TEXT NOT NULL,
   grade_level TEXT NOT NULL,
-  pdf_url TEXT NOT NULL,
-  uploaded_by UUID REFERENCES auth.users(id),
+  questions JSONB NOT NULL,
+  created_by UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT now()
 );
-ALTER TABLE public.worksheets ENABLE ROW LEVEL SECURITY;
--- RLS: authenticated SELECT, admin INSERT/UPDATE/DELETE
-
--- Storage bucket for worksheet PDFs
-INSERT INTO storage.buckets (id, name, public) VALUES ('worksheets', 'worksheets', true) ON CONFLICT DO NOTHING;
--- Storage RLS for admin uploads
+ALTER TABLE public.admin_quizzes ENABLE ROW LEVEL SECURITY;
+-- Authenticated SELECT, admin INSERT/UPDATE/DELETE
 ```
 
----
+**New admin components:**
+- Modify `AdminQuizEditor.tsx` — Add quiz creation form + edit existing quiz answers
+- Modify `AdminDashboard.tsx` — Add 2 new tabs (Reports, Settings), auto-show for admin users
 
-### Phase 2: Auto Quiz Simplification
+### Part 4: Marketplace Full Feature Implementation
 
-**Remove unit extraction** — When admin uploads a book, skip the unit/chunk extraction step entirely. Instead:
-- Store the book record in `auto_quiz_books` with `processing_status = 'ready'` immediately (no edge function call needed on upload)
-- When a student selects a book and clicks "Start Quiz", the frontend sends the book's PDF URL + question count directly to the `generate-auto-quiz` edge function
-- The edge function downloads the PDF, sends it to Gemini with inline PDF data, and gets quiz questions back directly — no chunks/units involved
+Currently the marketplace has: browse, upload, detail view. Missing: nearby map, seller chat, ratings UI, glassmorphism styling.
+
+**Enhancements:**
+
+1. **Glassmorphism styling** — Apply `backdrop-blur-xl bg-white/10 dark:bg-black/20 border border-white/15` to all marketplace cards and containers
+2. **Nearby button + map** — Add a "Nearby" toggle button in MarketplaceHome that shows a Leaflet map with product markers (use `leaflet` npm package, no Google Maps needed)
+3. **Seller chat integration** — "Contact Seller" button in ProductDetail creates a chat in existing `chats` table and navigates to messenger
+4. **Rating system** — After viewing a product, show seller rating from `marketplace_reviews`. Add review submission form
+5. **Distance display** — Use browser geolocation + haversine_distance function to show "X km away" on each product card
+6. **Skeleton loaders** — Add loading skeletons while products load
+7. **Rent flow** — Duration selector (7/30 days) with return date calculation
 
 **Files to modify:**
-- `src/components/admin/AdminBookManager.tsx` — remove `process-quiz-book` invocation on upload, set status to `ready`
-- `src/components/auto-quiz/AutoQuizSetup.tsx` — remove unit selection UI, just show books and question count
-- `supabase/functions/generate-auto-quiz/index.ts` — rewrite to accept `pdfUrl` instead of reading chunks, send PDF directly to Gemini
-
----
-
-### Phase 3: Marketplace Feature
-
-**Database tables (migration):**
-```sql
-CREATE TABLE public.marketplace_products (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  description TEXT,
-  category TEXT NOT NULL, -- 'books', 'worksheets', 'rentals', 'digital'
-  type TEXT NOT NULL DEFAULT 'sell', -- 'sell' or 'rent'
-  price NUMERIC NOT NULL DEFAULT 0,
-  condition TEXT, -- 'new', 'like-new', 'good', 'fair'
-  images TEXT[], -- array of storage URLs
-  file_url TEXT, -- for digital/worksheet PDFs
-  latitude DOUBLE PRECISION,
-  longitude DOUBLE PRECISION,
-  address TEXT,
-  status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
-  rent_duration_days INTEGER,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE TABLE public.marketplace_reviews (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id UUID REFERENCES marketplace_products(id) ON DELETE CASCADE,
-  seller_id UUID NOT NULL,
-  buyer_id UUID NOT NULL REFERENCES auth.users(id),
-  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-  comment TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-```
-
-RLS: Users can SELECT approved products, INSERT own products, admin can UPDATE status.
-
-**Storage bucket:** `marketplace-images` (public)
-
-**New files:**
-| File | Purpose |
+| File | Changes |
 |------|---------|
-| `src/components/marketplace/Marketplace.tsx` | Main container with tabs: Home, Upload, My Listings |
-| `src/components/marketplace/MarketplaceHome.tsx` | Browse listings: Recently Added, Categories, search |
-| `src/components/marketplace/ProductDetail.tsx` | Image slider, seller info, contact seller, distance |
-| `src/components/marketplace/ProductUpload.tsx` | Multi-step upload: info → media → location → submit |
-| `src/components/marketplace/NearbyMap.tsx` | Leaflet map (from uploaded zip) shown on button click, markers for products |
-| `src/components/admin/AdminMarketplace.tsx` | Approve/reject/delete listings |
+| `MarketplaceHome.tsx` | Glassmorphism cards, nearby button, distance display, skeletons |
+| `ProductDetail.tsx` | Glassmorphism, seller chat button, rating display, rent duration |
+| `ProductUpload.tsx` | Glassmorphism styling |
+| `Marketplace.tsx` | Add "My Listings" tab |
 
-**Map approach:** Use Leaflet (open-source) from the uploaded zip instead of Google Maps. Map only appears when user clicks "Nearby" button — not full-screen by default.
+**New file:**
+| `src/components/marketplace/NearbyMap.tsx` | Leaflet map with product markers, shown on button click |
 
-**Geo features:**
-- Browser Geolocation API for user position
-- Haversine distance calculation in a Postgres function for nearby queries
-- Reverse geocoding via free Nominatim API
+### Part 5: BottomNav — Hide for Admin
 
-**Dashboard integration:**
-- Add `'marketplace'` to `ActiveView` type
-- Add Marketplace quick-access button (with NEW badge) next to Auto Quiz
-- Add to BottomNav as 6th item or replace one
-
----
-
-### Phase 4: Admin Badge Verification
-
-- New component: `src/components/admin/AdminBadgeVerification.tsx`
-- Shows list of users with toggle to set `profiles.is_verified = true/false`
-- Migration: Add admin UPDATE policy on profiles if not already present (currently users can only update own profile)
-
-```sql
-CREATE POLICY "Admins can update any profile"
-  ON public.profiles FOR UPDATE TO authenticated
-  USING (has_role(auth.uid(), 'admin'));
-```
-
----
+When admin is logged in, hide BottomNav completely since they use the admin panel tabs.
 
 ### Implementation Order
 
-1. **Migration** — All new tables (worksheets, marketplace_products, marketplace_reviews) + RLS + storage buckets + admin profile update policy
-2. **Fix AI Chat scroll** — Quick CSS fix
-3. **Fix BottomNav glassmorphism** — CSS enhancement + add Marketplace tab
-4. **Auto Quiz simplification** — Remove units, direct PDF-to-Gemini flow
-5. **Admin Dashboard overhaul** — Add worksheet upload, badge verification, marketplace admin tabs
-6. **Marketplace UI** — All 6 new components
-7. **Leaflet map integration** — Extract uploaded zip, integrate into NearbyMap component
+1. Migration — `admin_quizzes` table + RLS
+2. Fix `AiChat.tsx` scroll
+3. Update `Dashboard.tsx` — admin auto-redirects to admin panel, hide BottomNav for admin
+4. Expand `AdminDashboard.tsx` — quiz creation, reports tab, settings tab
+5. Update `AdminQuizEditor.tsx` — quiz CRUD
+6. Marketplace glassmorphism + features (all marketplace files)
+7. Install leaflet + create NearbyMap component
 
 ### Files Summary
 
 | Modified | Created |
 |----------|---------|
-| `AdminDashboard.tsx` | `marketplace/Marketplace.tsx` |
-| `AdminBookManager.tsx` | `marketplace/MarketplaceHome.tsx` |
-| `AutoQuizSetup.tsx` | `marketplace/ProductDetail.tsx` |
-| `AiChat.tsx` | `marketplace/ProductUpload.tsx` |
-| `BottomNav.tsx` | `marketplace/NearbyMap.tsx` |
-| `Dashboard.tsx` | `admin/AdminMarketplace.tsx` |
-| `generate-auto-quiz/index.ts` | `admin/AdminBadgeVerification.tsx` |
-| | `admin/AdminWorksheets.tsx` |
+| `AiChat.tsx` | `marketplace/NearbyMap.tsx` |
+| `Dashboard.tsx` | |
+| `AdminDashboard.tsx` | |
+| `AdminQuizEditor.tsx` | |
+| `MarketplaceHome.tsx` | |
+| `ProductDetail.tsx` | |
+| `ProductUpload.tsx` | |
+| `Marketplace.tsx` | |
+| `BottomNav.tsx` | |
 
