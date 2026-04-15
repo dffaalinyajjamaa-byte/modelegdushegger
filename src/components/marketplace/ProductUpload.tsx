@@ -29,6 +29,7 @@ export default function ProductUpload({ user, onBack, onSuccess }: ProductUpload
   const [address, setAddress] = useState('');
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
+  const [rentDays, setRentDays] = useState('7');
   const { toast } = useToast();
 
   const getLocation = () => {
@@ -68,6 +69,7 @@ export default function ProductUpload({ user, onBack, onSuccess }: ProductUpload
         price: parseFloat(price), condition,
         images: imageUrls.length > 0 ? imageUrls : null,
         latitude: lat, longitude: lng, address: address || null,
+        rent_duration_days: type === 'rent' ? parseInt(rentDays) : null,
         status: 'pending'
       });
       if (error) throw error;
@@ -88,7 +90,7 @@ export default function ProductUpload({ user, onBack, onSuccess }: ProductUpload
         <h2 className="text-xl font-bold">Sell or Rent</h2>
       </div>
 
-      <Card>
+      <Card className="backdrop-blur-xl bg-card/50 border-border/30">
         <CardContent className="space-y-4 pt-4">
           <div>
             <Label>Title *</Label>
@@ -140,6 +142,19 @@ export default function ProductUpload({ user, onBack, onSuccess }: ProductUpload
               </Select>
             </div>
           </div>
+          {type === 'rent' && (
+            <div>
+              <Label>Rental Duration (days)</Label>
+              <Select value={rentDays} onValueChange={setRentDays}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">7 days</SelectItem>
+                  <SelectItem value="14">14 days</SelectItem>
+                  <SelectItem value="30">30 days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div>
             <Label>Photos (up to 4)</Label>
             <Input type="file" accept="image/*" multiple onChange={e => setImages(Array.from(e.target.files || []).slice(0, 4))} />
