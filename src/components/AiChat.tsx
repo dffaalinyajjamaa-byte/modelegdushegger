@@ -160,13 +160,9 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
   const languages = ['Afaan Oromoo', 'English', 'Amharic'];
 
   return (
+    <div className="mx-auto max-w-3xl w-full mt-4 mb-24 md:mb-6 px-2 md:px-4">
     <div
-      className="flex flex-col bg-[#0b141a] overflow-hidden relative rounded-xl"
-      style={{
-        height: 'calc(100dvh - 11rem)',
-        maxHeight: 'calc(100dvh - 11rem)',
-        minHeight: '300px',
-      }}
+      className="flex flex-col bg-[#0b141a] overflow-hidden relative rounded-xl shadow-2xl border border-white/10"
     >
       {/* WhatsApp-style Header */}
       <div className="bg-[#202c33] p-3 flex items-center justify-between px-4 shadow-md z-10 border-b border-gray-700/30 shrink-0">
@@ -221,9 +217,9 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
         </div>
       </div>
 
-      {/* Chat Area - scrollable */}
+      {/* Chat Area - scrollable inner with capped height */}
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-6 relative scroll-smooth min-h-0 overscroll-contain touch-pan-y"
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-6 relative scroll-smooth min-h-0 overscroll-contain touch-pan-y max-h-[60vh]"
         ref={scrollRef}
         style={{
           backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")',
@@ -342,6 +338,7 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
           </button>
         )}
       </div>
+    </div>
     </div>
   );
 };

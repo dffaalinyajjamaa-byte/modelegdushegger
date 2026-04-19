@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Zap, Filter, ArrowUpDown } from 'lucide-react';
+import { Zap, Filter, ArrowUpDown, Clock } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -10,46 +10,38 @@ interface ChargingPointsProps {
 
 const ChargingPoints = ({ userId }: ChargingPointsProps) => {
   const [totalPoints, setTotalPoints] = useState(0);
+  const [todayMinutes, setTodayMinutes] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchTotalPoints();
+
+    // Real-time refresh when daily_stats or rankings change
+    const channel = supabase
+      .channel(`charging-points-${userId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'user_rankings', filter: `user_id=eq.${userId}` }, fetchTotalPoints)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_stats', filter: `user_id=eq.${userId}` }, fetchTotalPoints)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const fetchTotalPoints = async () => {
     try {
-      // Fetch user stats
-      const { data: stats, error: statsError } = await supabase
-        .from('user_stats')
-        .select('tasks_completed, videos_watched, materials_read')
-        .eq('user_id', userId)
-        .single();
+      const today = new Date().toISOString().split('T')[0];
 
-      if (statsError && statsError.code !== 'PGRST116') throw statsError;
+      const [{ data: ranking }, { data: todayStat }] = await Promise.all([
+        supabase.from('user_rankings').select('total_points').eq('user_id', userId).maybeSingle(),
+        supabase.from('daily_stats').select('learning_time_minutes').eq('user_id', userId).eq('date', today).maybeSingle(),
+      ]);
 
-      // Fetch daily stats for current month
-      const { data: dailyStats, error: dailyError } = await supabase
-        .from('daily_stats')
-        .select('tasks_completed, videos_watched, materials_read, ai_interactions, exams_taken')
-        .eq('user_id', userId);
+      // Total points = ranking points + 1pt per minute watched today (real-time)
+      const base = ranking?.total_points || 0;
+      const mins = todayStat?.learning_time_minutes || 0;
 
-      if (dailyError) throw dailyError;
-
-      // Calculate total points
-      const userStatsPoints = stats 
-        ? (stats.tasks_completed || 0) + (stats.videos_watched || 0) + (stats.materials_read || 0)
-        : 0;
-
-      const dailyTotalPoints = dailyStats?.reduce((total, day) => {
-        return total + 
-          (day.tasks_completed || 0) + 
-          (day.videos_watched || 0) + 
-          (day.materials_read || 0) + 
-          (day.ai_interactions || 0) + 
-          (day.exams_taken || 0);
-      }, 0) || 0;
-
-      setTotalPoints(userStatsPoints + dailyTotalPoints);
+      setTodayMinutes(mins);
+      setTotalPoints(base + mins);
     } catch (error) {
       console.error('Error fetching charging points:', error);
     } finally {
@@ -67,12 +59,11 @@ const ChargingPoints = ({ userId }: ChargingPointsProps) => {
           <div>
             <p className="text-sm text-muted-foreground font-medium">Charging Points</p>
             <h2 className="text-4xl sm:text-5xl font-bold mt-1">
-              {loading ? (
-                <span className="animate-pulse">...</span>
-              ) : (
-                totalPoints
-              )}
+              {loading ? <span className="animate-pulse">...</span> : totalPoints}
             </h2>
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <Clock className="w-3 h-3" /> {todayMinutes} min studied today
+            </p>
           </div>
         </div>
 

@@ -169,8 +169,9 @@ export default function QuizFeature({ user, onBack }: QuizFeatureProps) {
   };
 
   const fetchQuizzes = async (subject?: string) => {
+    // Pull from admin-managed quizzes (real-time enabled)
     let query = supabase
-      .from('exams')
+      .from('admin_quizzes')
       .select('*')
       .eq('grade_level', userGrade);
 
@@ -181,9 +182,46 @@ export default function QuizFeature({ user, onBack }: QuizFeatureProps) {
     const { data } = await query.order('created_at', { ascending: false });
 
     if (data) {
-      setQuizzes(data as unknown as Quiz[]);
+      // Adapt admin_quizzes shape to internal Quiz shape
+      const adapted: Quiz[] = data.map((q: any) => {
+        const questions = Array.isArray(q.questions) ? q.questions : [];
+        const normalized = questions.map((qq: any, idx: number) => ({
+          id: qq.id || `q-${idx}`,
+          question: qq.question || qq.text || '',
+          options: qq.options || [qq.A, qq.B, qq.C, qq.D].filter(Boolean),
+          correct_answer: typeof qq.correct_answer === 'number'
+            ? qq.correct_answer
+            : (qq.answer === 'A' ? 0 : qq.answer === 'B' ? 1 : qq.answer === 'C' ? 2 : qq.answer === 'D' ? 3 : 0),
+          marks: qq.marks || 1,
+        }));
+        const duration = q.time_limit_minutes || Math.max(15, Math.ceil(normalized.length * 1.5));
+        return {
+          id: q.id,
+          title: q.title,
+          description: q.subject,
+          subject: q.subject,
+          grade_level: q.grade_level,
+          duration_minutes: duration,
+          total_marks: normalized.reduce((s: number, x: any) => s + (x.marks || 1), 0),
+          questions: normalized,
+        };
+      });
+      setQuizzes(adapted);
     }
   };
+
+  // Real-time: refresh quiz list when admin adds/updates a quiz
+  useEffect(() => {
+    if (!userGrade) return;
+    const channel = supabase
+      .channel(`admin-quizzes-${userGrade}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'admin_quizzes' }, () => {
+        fetchQuizzes(selectedSubject || undefined);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userGrade, selectedSubject]);
 
   const startQuiz = async (quiz: Quiz) => {
     // Try to load existing session
@@ -226,16 +264,20 @@ export default function QuizFeature({ user, onBack }: QuizFeatureProps) {
     const questionsCorrect = selectedQuiz.questions.filter(q => answers[q.id] === q.correct_answer).length;
     const questionsWrong = selectedQuiz.questions.length - questionsCorrect;
 
-    await supabase.from('exam_submissions').insert({
-      exam_id: selectedQuiz.id,
-      user_id: user.id,
-      answers: answers,
-      score: totalScore,
-      total_marks: selectedQuiz.total_marks,
-      questions_correct: questionsCorrect,
-      questions_wrong: questionsWrong,
-      time_taken: (selectedQuiz.duration_minutes * 60) - timeLeft
-    });
+    try {
+      await supabase.from('exam_submissions').insert({
+        exam_id: selectedQuiz.id,
+        user_id: user.id,
+        answers: answers,
+        score: totalScore,
+        total_marks: selectedQuiz.total_marks,
+        questions_correct: questionsCorrect,
+        questions_wrong: questionsWrong,
+        time_taken: (selectedQuiz.duration_minutes * 60) - timeLeft
+      });
+    } catch (err) {
+      console.warn('Submission record skipped (admin quiz):', err);
+    }
 
     // Update daily stats
     await supabase.rpc('increment_daily_stat', {
