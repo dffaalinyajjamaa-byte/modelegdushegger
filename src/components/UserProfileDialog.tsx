@@ -5,7 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Clock, Image as ImageIcon, File, FileText, Mic } from 'lucide-react';
+import { Clock, Image as ImageIcon, File, FileText, Mic, BookOpen, Trophy, PlayCircle, Flame } from 'lucide-react';
+import { formatLastSeen } from '@/hooks/use-presence';
 
 interface UserProfileDialogProps {
   userId: string;
@@ -17,11 +18,14 @@ export default function UserProfileDialog({ userId, open, onOpenChange }: UserPr
   const [profile, setProfile] = useState<any>(null);
   const [sharedMedia, setSharedMedia] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ videos: 0, materials: 0, tasks: 0, points: 0, streak: 0 });
+  const [presenceStatus, setPresenceStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && userId) {
       fetchUserProfile();
       fetchSharedMedia();
+      fetchStats();
     }
   }, [open, userId]);
 
@@ -57,16 +61,24 @@ export default function UserProfileDialog({ userId, open, onOpenChange }: UserPr
     }
   };
 
-  const getLastSeenText = (lastSeen: string) => {
-    const now = new Date();
-    const lastSeenDate = new Date(lastSeen);
-    const diffMs = now.getTime() - lastSeenDate.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins < 5) return 'Online';
-    if (diffMins < 60) return `${diffMins} minutes ago`;
-    if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
-    return lastSeenDate.toLocaleDateString();
+  const fetchStats = async () => {
+    try {
+      const [{ data: us }, { data: ur }, { data: msu }] = await Promise.all([
+        supabase.from('user_stats').select('videos_watched, materials_read, tasks_completed').eq('user_id', userId).maybeSingle(),
+        supabase.from('user_rankings').select('total_points, current_streak').eq('user_id', userId).maybeSingle(),
+        supabase.from('messaging_users').select('status').eq('user_id', userId).maybeSingle(),
+      ]);
+      setStats({
+        videos: us?.videos_watched || 0,
+        materials: us?.materials_read || 0,
+        tasks: us?.tasks_completed || 0,
+        points: ur?.total_points || 0,
+        streak: ur?.current_streak || 0,
+      });
+      setPresenceStatus(msu?.status || null);
+    } catch (e) {
+      console.error('Stats error', e);
+    }
   };
 
   if (loading) return null;
@@ -99,9 +111,9 @@ export default function UserProfileDialog({ userId, open, onOpenChange }: UserPr
                 <p className="text-sm text-muted-foreground">{profile?.email}</p>
                 
                 <div className="flex items-center justify-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <span className={`w-2 h-2 rounded-full ${formatLastSeen(profile?.last_seen, presenceStatus) === 'Online' ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground'}`} />
                   <p className="text-sm text-muted-foreground">
-                    {profile?.last_seen ? getLastSeenText(profile.last_seen) : 'Unknown'}
+                    {formatLastSeen(profile?.last_seen, presenceStatus)}
                   </p>
                 </div>
 
@@ -113,10 +125,36 @@ export default function UserProfileDialog({ userId, open, onOpenChange }: UserPr
 
             {/* Bio */}
             {profile?.bio && (
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm">{profile.bio}</p>
+              <div className="p-4 bg-muted/50 rounded-lg border border-border/50 backdrop-blur-sm">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">About</p>
+                <p className="text-sm whitespace-pre-wrap">{profile.bio}</p>
               </div>
             )}
+
+            {/* Stats — social-style activity */}
+            <div className="grid grid-cols-4 gap-2">
+              <div className="rounded-xl p-3 bg-card/60 backdrop-blur-md border border-border/40 text-center">
+                <PlayCircle className="w-4 h-4 mx-auto text-primary mb-1" />
+                <p className="text-base font-bold leading-none">{stats.videos}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Videos</p>
+              </div>
+              <div className="rounded-xl p-3 bg-card/60 backdrop-blur-md border border-border/40 text-center">
+                <BookOpen className="w-4 h-4 mx-auto text-primary mb-1" />
+                <p className="text-base font-bold leading-none">{stats.materials}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Read</p>
+              </div>
+              <div className="rounded-xl p-3 bg-card/60 backdrop-blur-md border border-border/40 text-center">
+                <Trophy className="w-4 h-4 mx-auto text-yellow-500 mb-1" />
+                <p className="text-base font-bold leading-none">{stats.points}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Points</p>
+              </div>
+              <div className="rounded-xl p-3 bg-card/60 backdrop-blur-md border border-border/40 text-center">
+                <Flame className="w-4 h-4 mx-auto text-orange-500 mb-1" />
+                <p className="text-base font-bold leading-none">{stats.streak}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Streak</p>
+              </div>
+            </div>
+
 
             {/* Tabs for Shared Media */}
             <Tabs defaultValue="media" className="w-full">

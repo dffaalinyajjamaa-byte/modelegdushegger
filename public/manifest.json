@@ -1,0 +1,24 @@
+{
+  "name": "Model Egdu Digital School",
+  "short_name": "Model Egdu",
+  "description": "AI learning platform for Ethiopian students by J-Hope Technologies",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b141a",
+  "theme_color": "#ef4444",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://storage.googleapis.com/gpt-engineer-file-uploads/3KyTLoeZyDZ10cTkVR2q621g95q1/uploads/1768838377177-model-egdu-logo-DY_KJLZh.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://storage.googleapis.com/gpt-engineer-file-uploads/3KyTLoeZyDZ10cTkVR2q621g95q1/uploads/1768838377177-model-egdu-logo-DY_KJLZh.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

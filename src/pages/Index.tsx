@@ -5,12 +5,16 @@ import AuthForm from '@/components/AuthForm';
 import Dashboard from '@/components/Dashboard';
 import LandingPage from '@/components/LandingPage';
 import GlobalBackground from '@/components/GlobalBackground';
+import { usePresence } from '@/hooks/use-presence';
 
 const Index = () => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLanding, setShowLanding] = useState(true);
+
+  // Track real-time online/last-seen presence
+  usePresence(user?.id);
 
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | null = null;

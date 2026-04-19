@@ -160,7 +160,14 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
   const languages = ['Afaan Oromoo', 'English', 'Amharic'];
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-12rem)] md:h-[calc(100vh-6rem)] bg-[#0b141a] overflow-hidden relative rounded-xl">
+    <div
+      className="flex flex-col bg-[#0b141a] overflow-hidden relative rounded-xl"
+      style={{
+        height: 'calc(100dvh - 11rem)',
+        maxHeight: 'calc(100dvh - 11rem)',
+        minHeight: '300px',
+      }}
+    >
       {/* WhatsApp-style Header */}
       <div className="bg-[#202c33] p-3 flex items-center justify-between px-4 shadow-md z-10 border-b border-gray-700/30 shrink-0">
         <div className="flex items-center gap-3">
@@ -215,10 +222,17 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
       </div>
 
       {/* Chat Area - scrollable */}
-      <div 
-        className="flex-1 overflow-y-auto p-4 pb-6 relative scroll-smooth min-h-0 overscroll-contain" 
-        ref={scrollRef} 
-        style={{ backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")', backgroundBlendMode: 'overlay', backgroundSize: '400px', backgroundColor: '#0b141a', WebkitOverflowScrolling: 'touch' }}
+      <div
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-6 relative scroll-smooth min-h-0 overscroll-contain touch-pan-y"
+        ref={scrollRef}
+        style={{
+          backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")',
+          backgroundBlendMode: 'overlay',
+          backgroundSize: '400px',
+          backgroundColor: '#0b141a',
+          WebkitOverflowScrolling: 'touch',
+          overscrollBehavior: 'contain',
+        }}
       >
         <div className="absolute inset-0 bg-[#0b141a]/93 pointer-events-none"></div>
         

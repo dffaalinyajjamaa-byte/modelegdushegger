@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import LoadingFallback from "./components/LoadingFallback";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
 
 // Lazy load page components
 const Index = lazy(() => import("./pages/Index"));
@@ -18,6 +19,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <PWAInstallPrompt />
       <BrowserRouter>
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
