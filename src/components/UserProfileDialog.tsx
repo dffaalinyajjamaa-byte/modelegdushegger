@@ -5,7 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Clock, Image as ImageIcon, File, FileText, Mic } from 'lucide-react';
+import { Clock, Image as ImageIcon, File, FileText, Mic, BookOpen, Trophy, PlayCircle, Flame } from 'lucide-react';
+import { formatLastSeen } from '@/hooks/use-presence';
 
 interface UserProfileDialogProps {
   userId: string;
@@ -17,11 +18,14 @@ export default function UserProfileDialog({ userId, open, onOpenChange }: UserPr
   const [profile, setProfile] = useState<any>(null);
   const [sharedMedia, setSharedMedia] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ videos: 0, materials: 0, tasks: 0, points: 0, streak: 0 });
+  const [presenceStatus, setPresenceStatus] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && userId) {
       fetchUserProfile();
       fetchSharedMedia();
+      fetchStats();
     }
   }, [open, userId]);
 
@@ -57,16 +61,24 @@ export default function UserProfileDialog({ userId, open, onOpenChange }: UserPr
     }
   };
 
-  const getLastSeenText = (lastSeen: string) => {
-    const now = new Date();
-    const lastSeenDate = new Date(lastSeen);
-    const diffMs = now.getTime() - lastSeenDate.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    
-    if (diffMins < 5) return 'Online';
-    if (diffMins < 60) return `${diffMins} minutes ago`;
-    if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
-    return lastSeenDate.toLocaleDateString();
+  const fetchStats = async () => {
+    try {
+      const [{ data: us }, { data: ur }, { data: msu }] = await Promise.all([
+        supabase.from('user_stats').select('videos_watched, materials_read, tasks_completed').eq('user_id', userId).maybeSingle(),
+        supabase.from('user_rankings').select('total_points, current_streak').eq('user_id', userId).maybeSingle(),
+        supabase.from('messaging_users').select('status').eq('user_id', userId).maybeSingle(),
+      ]);
+      setStats({
+        videos: us?.videos_watched || 0,
+        materials: us?.materials_read || 0,
+        tasks: us?.tasks_completed || 0,
+        points: ur?.total_points || 0,
+        streak: ur?.current_streak || 0,
+      });
+      setPresenceStatus(msu?.status || null);
+    } catch (e) {
+      console.error('Stats error', e);
+    }
   };
 
   if (loading) return null;
