@@ -106,6 +106,7 @@ export type Database = {
           id: string
           questions: Json
           subject: string
+          time_limit_minutes: number | null
           title: string
         }
         Insert: {
@@ -115,6 +116,7 @@ export type Database = {
           id?: string
           questions?: Json
           subject: string
+          time_limit_minutes?: number | null
           title: string
         }
         Update: {
@@ -124,6 +126,7 @@ export type Database = {
           id?: string
           questions?: Json
           subject?: string
+          time_limit_minutes?: number | null
           title?: string
         }
         Relationships: []
