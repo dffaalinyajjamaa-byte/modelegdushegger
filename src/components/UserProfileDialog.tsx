@@ -111,9 +111,9 @@ export default function UserProfileDialog({ userId, open, onOpenChange }: UserPr
                 <p className="text-sm text-muted-foreground">{profile?.email}</p>
                 
                 <div className="flex items-center justify-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <span className={`w-2 h-2 rounded-full ${formatLastSeen(profile?.last_seen, presenceStatus) === 'Online' ? 'bg-green-500 animate-pulse' : 'bg-muted-foreground'}`} />
                   <p className="text-sm text-muted-foreground">
-                    {profile?.last_seen ? getLastSeenText(profile.last_seen) : 'Unknown'}
+                    {formatLastSeen(profile?.last_seen, presenceStatus)}
                   </p>
                 </div>
 
@@ -125,10 +125,36 @@ export default function UserProfileDialog({ userId, open, onOpenChange }: UserPr
 
             {/* Bio */}
             {profile?.bio && (
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm">{profile.bio}</p>
+              <div className="p-4 bg-muted/50 rounded-lg border border-border/50 backdrop-blur-sm">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">About</p>
+                <p className="text-sm whitespace-pre-wrap">{profile.bio}</p>
               </div>
             )}
+
+            {/* Stats — social-style activity */}
+            <div className="grid grid-cols-4 gap-2">
+              <div className="rounded-xl p-3 bg-card/60 backdrop-blur-md border border-border/40 text-center">
+                <PlayCircle className="w-4 h-4 mx-auto text-primary mb-1" />
+                <p className="text-base font-bold leading-none">{stats.videos}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Videos</p>
+              </div>
+              <div className="rounded-xl p-3 bg-card/60 backdrop-blur-md border border-border/40 text-center">
+                <BookOpen className="w-4 h-4 mx-auto text-primary mb-1" />
+                <p className="text-base font-bold leading-none">{stats.materials}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Read</p>
+              </div>
+              <div className="rounded-xl p-3 bg-card/60 backdrop-blur-md border border-border/40 text-center">
+                <Trophy className="w-4 h-4 mx-auto text-yellow-500 mb-1" />
+                <p className="text-base font-bold leading-none">{stats.points}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Points</p>
+              </div>
+              <div className="rounded-xl p-3 bg-card/60 backdrop-blur-md border border-border/40 text-center">
+                <Flame className="w-4 h-4 mx-auto text-orange-500 mb-1" />
+                <p className="text-base font-bold leading-none">{stats.streak}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Streak</p>
+              </div>
+            </div>
+
 
             {/* Tabs for Shared Media */}
             <Tabs defaultValue="media" className="w-full">
