@@ -718,28 +718,41 @@ export default function Messenger({ user, onBack }: MessengerProps) {
         {/* Left Sidebar - Chat List */}
         {showChatList && (
           <div className={`${isMobile ? 'w-full' : 'w-96'} h-full border-r border-border/50 flex flex-col bg-background overflow-y-auto overflow-x-hidden`}>
-            {/* Header */}
-            <div className="p-4 border-b border-border/50 flex-shrink-0">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Button size="icon" variant="ghost" onClick={onBack}>
-                    <ArrowLeft className="w-5 h-5" />
-                  </Button>
-                  <h2 className="text-xl font-bold text-foreground">Messages</h2>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button size="icon" variant="ghost" onClick={() => setIsUserSearchOpen(true)} title="Search Users">
-                    <Search className="w-5 h-5" />
-                  </Button>
-                  <Button size="icon" variant="ghost" onClick={() => setActiveTab('requests')} title="Friend Requests">
-                    <UserPlus className="w-5 h-5" />
-                  </Button>
-                </div>
+            {/* Compact Header */}
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-background/80 backdrop-blur-md flex-shrink-0">
+              <div className="flex items-center gap-1">
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onBack}>
+                  <ArrowLeft className="w-4 h-4" />
+                </Button>
+                <h2 className="text-sm font-semibold text-foreground">Messages</h2>
               </div>
+              <div className="flex items-center gap-0.5">
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setIsUserSearchOpen(true)} title="Search Users">
+                  <Search className="w-4 h-4" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setActiveTab('requests')} title="Friend Requests">
+                  <UserPlus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
 
-              {/* Tabs */}
+            {/* Inline search bar */}
+            <div className="px-3 py-2 border-b border-border/40 bg-background/60 backdrop-blur-sm flex-shrink-0">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by name or contact..."
+                  className="pl-8 h-8 text-xs bg-muted/40 border-border/50"
+                />
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="px-3 pt-2 pb-1 flex-shrink-0">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-                <TabsList className="w-full grid grid-cols-3">
+                <TabsList className="w-full grid grid-cols-3 h-8">
                   <TabsTrigger value="chats" className="text-xs">Chats</TabsTrigger>
                   <TabsTrigger value="friends" className="text-xs">Friends</TabsTrigger>
                   <TabsTrigger value="requests" className="text-xs">Requests</TabsTrigger>
