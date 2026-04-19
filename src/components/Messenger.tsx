@@ -764,115 +764,102 @@ export default function Messenger({ user, onBack }: MessengerProps) {
             <div className="flex-1 overflow-hidden">
               {activeTab === 'chats' && (
                 <ScrollArea className="h-full">
-                  {/* Recommended Friends Section */}
-                  {recommendedFriends.length > 0 && (
-                    <div className="p-4 border-b border-border/50">
-                      <h3 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                        <Heart className="w-4 h-4" />
-                        People You May Know
-                      </h3>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {recommendedFriends.map(friend => (
-                          <div key={friend.id} className="flex flex-col items-center gap-1 min-w-[80px]">
-                            <ChatBubbleAvatar 
-                              src={friend.profile_pic || ''} 
-                              fallback={friend.name.charAt(0)} 
-                              className="w-12 h-12"
-                            />
-                            <p className="text-xs text-center truncate w-full">{friend.name.split(' ')[0]}</p>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              className="h-6 text-xs"
-                              onClick={() => sendFriendRequest(friend.user_id)}
-                              disabled={sentRequests.includes(friend.user_id)}
-                            >
-                              {sentRequests.includes(friend.user_id) ? 'Pending' : 'Add'}
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  {/* People You May Know section removed per design request */}
 
-                  {/* Pinned Chats */}
-                  {pinnedChatsList.filter(chat => !chat.is_group).length > 0 && (
-                    <div className="border-b border-border/50 bg-muted/20">
-                      <div className="px-4 py-2 text-xs font-semibold text-muted-foreground flex items-center gap-2">
-                        <Pin className="w-3 h-3" />
-                        Pinned
-                      </div>
-                      {pinnedChatsList.filter(chat => !chat.is_group).map(chat => {
-                        const otherUser = getChatUser(chat);
-                        return (
-                          <Card 
-                            key={chat.id} 
-                            className={`cursor-pointer m-2 hover:bg-accent/50 transition-colors ${selectedChat?.id === chat.id ? 'bg-accent' : ''}`} 
-                            onClick={() => setSelectedChat(chat)}
-                          >
-                            <CardContent className="p-3 flex items-center gap-3 relative">
-                              <Pin className="w-3 h-3 text-primary absolute top-2 right-2" />
-                              <ChatBubbleAvatar src={otherUser?.profile_pic || ''} fallback={otherUser?.name.charAt(0) || 'U'} />
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-sm truncate flex items-center gap-1.5">
-                                  {otherUser?.name}
-                                  {otherUser && renderUserBadge(otherUser.user_id)}
-                                </h3>
-                              </div>
-                              <Button size="icon" variant="ghost" className="h-6 w-6" onClick={e => { e.stopPropagation(); togglePinChat(chat.chat_id); }}>
-                                <X className="w-3 h-3" />
-                              </Button>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Regular Chats */}
-                  {filteredChats.filter(chat => !chat.is_group && !pinnedChats.includes(chat.chat_id)).length === 0 && 
-                   pinnedChatsList.filter(chat => !chat.is_group).length === 0 ? (
-                    <div className="text-center text-muted-foreground py-8 px-4">
-                      <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p className="font-medium">No chats yet</p>
-                      <p className="text-sm mt-1">Add friends to start chatting!</p>
-                      <Button 
-                        className="mt-4" 
-                        onClick={() => setActiveTab('requests')}
-                      >
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Find Friends
-                      </Button>
-                    </div>
-                  ) : (
-                    filteredChats.filter(chat => !chat.is_group && !pinnedChats.includes(chat.chat_id)).map(chat => {
-                      const otherUser = getChatUser(chat);
+                  {/* Pinned Chats - filtered by search query */}
+                  {(() => {
+                    const q = searchQuery.trim().toLowerCase();
+                    const matches = (chat: Chat) => {
+                      if (!q) return true;
+                      const u = getChatUser(chat);
+                      if (!u) return false;
                       return (
-                        <Card 
-                          key={chat.id} 
-                          className={`cursor-pointer m-2 hover:bg-accent/50 transition-colors ${selectedChat?.id === chat.id ? 'bg-accent' : ''}`} 
-                          onClick={() => setSelectedChat(chat)}
-                        >
-                          <CardContent className="p-3 flex items-center gap-3">
-                            <div className="relative">
-                              <ChatBubbleAvatar src={otherUser?.profile_pic || ''} fallback={otherUser?.name.charAt(0) || 'U'} />
-                              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 ring-2 ring-background" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-sm truncate flex items-center gap-1.5">
-                                {otherUser?.name}
-                                {otherUser && renderUserBadge(otherUser.user_id)}
-                              </h3>
-                              <p className="text-xs text-muted-foreground truncate">Tap to chat</p>
-                            </div>
-                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={e => { e.stopPropagation(); togglePinChat(chat.chat_id); }}>
-                              <Pin className="w-3 h-3" />
-                            </Button>
-                          </CardContent>
-                        </Card>
+                        u.name?.toLowerCase().includes(q) ||
+                        u.search_id?.toLowerCase().includes(q) ||
+                        u.user_id?.toLowerCase().includes(q)
                       );
-                    })
-                  )}
+                    };
+                    const pinnedVisible = pinnedChatsList.filter(c => !c.is_group && matches(c));
+                    const regularVisible = filteredChats.filter(c => !c.is_group && !pinnedChats.includes(c.chat_id) && matches(c));
+                    return (
+                      <>
+                        {pinnedVisible.length > 0 && (
+                          <div className="border-b border-border/50 bg-muted/20">
+                            <div className="px-4 py-2 text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                              <Pin className="w-3 h-3" />
+                              Pinned
+                            </div>
+                            {pinnedVisible.map(chat => {
+                              const otherUser = getChatUser(chat);
+                              return (
+                                <Card 
+                                  key={chat.id} 
+                                  className={`cursor-pointer m-2 hover:bg-accent/50 transition-colors ${selectedChat?.id === chat.id ? 'bg-accent' : ''}`} 
+                                  onClick={() => setSelectedChat(chat)}
+                                >
+                                  <CardContent className="p-3 flex items-center gap-3 relative">
+                                    <Pin className="w-3 h-3 text-primary absolute top-2 right-2" />
+                                    <ChatBubbleAvatar src={otherUser?.profile_pic || ''} fallback={otherUser?.name.charAt(0) || 'U'} />
+                                    <div className="flex-1 min-w-0">
+                                      <h3 className="font-semibold text-sm truncate flex items-center gap-1.5">
+                                        {otherUser?.name}
+                                        {otherUser && renderUserBadge(otherUser.user_id)}
+                                      </h3>
+                                    </div>
+                                    <Button size="icon" variant="ghost" className="h-6 w-6" onClick={e => { e.stopPropagation(); togglePinChat(chat.chat_id); }}>
+                                      <X className="w-3 h-3" />
+                                    </Button>
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {regularVisible.length === 0 && pinnedVisible.length === 0 ? (
+                          <div className="text-center text-muted-foreground py-8 px-4">
+                            <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                            <p className="font-medium">{q ? 'No matching chats' : 'No chats yet'}</p>
+                            <p className="text-sm mt-1">{q ? 'Try a different search.' : 'Add friends to start chatting!'}</p>
+                            {!q && (
+                              <Button className="mt-4" onClick={() => setActiveTab('requests')}>
+                                <UserPlus className="w-4 h-4 mr-2" />
+                                Find Friends
+                              </Button>
+                            )}
+                          </div>
+                        ) : (
+                          regularVisible.map(chat => {
+                            const otherUser = getChatUser(chat);
+                            return (
+                              <Card 
+                                key={chat.id} 
+                                className={`cursor-pointer m-2 hover:bg-accent/50 transition-colors ${selectedChat?.id === chat.id ? 'bg-accent' : ''}`} 
+                                onClick={() => setSelectedChat(chat)}
+                              >
+                                <CardContent className="p-3 flex items-center gap-3">
+                                  <div className="relative">
+                                    <ChatBubbleAvatar src={otherUser?.profile_pic || ''} fallback={otherUser?.name.charAt(0) || 'U'} />
+                                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 ring-2 ring-background" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-semibold text-sm truncate flex items-center gap-1.5">
+                                      {otherUser?.name}
+                                      {otherUser && renderUserBadge(otherUser.user_id)}
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground truncate">Tap to chat</p>
+                                  </div>
+                                  <Button size="icon" variant="ghost" className="h-6 w-6" onClick={e => { e.stopPropagation(); togglePinChat(chat.chat_id); }}>
+                                    <Pin className="w-3 h-3" />
+                                  </Button>
+                                </CardContent>
+                              </Card>
+                            );
+                          })
+                        )}
+                      </>
+                    );
+                  })()}
                 </ScrollArea>
               )}
 
