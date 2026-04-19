@@ -264,16 +264,20 @@ export default function QuizFeature({ user, onBack }: QuizFeatureProps) {
     const questionsCorrect = selectedQuiz.questions.filter(q => answers[q.id] === q.correct_answer).length;
     const questionsWrong = selectedQuiz.questions.length - questionsCorrect;
 
-    await supabase.from('exam_submissions').insert({
-      exam_id: selectedQuiz.id,
-      user_id: user.id,
-      answers: answers,
-      score: totalScore,
-      total_marks: selectedQuiz.total_marks,
-      questions_correct: questionsCorrect,
-      questions_wrong: questionsWrong,
-      time_taken: (selectedQuiz.duration_minutes * 60) - timeLeft
-    });
+    try {
+      await supabase.from('exam_submissions').insert({
+        exam_id: selectedQuiz.id,
+        user_id: user.id,
+        answers: answers,
+        score: totalScore,
+        total_marks: selectedQuiz.total_marks,
+        questions_correct: questionsCorrect,
+        questions_wrong: questionsWrong,
+        time_taken: (selectedQuiz.duration_minutes * 60) - timeLeft
+      });
+    } catch (err) {
+      console.warn('Submission record skipped (admin quiz):', err);
+    }
 
     // Update daily stats
     await supabase.rpc('increment_daily_stat', {
