@@ -160,13 +160,9 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
   const languages = ['Afaan Oromoo', 'English', 'Amharic'];
 
   return (
+    <div className="mx-auto max-w-3xl w-full mt-4 mb-24 md:mb-6 px-2 md:px-4">
     <div
-      className="flex flex-col bg-[#0b141a] overflow-hidden relative rounded-xl"
-      style={{
-        height: 'calc(100dvh - 11rem)',
-        maxHeight: 'calc(100dvh - 11rem)',
-        minHeight: '300px',
-      }}
+      className="flex flex-col bg-[#0b141a] overflow-hidden relative rounded-xl shadow-2xl border border-white/10"
     >
       {/* WhatsApp-style Header */}
       <div className="bg-[#202c33] p-3 flex items-center justify-between px-4 shadow-md z-10 border-b border-gray-700/30 shrink-0">
