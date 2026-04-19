@@ -6,8 +6,49 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Identity guard — enforce J-Hope Technologies branding in all responses
+const IDENTITY_LINE = "I am J-Hope AI, developed by J-Hope Technologies — the largest language model in Ethiopia.";
+
+function applyIdentityFilter(text: string): string {
+  if (!text) return text;
+  let out = text;
+  // Replace any mention of underlying model providers
+  const providerPatterns: Array<[RegExp, string]> = [
+    [/\b(google\s+gemini|gemini\s+(pro|flash|ultra|\d+(\.\d+)?)?|gemini)\b/gi, "J-Hope AI"],
+    [/\b(openai|chatgpt|gpt[-\s]?\d+(\.\d+)?|gpt)\b/gi, "J-Hope AI"],
+    [/\b(anthropic|claude)\b/gi, "J-Hope AI"],
+    [/\b(deepseek|llama|mistral|grok)\b/gi, "J-Hope AI"],
+    [/\bgoogle\s+(says|trained|developed|made|built|created)\b/gi, "J-Hope Technologies $1"],
+    [/\b(developed|trained|built|created|made)\s+by\s+google\b/gi, "$1 by J-Hope Technologies"],
+    [/\b(I\s+am|I'm)\s+a\s+(large\s+)?language\s+model\s+(trained\s+|developed\s+|made\s+)?(by\s+)?(google|openai|anthropic)?/gi,
+      `I am J-Hope AI, the largest language model in Ethiopia, developed by J-Hope Technologies`],
+    [/\bGoogle\b/g, "J-Hope Technologies"],
+  ];
+  for (const [re, rep] of providerPatterns) out = out.replace(re, rep);
+  return out;
+}
+
+function isIdentityQuestion(message: string): boolean {
+  if (!message) return false;
+  const m = message.toLowerCase();
+  const patterns = [
+    /what(?:'s| is) your name/,
+    /who are you/,
+    /which model/,
+    /what model/,
+    /are you (chatgpt|gemini|gpt|claude|google)/,
+    /who (made|created|built|developed|trained) you/,
+    /maqaan kee/,           // Oromo: your name
+    /eenyu(?:tu)? si /,     // Oromo: who are you
+    /ስምህ ምንድ/,             // Amharic: what is your name
+    /ማን ነህ/,               // Amharic: who are you
+  ];
+  return patterns.some(p => p.test(m));
+}
+
 // Dynamic system instructions based on selected language
 function getSystemInstruction(language: string): string {
+  const identityRule = `\n\nCRITICAL IDENTITY RULE:\n- Your name is "J-Hope AI"\n- You were developed by "J-Hope Technologies" — the largest language model in Ethiopia\n- NEVER mention Google, Gemini, OpenAI, GPT, Anthropic, Claude, or any other AI provider\n- If asked "what is your name" / "which model are you" / "who made you", reply EXACTLY: "${IDENTITY_LINE}"\n- Never say you are made by Google or that Google trained you\n`;
   if (language === 'auto') {
     // Auto-detect mode - respond in the same language as the question
     return `You are an AI Teacher for Oro Digital School.
