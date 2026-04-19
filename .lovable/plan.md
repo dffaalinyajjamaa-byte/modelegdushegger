@@ -1,20 +1,37 @@
 
-This is a large multi-feature request. Let me organize into focused phases.
+This is a massive multi-feature request. Let me organize it into focused phases. Most database tables already exist (`profiles`, `daily_stats`, `user_rankings`, `messaging_users`, `admin_quizzes`, `worksheets`, `auto_quiz_books`, etc.) so I can mostly do code-level changes.
 
-Key items:
-1. Fix AI chat scroll (still broken on mobile 360x586)
-2. AI identity filter — when asked "what's your name/which model" → "J-Hope Technologies, largest language model in Ethiopia"
-3. Marketplace e-commerce features (cart, wishlist, orders, payment placeholder)
-4. Admin Quiz: read student quizzes for Grade 6/8, create new ones that push realtime to students
-5. Admin: read uploaded worksheets, realtime push of new worksheets to students
-6. Admin: see ALL student features and edit (super-admin view of student-side modules)
-7. Messenger: search by name/contact, glassmorphism UI upgrade
-8. Messenger: chat box covered by navbar — fix bottom padding above navbar
-9. Profile: social-media style (bio, etc.) — already has bio field
-10. Tap user avatar in chat → show profile dialog (already exists)
-11. Real-time online/last-seen tracking (not always "online")
-12. Track user video-watched progress visible in profile
-13. PWA install prompt: 10-second popup with app icon, then auto-dismiss
-14. PWA push notifications, Android-style
+Let me break this down by area:
 
-I have enough context. Plan below.
+**1. AI Chat Layout Fix** — full-page scroll, chat box above navbar, inner scrollable messages with `max-h-[60vh]`, `min-h-screen flex flex-col` wrapper.
+
+**2. Messenger Cleanup** — remove "People You May Know" / recommended friends section entirely, smaller "Messages" header, search bar that filters real chat list & friends only.
+
+**3. Dashboard Streak + Points System (Real-time)**
+- Use existing `daily_stats.learning_time_minutes` + `user_rankings` (current_streak, longest_streak, total_points, badge_tier already exist)
+- Recompute streak from consecutive days where `learning_time_minutes > 0` OR any activity > 0
+- Update badge tier mapping: Beginner (0-9), Bronze (10-19), Silver (20-29), Metal Green (50+), Gold (90+) — already in `update_badge_tier()` trigger but adjust thresholds in UI
+- Show "Next: Bronze (10), X days to go" dynamic copy
+- Charging Points: 1 minute = 1 point, persist via existing `award_points` RPC
+
+**4. Overall Progress + Weekly Activity + Total Stats + Activity Distribution**
+- Use existing `daily_stats` table (tasks_completed, videos_watched, materials_read, exams_taken)
+- Build 3 cards (Today / All-time) for Videos, Books, Tasks
+- 7-day filterable bar chart (Tasks/Videos/Materials)
+- Total Stats: 3 bars with auto-scaling Y-axis
+- Activity Distribution: donut chart from last 30 days
+- Real-time refetch via Supabase realtime on `daily_stats`
+
+**5. Auto Quiz — already PDF→Gemini direct, verify & polish loading state, keep on same page**
+
+**6. Admin Quiz Builder + Student Quiz pulling from `admin_quizzes` + Worksheet view**
+- Admin quiz creator already exists in AdminDashboard
+- Wire `QuizFeature.tsx` (Grade 8 Quizzes) to load from `admin_quizzes` filtered by subject + grade_level
+- Timer derived from question count (1.5min/q) since admin_quizzes has no time_limit column — or add it
+- New Worksheet view that reuses admin_quizzes with Show/Hide Answers toggle
+
+**Schema additions needed:**
+- Add `time_limit_minutes INTEGER DEFAULT 30` to `admin_quizzes`
+- Enable realtime on `daily_stats`, `user_rankings`, `admin_quizzes`, `worksheets`
+
+Keeping plan concise per instructions.
