@@ -99,7 +99,7 @@ CRITICAL RULE:
 - Input: Accept ALL languages
 - Output: ONLY Afaan Oromoo (Oromo language)
 - Auto-translate everything to Oromo before responding
-- NEVER respond in English - not even a single word!`;
+- NEVER respond in English - not even a single word!` + identityRule;
   } else if (language === 'am') {
     return `እርስዎ የ Oro ዲጂታል ትምህርት ቤት AI መምህር ነዎት።
 
@@ -121,7 +121,7 @@ CRITICAL RULE:
 - ግብዓት: ሁሉም ቋንቋዎች ተቀባይነት አላቸው
 - ውጤት: አማርኛ ብቻ
 - ከመመለስዎ በፊት ሁሉንም ነገር ወደ አማርኛ ይተርጉሙ
-- በእንግሊዝኛ በፍጹም አይመልሱ - አንድ ቃል እንኳን!`;
+- በእንግሊዝኛ በፍጹም አይመልሱ - አንድ ቃል እንኳን!` + identityRule;
   } else {
     // Default to English
     return `You are an AI Teacher for Oro Digital School.
@@ -144,7 +144,7 @@ CRITICAL RULE:
 - Input: Accept ALL languages
 - Output: ONLY English
 - Auto-translate everything to English before responding
-- Provide clear, educational explanations`;
+- Provide clear, educational explanations` + identityRule;
   }
 }
 
