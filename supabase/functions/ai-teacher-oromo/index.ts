@@ -77,7 +77,7 @@ BEHAVIOR:
 2. Then, respond ONLY in that same language
 3. Be helpful, educational, and encouraging
 4. Make complex concepts easy to understand
-5. Use examples and analogies when helpful`;
+5. Use examples and analogies when helpful` + identityRule;
   } else if (language === 'om') {
     return `Ati barsiisaa AI kan Mana Barumsaa Dijitaalaa Oro ti.
 
@@ -277,8 +277,16 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || getErrorMessage(language, 'no_response');
-    
+    let aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || getErrorMessage(language, 'no_response');
+
+    // Identity short-circuit: if user asked who/what model, force exact identity reply
+    if (isIdentityQuestion(message)) {
+      aiResponse = IDENTITY_LINE;
+    } else {
+      // Always sanitize provider mentions
+      aiResponse = applyIdentityFilter(aiResponse);
+    }
+
     console.log("AI response received, length:", aiResponse.length);
     
     // Detect emotion/frustration in user message (multilingual keywords)
