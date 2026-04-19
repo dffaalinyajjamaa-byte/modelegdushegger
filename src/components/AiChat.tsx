@@ -217,9 +217,9 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
         </div>
       </div>
 
-      {/* Chat Area - scrollable */}
+      {/* Chat Area - scrollable inner with capped height */}
       <div
-        className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-6 relative scroll-smooth min-h-0 overscroll-contain touch-pan-y"
+        className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-6 relative scroll-smooth min-h-0 overscroll-contain touch-pan-y max-h-[60vh]"
         ref={scrollRef}
         style={{
           backgroundImage: 'url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png")',
@@ -338,6 +338,7 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
           </button>
         )}
       </div>
+    </div>
     </div>
   );
 };
