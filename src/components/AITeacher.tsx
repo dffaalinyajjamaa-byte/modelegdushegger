@@ -544,8 +544,8 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
         </div>
       </ScrollArea>
 
-      {/* Input Area */}
-      <div className="app-footer border-t bg-background/80 backdrop-blur-xl">
+      {/* Input Area - sits above mobile bottom nav */}
+      <div className="app-footer border-t bg-background/80 backdrop-blur-xl pb-24 md:pb-3">
         <div className="max-w-3xl mx-auto px-4 py-3">
           <div className="flex items-end gap-2">
             {/* Voice Input Button with Gemini STT */}
