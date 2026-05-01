@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, FileText, ExternalLink, Download, RefreshCw, AlertCircle } from 'lucide-react';
 import { validateContentUrl, extractGoogleDriveFileId } from '@/lib/content-utils';
+import { useLearningTime } from '@/hooks/use-learning-time';
 
 interface Content {
   id: string;
@@ -30,6 +31,9 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+
+  // While the user is reading, count minutes toward streak/points
+  useLearningTime(user.id, true);
 
   const handleMarkRead = () => {
     if (!marked && onMaterialRead) {

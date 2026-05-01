@@ -16,6 +16,7 @@ import AboutUs from './AboutUs';
 import StudentProfile from './StudentProfile';
 import BottomNav from './BottomNav';
 import ProgressCharts from './ProgressCharts';
+import OverallProgressCards from './OverallProgressCards';
 import AnimatedTagline from './AnimatedTagline';
 import ChargingPoints from './ChargingPoints';
 import SubjectProgressCards from './SubjectProgressCards';
@@ -502,26 +503,7 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
 
         {/* Progress Tab - Detailed Analytics */}
         <TabsContent value="progress" className="space-y-6">
-          <div className="grid grid-cols-3 gap-3 sm:gap-4">
-            <Card className="p-4 sm:p-6 text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">
-                {userStats.videos_watched}
-              </div>
-              <div className="text-xs sm:text-sm text-muted-foreground">Videos Watched</div>
-            </Card>
-            <Card className="p-4 sm:p-6 text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">
-                {userStats.materials_read}
-              </div>
-              <div className="text-xs sm:text-sm text-muted-foreground">Books Read</div>
-            </Card>
-            <Card className="p-4 sm:p-6 text-center">
-              <div className="text-2xl sm:text-3xl font-bold text-primary mb-1">
-                {userStats.tasks_completed}
-              </div>
-              <div className="text-xs sm:text-sm text-muted-foreground">Tasks Done</div>
-            </Card>
-          </div>
+          <OverallProgressCards userId={user.id} />
           <ProgressCharts userId={user.id} stats={userStats} />
         </TabsContent>
       </DashboardTabs>

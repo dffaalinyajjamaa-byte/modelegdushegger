@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Play, ExternalLink, Award } from 'lucide-react';
 import { getYouTubeVideoId } from '@/lib/youtube-utils';
 import { useVideoProgress } from '@/hooks/use-video-progress';
+import { useLearningTime } from '@/hooks/use-learning-time';
 
 interface Content {
   id: string;
@@ -37,6 +38,9 @@ export default function VideoViewer({ content, user, onBack, onLogActivity, onVi
     user.id,
     content.id
   );
+
+  // Count active video viewing toward learning_time_minutes (drives streak + points)
+  useLearningTime(user.id, isPlaying);
 
   useEffect(() => {
     // Log activity when component mounts

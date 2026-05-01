@@ -15,6 +15,7 @@ import AdminResults from './AdminResults';
 import AdminNationalExams from './AdminNationalExams';
 import AdminContentManager from './AdminContentManager';
 import AdminQuizEditor from './AdminQuizEditor';
+import AdminQuizList from './AdminQuizList';
 import AdminWorksheetManager from './AdminWorksheetManager';
 import AdminBadgeVerification from './AdminBadgeVerification';
 import AdminMarketplace from './AdminMarketplace';
@@ -30,7 +31,7 @@ interface AdminDashboardProps {
   onBack: () => void;
 }
 
-type AdminSection = 'overview' | 'national-exams' | 'books' | 'content' | 'quiz-editor' | 'users' | 'analytics' | 'worksheets' | 'badges' | 'marketplace' | 'reports' | 'settings';
+type AdminSection = 'overview' | 'national-exams' | 'books' | 'content' | 'quiz-manage' | 'quiz-editor' | 'users' | 'analytics' | 'worksheets' | 'badges' | 'marketplace' | 'reports' | 'settings';
 
 interface Stats {
   totalUsers: number;
@@ -268,6 +269,7 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
     { id: 'content', label: 'Content', icon: Video },
     { id: 'marketplace', label: 'Market', icon: ShoppingBag },
     { id: 'badges', label: 'Badges', icon: BadgeCheck },
+    { id: 'quiz-manage', label: 'Quizzes', icon: Edit3 },
     { id: 'quiz-editor', label: 'Results', icon: Edit3 },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'reports', label: 'Reports', icon: Flag, badge: stats.pendingReports },
@@ -367,6 +369,7 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
         {activeSection === 'content' && <AdminContentManager user={user} />}
         {activeSection === 'marketplace' && <AdminMarketplace />}
         {activeSection === 'badges' && <AdminBadgeVerification />}
+        {activeSection === 'quiz-manage' && <AdminQuizList />}
         {activeSection === 'quiz-editor' && <AdminQuizEditor />}
         {activeSection === 'users' && <AdminUserManager />}
         {activeSection === 'reports' && <AdminReports />}
