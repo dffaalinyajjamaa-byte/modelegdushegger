@@ -369,6 +369,7 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
         {activeSection === 'content' && <AdminContentManager user={user} />}
         {activeSection === 'marketplace' && <AdminMarketplace />}
         {activeSection === 'badges' && <AdminBadgeVerification />}
+        {activeSection === 'quiz-manage' && <AdminQuizList />}
         {activeSection === 'quiz-editor' && <AdminQuizEditor />}
         {activeSection === 'users' && <AdminUserManager />}
         {activeSection === 'reports' && <AdminReports />}
