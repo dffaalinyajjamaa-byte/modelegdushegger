@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Play, ExternalLink, Award } from 'lucide-react';
 import { getYouTubeVideoId } from '@/lib/youtube-utils';
 import { useVideoProgress } from '@/hooks/use-video-progress';
+import { useLearningTime } from '@/hooks/use-learning-time';
 
 interface Content {
   id: string;
