@@ -15,6 +15,7 @@ import AdminResults from './AdminResults';
 import AdminNationalExams from './AdminNationalExams';
 import AdminContentManager from './AdminContentManager';
 import AdminQuizEditor from './AdminQuizEditor';
+import AdminQuizList from './AdminQuizList';
 import AdminWorksheetManager from './AdminWorksheetManager';
 import AdminBadgeVerification from './AdminBadgeVerification';
 import AdminMarketplace from './AdminMarketplace';
