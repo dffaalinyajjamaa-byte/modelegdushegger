@@ -71,6 +71,9 @@ export default function QuizFeature({ user, onBack }: QuizFeatureProps) {
   const [userGrade, setUserGrade] = useState<string>('Grade 8');
   const { toast } = useToast();
 
+  // Quiz time counts toward streak/points
+  useLearningTime(user.id, !!selectedQuiz && !isSubmitted && !isPaused);
+
   useEffect(() => {
     fetchProfile();
   }, []);
