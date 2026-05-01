@@ -31,7 +31,7 @@ interface AdminDashboardProps {
   onBack: () => void;
 }
 
-type AdminSection = 'overview' | 'national-exams' | 'books' | 'content' | 'quiz-editor' | 'users' | 'analytics' | 'worksheets' | 'badges' | 'marketplace' | 'reports' | 'settings';
+type AdminSection = 'overview' | 'national-exams' | 'books' | 'content' | 'quiz-manage' | 'quiz-editor' | 'users' | 'analytics' | 'worksheets' | 'badges' | 'marketplace' | 'reports' | 'settings';
 
 interface Stats {
   totalUsers: number;
