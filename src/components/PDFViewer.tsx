@@ -32,6 +32,9 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
   const [iframeError, setIframeError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
+  // While the user is reading, count minutes toward streak/points
+  useLearningTime(user.id, true);
+
   const handleMarkRead = () => {
     if (!marked && onMaterialRead) {
       onMaterialRead();
