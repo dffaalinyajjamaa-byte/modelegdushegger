@@ -89,7 +89,7 @@ export default function AdminQuizList() {
     const { error } = await supabase.from('admin_quizzes').update({
       title: eTitle, subject: eSubject, grade_level: eGrade,
       time_limit_minutes: parseInt(eTime) || 30,
-      questions: eQuestions,
+      questions: eQuestions as any,
     }).eq('id', editingQuiz.id);
     if (error) toast({ title: 'Save failed', description: error.message, variant: 'destructive' });
     else { toast({ title: '✅ Quiz updated' }); setEditingQuiz(null); }
