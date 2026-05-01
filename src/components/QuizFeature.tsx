@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Clock, BookOpen, ArrowLeft, CheckCircle, XCircle, Globe, Book, Beaker, Users, Shield, Calculator } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useLearningTime } from '@/hooks/use-learning-time';
 
 interface QuizFeatureProps {
   user: User;
