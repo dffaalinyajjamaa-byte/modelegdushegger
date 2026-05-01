@@ -269,6 +269,7 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
     { id: 'content', label: 'Content', icon: Video },
     { id: 'marketplace', label: 'Market', icon: ShoppingBag },
     { id: 'badges', label: 'Badges', icon: BadgeCheck },
+    { id: 'quiz-manage', label: 'Quizzes', icon: Edit3 },
     { id: 'quiz-editor', label: 'Results', icon: Edit3 },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'reports', label: 'Reports', icon: Flag, badge: stats.pendingReports },
