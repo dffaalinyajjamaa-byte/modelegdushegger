@@ -6,6 +6,7 @@ import HologramAvatar from './HologramAvatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useLearningTime } from '@/hooks/use-learning-time';
 
 interface AiChatProps {
   user: User;
