@@ -16,6 +16,7 @@ import AboutUs from './AboutUs';
 import StudentProfile from './StudentProfile';
 import BottomNav from './BottomNav';
 import ProgressCharts from './ProgressCharts';
+import OverallProgressCards from './OverallProgressCards';
 import AnimatedTagline from './AnimatedTagline';
 import ChargingPoints from './ChargingPoints';
 import SubjectProgressCards from './SubjectProgressCards';
