@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, FileText, ExternalLink, Download, RefreshCw, AlertCircle } from 'lucide-react';
 import { validateContentUrl, extractGoogleDriveFileId } from '@/lib/content-utils';
+import { useLearningTime } from '@/hooks/use-learning-time';
 
 interface Content {
   id: string;
