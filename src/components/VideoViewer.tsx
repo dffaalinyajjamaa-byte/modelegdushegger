@@ -39,6 +39,9 @@ export default function VideoViewer({ content, user, onBack, onLogActivity, onVi
     content.id
   );
 
+  // Count active video viewing toward learning_time_minutes (drives streak + points)
+  useLearningTime(user.id, isPlaying);
+
   useEffect(() => {
     // Log activity when component mounts
     onLogActivity('video_opened', `Opened video: ${content.title}`, {
