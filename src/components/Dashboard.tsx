@@ -3,7 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { LogOut, Settings, Video, BookOpen, Bot, FileText, Brain, MessageCircle, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee, FlaskConical, Trophy, ClipboardList, GraduationCap, CalendarClock, Music, ShoppingBag } from 'lucide-react';
+import { LogOut, Settings, Video, BookOpen, Bot, FileText, Brain, MessageCircle, ArrowLeft, MoreVertical, User as UserIcon, Info, Coffee, FlaskConical, Trophy, ClipboardList, GraduationCap, CalendarClock, Music, ShoppingBag, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SmartPlanner from './SmartPlanner';
 import VideoViewer from './VideoViewer';
