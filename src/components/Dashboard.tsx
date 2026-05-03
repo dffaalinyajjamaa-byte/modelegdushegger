@@ -412,24 +412,24 @@ export default function Dashboard({ user, session, onSignOut }: DashboardProps) 
   }, [user?.id]);
 
   const renderDashboard = () => (
-    <div className="space-y-6 sm:space-y-8">
-      {/* Hero Section - With role-based welcome */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary/90 to-accent p-6 text-primary-foreground shadow-glow">
+    <div className="space-y-6 sm:space-y-8 pb-28">
+      {/* Hero — Liquid Glass island */}
+      <section className="relative overflow-hidden lg-island lg-glass-strong lg-glow-border p-6">
+        <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-[hsl(var(--ios-blue))]/30 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -left-10 w-56 h-56 rounded-full bg-[hsl(var(--ios-blue-light))]/25 blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col items-center text-center">
-          <img 
-            src={logo} 
-            alt="Model Egdu" 
-            className="w-20 h-20 mb-3 rounded-full shadow-glow"
+          <img
+            src={logo}
+            alt="Model Egdu"
+            className="w-20 h-20 mb-3 rounded-full ring-1 ring-white/20 shadow-xl"
           />
           <div className="flex items-center gap-2 mb-2">
-            <h1 className="text-2xl font-bold">
-              Welcome{isTeacherUser ? ' Teacher' : ''}, {profile?.full_name?.split(' ')[0] || 'User'}! 👋
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Welcome{isTeacherUser ? ' Teacher' : ''}, {profile?.full_name?.split(' ')[0] || 'User'}
             </h1>
             {isTeacherUser && (
-              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-yellow-400 shadow-lg">
-                <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[hsl(var(--ios-blue))]">
+                <Check className="w-4 h-4 text-white" strokeWidth={2.5} />
               </span>
             )}
           </div>
