@@ -275,7 +275,7 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
                         : 'bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/30 hover:border-purple-500/60'
                     }`}
                   >
-                    <span className="text-4xl block mb-3">{cat.icon}</span>
+                    <cat.Icon className="w-9 h-9 mb-3 text-[hsl(var(--ios-blue))]" strokeWidth={1.75} />
                     <h3 className="font-semibold text-sm">{cat.nameLocal || cat.name}</h3>
                     {cat.hasSubcategories && (
                       <p className="text-xs text-muted-foreground mt-1">Tap to explore</p>
@@ -327,7 +327,7 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
                         : 'bg-gradient-to-br from-emerald-500/10 to-green-500/10 border-2 border-emerald-500/30 hover:border-emerald-500/60'
                     }`}
                   >
-                    <span className="text-4xl block mb-3">{subCat.icon}</span>
+                    <subCat.Icon className="w-9 h-9 mb-3 text-[hsl(var(--ios-blue))]" strokeWidth={1.75} />
                     <h3 className="font-semibold text-sm">{subCat.nameLocal}</h3>
                     <p className="text-xs text-muted-foreground mt-1">{subCat.name}</p>
                   </motion.button>
