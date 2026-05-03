@@ -814,7 +814,8 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                     className="space-y-4 p-4 bg-red-500/5 rounded-xl border border-red-500/20"
                   >
                     <div className="flex items-center gap-2 text-red-600 mb-2">
-                      <span className="text-sm font-medium">🔐 Admin Verification</span>
+                      <Lock className="w-4 h-4" strokeWidth={1.75} />
+                      <span className="text-sm font-medium">Admin Verification</span>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="adminCode">Admin Code *</Label>
