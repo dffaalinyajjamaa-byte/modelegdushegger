@@ -519,18 +519,18 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
                 {/* Translation Status Indicator */}
                 <div className="flex items-center gap-2 text-xs text-primary animate-pulse">
                   {translationStatus === 'understanding' && (
-                    <>🧠 Hubachaa jira... (Understanding...)</>
+                    <>Hubachaa jira... (Understanding...)</>
                   )}
                   {translationStatus === 'translating' && (
-                    <>🔄 Hiikaa jira... (Translating...)</>
+                    <>Hiikaa jira... (Translating...)</>
                   )}
                   {translationStatus === 'responding' && (
-                    <>✨ Deebisaa qopheessaa jira... (Preparing response...)</>
+                    <>Deebisaa qopheessaa jira... (Preparing response...)</>
                   )}
                 </div>
                 {retrying && (
                   <div className="flex items-center gap-2 text-xs text-amber-500">
-                    🔄 Irra deebi'ee yaalaa jira... (Retrying...)
+                    Irra deebi'ee yaalaa jira... (Retrying...)
                   </div>
                 )}
                 <div className="flex space-x-2">

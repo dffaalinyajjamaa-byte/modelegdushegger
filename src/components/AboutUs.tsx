@@ -90,7 +90,7 @@ export default function AboutUs() {
       {/* Footer */}
       <div className="text-center text-sm text-muted-foreground py-4">
         <p>© 2025 Model Egdu. All rights reserved.</p>
-        <p className="mt-1">Made with ❤️ for Ethiopian Students</p>
+        <p className="mt-1">Made for Ethiopian Students</p>
       </div>
     </div>
   );

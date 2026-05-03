@@ -5,7 +5,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trophy, Flame } from 'lucide-react';
+import { Trophy, Flame, Medal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import VerifiedBadge from '@/components/VerifiedBadge';
 
@@ -113,9 +113,9 @@ export default function Leaderboard({ currentUserId }: LeaderboardProps) {
   };
 
   const getMedalIcon = (index: number) => {
-    if (index === 0) return <span className="text-2xl">🥇</span>;
-    if (index === 1) return <span className="text-2xl">🥈</span>;
-    if (index === 2) return <span className="text-2xl">🥉</span>;
+    if (index === 0) return <Trophy className="w-6 h-6 text-yellow-500" strokeWidth={1.75} />;
+    if (index === 1) return <Medal className="w-6 h-6 text-slate-400" strokeWidth={1.75} />;
+    if (index === 2) return <Medal className="w-6 h-6 text-amber-700" strokeWidth={1.75} />;
     return <span className="text-lg font-bold text-muted-foreground">{index + 1}</span>;
   };
 
