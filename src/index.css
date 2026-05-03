@@ -333,7 +333,27 @@ All colors MUST be HSL.
     --sidebar-ring: 248 80% 67%;
   }
 
+  :root {
+    /* ===== LIQUID GLASS TOKENS (iOS 18 / Vision Pro) ===== */
+    --ios-blue: 211 100% 52%;
+    --ios-blue-light: 200 96% 67%;
+    --ios-gray: 240 2% 57%;
+    --glass-tint: 0 0% 100%;
+    --glass-border: 0 0% 100%;
+    --glass-shadow: 220 30% 10%;
+    --radius-island: 28px;
+    --radius-card: 22px;
+    --radius-control: 14px;
+    --blur-glass: 30px;
+    --blur-glass-strong: 50px;
+    --spring-fast: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
   .dark {
+    --glass-tint: 220 30% 15%;
+    --glass-border: 0 0% 100%;
+    --glass-shadow: 0 0% 0%;
+
     /* Dark mode uses same glassmorphism theme */
     --background: 220 50% 10%;
     --foreground: 0 0% 100%;
