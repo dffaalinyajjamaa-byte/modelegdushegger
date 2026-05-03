@@ -333,7 +333,27 @@ All colors MUST be HSL.
     --sidebar-ring: 248 80% 67%;
   }
 
+  :root {
+    /* ===== LIQUID GLASS TOKENS (iOS 18 / Vision Pro) ===== */
+    --ios-blue: 211 100% 52%;
+    --ios-blue-light: 200 96% 67%;
+    --ios-gray: 240 2% 57%;
+    --glass-tint: 0 0% 100%;
+    --glass-border: 0 0% 100%;
+    --glass-shadow: 220 30% 10%;
+    --radius-island: 28px;
+    --radius-card: 22px;
+    --radius-control: 14px;
+    --blur-glass: 30px;
+    --blur-glass-strong: 50px;
+    --spring-fast: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
   .dark {
+    --glass-tint: 220 30% 15%;
+    --glass-border: 0 0% 100%;
+    --glass-shadow: 0 0% 0%;
+
     /* Dark mode uses same glassmorphism theme */
     --background: 220 50% 10%;
     --foreground: 0 0% 100%;
@@ -1125,3 +1145,129 @@ All colors MUST be HSL.
 
 /* Close @layer base block */
 }
+
+/* ===================================================================
+   LIQUID GLASS UTILITY LAYER — iOS 18 / Vision Pro inspired
+   =================================================================== */
+@layer utilities {
+  /* Floating glass surface */
+  .lg-glass {
+    background: hsl(var(--glass-tint) / 0.55);
+    backdrop-filter: blur(var(--blur-glass)) saturate(1.8);
+    -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(1.8);
+    border: 0.5px solid hsl(var(--glass-border) / 0.18);
+    box-shadow:
+      0 1px 0 hsl(var(--glass-border) / 0.12) inset,
+      0 12px 40px -12px hsl(var(--glass-shadow) / 0.45),
+      0 4px 16px -8px hsl(var(--glass-shadow) / 0.35);
+  }
+  .dark .lg-glass {
+    background: hsl(var(--glass-tint) / 0.5);
+  }
+
+  .lg-glass-strong {
+    background: hsl(var(--glass-tint) / 0.7);
+    backdrop-filter: blur(var(--blur-glass-strong)) saturate(1.8);
+    -webkit-backdrop-filter: blur(var(--blur-glass-strong)) saturate(1.8);
+    border: 0.5px solid hsl(var(--glass-border) / 0.2);
+    box-shadow:
+      0 1px 0 hsl(var(--glass-border) / 0.15) inset,
+      0 20px 60px -20px hsl(var(--glass-shadow) / 0.5);
+  }
+
+  /* Floating island (detached from screen edges, big radius) */
+  .lg-island {
+    border-radius: var(--radius-island);
+    margin-inline: 0.75rem;
+  }
+
+  /* Edge fade for scroll containers */
+  .lg-edge-fade {
+    -webkit-mask-image: linear-gradient(to bottom,
+      transparent 0,
+      #000 24px,
+      #000 calc(100% - 32px),
+      transparent 100%);
+            mask-image: linear-gradient(to bottom,
+      transparent 0,
+      #000 24px,
+      #000 calc(100% - 32px),
+      transparent 100%);
+  }
+
+  /* Press / tap feedback (damped spring feel) */
+  .lg-press {
+    transition: transform 0.4s var(--spring-fast), filter 0.3s ease;
+  }
+  .lg-press:active {
+    transform: scale(0.97);
+    filter: brightness(1.08);
+  }
+
+  /* Inner glow border outline */
+  .lg-glow-border {
+    box-shadow: inset 0 0 0 0.5px hsl(var(--glass-border) / 0.25),
+                0 0 24px -8px hsl(var(--ios-blue) / 0.35);
+  }
+
+  /* iOS blue accent */
+  .lg-accent { color: hsl(var(--ios-blue)); }
+  .lg-accent-bg { background-color: hsl(var(--ios-blue)); color: white; }
+
+  /* Shimmer skeleton */
+  @keyframes lg-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .lg-shimmer {
+    background: linear-gradient(90deg,
+      hsl(var(--glass-tint) / 0.1) 0%,
+      hsl(var(--glass-tint) / 0.35) 50%,
+      hsl(var(--glass-tint) / 0.1) 100%);
+    background-size: 200% 100%;
+    animation: lg-shimmer 1.6s ease-in-out infinite;
+  }
+
+  /* Light reflection sweep on hover */
+  .lg-reflect {
+    position: relative;
+    overflow: hidden;
+  }
+  .lg-reflect::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg,
+      transparent 30%,
+      hsl(var(--glass-border) / 0.18) 50%,
+      transparent 70%);
+    transform: translateX(-120%);
+    transition: transform 0.9s var(--spring-fast);
+    pointer-events: none;
+  }
+  .lg-reflect:hover::before { transform: translateX(120%); }
+
+  /* Accessibility — reduced transparency: opaque frosted matte */
+  @media (prefers-reduced-transparency: reduce) {
+    .lg-glass, .lg-glass-strong {
+      background: hsl(var(--card));
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+  }
+
+  /* Increased contrast: solid 1pt border */
+  @media (prefers-contrast: more) {
+    .lg-glass, .lg-glass-strong {
+      border: 1px solid hsl(var(--foreground));
+    }
+  }
+
+  /* Reduced motion: disable spring scale */
+  @media (prefers-reduced-motion: reduce) {
+    .lg-press { transition: none; }
+    .lg-press:active { transform: none; }
+    .lg-reflect::before { display: none; }
+  }
+}
+

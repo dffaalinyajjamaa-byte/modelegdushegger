@@ -1,4 +1,4 @@
-import { Flame, Award } from 'lucide-react';
+import { Flame, Award, Medal, Trophy, Leaf } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -12,14 +12,15 @@ interface StreakBadgeProps {
 
 export default function StreakBadge({ currentStreak, longestStreak, totalPoints, className }: StreakBadgeProps) {
   const getStreakMilestone = (streak: number) => {
-    if (streak >= 90) return { icon: '🥇', name: 'Gold', color: 'text-yellow-500' };
-    if (streak >= 50) return { icon: '💚', name: 'Metal Green', color: 'text-emerald-500' };
-    if (streak >= 20) return { icon: '🥈', name: 'Silver', color: 'text-gray-400' };
-    if (streak >= 10) return { icon: '🥉', name: 'Bronze', color: 'text-amber-700' };
-    return { icon: '🔥', name: 'Beginner', color: 'text-orange-500' };
+    if (streak >= 90) return { Icon: Trophy, name: 'Gold', color: 'text-yellow-500' };
+    if (streak >= 50) return { Icon: Leaf, name: 'Metal Green', color: 'text-emerald-500' };
+    if (streak >= 20) return { Icon: Medal, name: 'Silver', color: 'text-gray-400' };
+    if (streak >= 10) return { Icon: Medal, name: 'Bronze', color: 'text-amber-700' };
+    return { Icon: Flame, name: 'Beginner', color: 'text-orange-500' };
   };
 
   const milestone = getStreakMilestone(currentStreak);
+  const MilestoneIcon = milestone.Icon;
 
   return (
     <Card className={cn("p-6", className)}>
@@ -41,7 +42,7 @@ export default function StreakBadge({ currentStreak, longestStreak, totalPoints,
             <p className="text-3xl font-bold">{currentStreak}</p>
             <p className="text-sm text-muted-foreground">Day Streak</p>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-xl">{milestone.icon}</span>
+              <MilestoneIcon className={cn("w-4 h-4", milestone.color)} strokeWidth={1.75} />
               <span className={cn("text-sm font-semibold", milestone.color)}>
                 {milestone.name}
               </span>

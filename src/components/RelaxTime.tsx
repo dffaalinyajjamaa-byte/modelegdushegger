@@ -3,7 +3,8 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Play, Globe, Music, Sparkles, BookOpen, Users } from 'lucide-react';
+import { ArrowLeft, Play, Globe, Music, Sparkles, BookOpen, Users, Landmark, Swords, Crown, Scroll, Theater, Film, MessageSquare, Music2, HelpCircle, Flower2, UtensilsCrossed, Shirt, PartyPopper } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import YouTube from 'react-youtube';
 import { getYouTubeThumbnail, getYouTubeVideoId } from '@/lib/youtube-utils';
@@ -51,41 +52,40 @@ const languages = [
   },
 ];
 
-const categories: Record<string, { id: string; name: string; nameLocal?: string; icon: string; hasSubcategories?: boolean }[]> = {
+const categories: Record<string, { id: string; name: string; nameLocal?: string; Icon: LucideIcon; hasSubcategories?: boolean }[]> = {
   afaan_oromoo: [
-    { id: 'history_country', name: 'History of Country', nameLocal: 'Seenaa Biyyaa', icon: '🏛️' },
-    { id: 'history_heroes', name: 'History of Heroes', nameLocal: 'Seenaa Gootota', icon: '⚔️' },
-    { id: 'history_gada', name: 'History of Gada System', nameLocal: 'Seenaa Sirna Gadaa', icon: '👑' },
-    { id: 'afoola', name: 'Afoola', nameLocal: 'Afoola', icon: '📜', hasSubcategories: true },
-    { id: 'aadaa', name: 'Aadaa', nameLocal: 'Aadaa', icon: '🎭', hasSubcategories: true },
+    { id: 'history_country', name: 'History of Country', nameLocal: 'Seenaa Biyyaa', Icon: Landmark },
+    { id: 'history_heroes', name: 'History of Heroes', nameLocal: 'Seenaa Gootota', Icon: Swords },
+    { id: 'history_gada', name: 'History of Gada System', nameLocal: 'Seenaa Sirna Gadaa', Icon: Crown },
+    { id: 'afoola', name: 'Afoola', nameLocal: 'Afoola', Icon: Scroll, hasSubcategories: true },
+    { id: 'aadaa', name: 'Aadaa', nameLocal: 'Aadaa', Icon: Theater, hasSubcategories: true },
   ],
   english: [
-    { id: 'history_country', name: 'History of Country', icon: '🏛️' },
-    { id: 'history_heroes', name: 'History of Heroes', icon: '⚔️' },
-    { id: 'life_teaching', name: 'Life Teaching Short Movies', icon: '🎬' },
-    { id: 'fairy_tales', name: 'Fairy Tales', icon: '📖' },
+    { id: 'history_country', name: 'History of Country', Icon: Landmark },
+    { id: 'history_heroes', name: 'History of Heroes', Icon: Swords },
+    { id: 'life_teaching', name: 'Life Teaching Short Movies', Icon: Film },
+    { id: 'fairy_tales', name: 'Fairy Tales', Icon: BookOpen },
   ],
   amharic: [
-    { id: 'history_country', name: 'History of Country', nameLocal: 'የአገር ታሪክ', icon: '🏛️' },
-    { id: 'history_heroes', name: 'History of Heroes', nameLocal: 'የጀግኖች ታሪክ', icon: '⚔️' },
-    { id: 'fairy_tales', name: 'Fairy Tales', nameLocal: 'ተረቶች', icon: '📖' },
+    { id: 'history_country', name: 'History of Country', nameLocal: 'የአገር ታሪክ', Icon: Landmark },
+    { id: 'history_heroes', name: 'History of Heroes', nameLocal: 'የጀግኖች ታሪክ', Icon: Swords },
+    { id: 'fairy_tales', name: 'Fairy Tales', nameLocal: 'ተረቶች', Icon: BookOpen },
   ],
 };
 
-// Subcategories for Afoola and Aadaa
-const subcategories: Record<string, { id: string; name: string; nameLocal: string; icon: string }[]> = {
+const subcategories: Record<string, { id: string; name: string; nameLocal: string; Icon: LucideIcon }[]> = {
   afoola: [
-    { id: 'walaloo', name: 'Poetry', nameLocal: 'Walaloo', icon: '📜' },
-    { id: 'mammaaksa', name: 'Proverbs', nameLocal: 'Mammaaksa', icon: '💬' },
-    { id: 'geerarsa', name: 'Oral Songs', nameLocal: 'Geerarsa', icon: '🎵' },
-    { id: 'hibboo', name: 'Riddles', nameLocal: 'Hibboo', icon: '❓' },
-    { id: 'oduu_durii', name: 'Folk Tales', nameLocal: 'Oduu Durii', icon: '📖' },
+    { id: 'walaloo', name: 'Poetry', nameLocal: 'Walaloo', Icon: Scroll },
+    { id: 'mammaaksa', name: 'Proverbs', nameLocal: 'Mammaaksa', Icon: MessageSquare },
+    { id: 'geerarsa', name: 'Oral Songs', nameLocal: 'Geerarsa', Icon: Music2 },
+    { id: 'hibboo', name: 'Riddles', nameLocal: 'Hibboo', Icon: HelpCircle },
+    { id: 'oduu_durii', name: 'Folk Tales', nameLocal: 'Oduu Durii', Icon: BookOpen },
   ],
   aadaa: [
-    { id: 'irreecha', name: 'Thanksgiving Festival', nameLocal: 'Irreecha', icon: '🌸' },
-    { id: 'nyaata', name: 'Traditional Food', nameLocal: 'Nyaata', icon: '🍲' },
-    { id: 'uffannaa', name: 'Traditional Clothing', nameLocal: 'Uffannaa', icon: '👗' },
-    { id: 'shubbisa', name: 'Traditional Dance', nameLocal: 'Shubbisa', icon: '💃' },
+    { id: 'irreecha', name: 'Thanksgiving Festival', nameLocal: 'Irreecha', Icon: Flower2 },
+    { id: 'nyaata', name: 'Traditional Food', nameLocal: 'Nyaata', Icon: UtensilsCrossed },
+    { id: 'uffannaa', name: 'Traditional Clothing', nameLocal: 'Uffannaa', Icon: Shirt },
+    { id: 'shubbisa', name: 'Traditional Dance', nameLocal: 'Shubbisa', Icon: PartyPopper },
   ],
 };
 
@@ -275,7 +275,7 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
                         : 'bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-2 border-purple-500/30 hover:border-purple-500/60'
                     }`}
                   >
-                    <span className="text-4xl block mb-3">{cat.icon}</span>
+                    <cat.Icon className="w-9 h-9 mb-3 text-[hsl(var(--ios-blue))]" strokeWidth={1.75} />
                     <h3 className="font-semibold text-sm">{cat.nameLocal || cat.name}</h3>
                     {cat.hasSubcategories && (
                       <p className="text-xs text-muted-foreground mt-1">Tap to explore</p>
@@ -327,7 +327,7 @@ export default function RelaxTime({ user, onBack }: RelaxTimeProps) {
                         : 'bg-gradient-to-br from-emerald-500/10 to-green-500/10 border-2 border-emerald-500/30 hover:border-emerald-500/60'
                     }`}
                   >
-                    <span className="text-4xl block mb-3">{subCat.icon}</span>
+                    <subCat.Icon className="w-9 h-9 mb-3 text-[hsl(var(--ios-blue))]" strokeWidth={1.75} />
                     <h3 className="font-semibold text-sm">{subCat.nameLocal}</h3>
                     <p className="text-xs text-muted-foreground mt-1">{subCat.name}</p>
                   </motion.button>

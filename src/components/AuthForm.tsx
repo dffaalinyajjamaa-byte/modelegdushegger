@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, Camera, Mail, RefreshCw, WifiOff, ArrowLeft, GraduationCap, BookOpen } from 'lucide-react';
+import { Eye, EyeOff, Camera, Mail, RefreshCw, WifiOff, ArrowLeft, GraduationCap, BookOpen, Lock as LockIcon } from 'lucide-react';
 import logo from '@/assets/model-egdu-logo.png';
 import { motion } from 'framer-motion';
 import VerifiedBadge from '@/components/VerifiedBadge';
@@ -814,7 +814,8 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
                     className="space-y-4 p-4 bg-red-500/5 rounded-xl border border-red-500/20"
                   >
                     <div className="flex items-center gap-2 text-red-600 mb-2">
-                      <span className="text-sm font-medium">🔐 Admin Verification</span>
+                      <LockIcon className="w-4 h-4" strokeWidth={1.75} />
+                      <span className="text-sm font-medium">Admin Verification</span>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="adminCode">Admin Code *</Label>

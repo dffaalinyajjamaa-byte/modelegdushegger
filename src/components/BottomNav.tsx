@@ -62,59 +62,49 @@ export default function BottomNav() {
     );
   }
 
-  // Mobile/Tablet: liquid glassmorphism bottom nav
+  // Mobile/Tablet: Liquid Glass floating island tab bar
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 pb-safe">
-      <div className="relative mx-2 mb-2">
-        {/* Liquid glass background */}
-        <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-white/[0.08] via-white/[0.12] to-white/[0.08] dark:from-black/[0.3] dark:via-black/[0.4] dark:to-black/[0.3] backdrop-blur-2xl border border-white/[0.15] dark:border-white/[0.08] shadow-[0_8px_32px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.1)]" />
-        
-        <div className="relative grid grid-cols-5 gap-1 h-16 px-1">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 pb-[max(0.5rem,env(safe-area-inset-bottom))] pointer-events-none">
+      <div className="mx-3 pointer-events-auto lg-island lg-glass-strong lg-glow-border">
+        <div className="grid grid-cols-5 h-[64px] px-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.state && (location.state as any).activeView === item.activeView;
-            
+
             return (
               <button
                 key={item.label}
                 onClick={() => handleNavClick(item.path, item.activeView)}
+                aria-label={item.label}
+                aria-current={isActive ? 'page' : undefined}
                 className={cn(
-                  'relative flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-2xl transition-all duration-300',
-                  'active:scale-90 min-h-[44px] min-w-[44px]',
+                  'relative flex flex-col items-center justify-center gap-0.5 rounded-2xl mx-0.5 my-1.5 lg-press min-h-[44px]',
                   isActive
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'text-[hsl(var(--ios-blue))]'
+                    : 'text-muted-foreground'
                 )}
               >
-                {/* Active indicator blob */}
                 {isActive && (
-                  <div className="absolute inset-1 rounded-2xl bg-primary/15 backdrop-blur-sm animate-pulse" 
-                       style={{ animationDuration: '3s' }} />
+                  <span className="absolute inset-x-2 inset-y-1 rounded-2xl bg-[hsl(var(--ios-blue))]/12" />
                 )}
-                
-                <div className="relative z-10">
+                <span className="relative z-10">
                   {item.customIcon ? (
-                    <img 
-                      src={aiTeacherRobot} 
-                      alt="AI Teacher" 
-                      className={cn(
-                        'w-6 h-6 rounded-full object-cover transition-all duration-300',
-                        isActive && 'drop-shadow-glow scale-110'
-                      )} 
+                    <img
+                      src={aiTeacherRobot}
+                      alt=""
+                      className={cn('w-6 h-6 rounded-full object-cover', isActive && 'ring-2 ring-[hsl(var(--ios-blue))]/40')}
                     />
                   ) : Icon ? (
                     <Icon
-                      className={cn(
-                        'w-5 h-5 transition-all duration-300',
-                        isActive && 'drop-shadow-glow scale-110'
-                      )}
+                      className="w-[22px] h-[22px]"
+                      strokeWidth={isActive ? 2.25 : 1.75}
                       fill={isActive ? 'currentColor' : 'none'}
                     />
                   ) : null}
-                </div>
+                </span>
                 <span className={cn(
-                  "relative z-10 text-[10px] font-medium transition-all duration-300",
-                  isActive && "font-bold"
+                  'relative z-10 text-[10px] tracking-tight',
+                  isActive ? 'font-semibold' : 'font-medium'
                 )}>{item.label}</span>
               </button>
             );
