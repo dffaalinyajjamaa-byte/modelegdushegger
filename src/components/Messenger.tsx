@@ -1037,7 +1037,7 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                               
                               {/* Action Buttons */}
                               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleReaction(message.id, '👍')} title="React with 👍">
+                                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleReaction(message.id, '👍')} title="React">
                                   <SmilePlus className="w-3 h-3" />
                                 </Button>
                                 <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleReply(message)} title="Reply to this message">
