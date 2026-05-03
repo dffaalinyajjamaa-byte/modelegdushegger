@@ -42,7 +42,7 @@ export default function StreakBadge({ currentStreak, longestStreak, totalPoints,
             <p className="text-3xl font-bold">{currentStreak}</p>
             <p className="text-sm text-muted-foreground">Day Streak</p>
             <div className="flex items-center gap-1 mt-1">
-              <span className="text-xl">{milestone.icon}</span>
+              <MilestoneIcon className={cn("w-4 h-4", milestone.color)} strokeWidth={1.75} />
               <span className={cn("text-sm font-semibold", milestone.color)}>
                 {milestone.name}
               </span>
