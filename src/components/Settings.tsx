@@ -139,6 +139,45 @@ export default function Settings({ user, onBack }: SettingsProps) {
           </Button>
         </CardContent>
       </Card>
+
+      <Card className="lg-glass border-0">
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 flex-1">
+              <Zap className="w-5 h-5 mt-0.5 text-primary shrink-0" />
+              <div>
+                <Label className="font-medium">Reduce motion</Label>
+                <p className="text-sm text-muted-foreground">
+                  Disable spring animations and transitions across the app.
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={prefs.reduceMotion}
+              onCheckedChange={(v) => updatePrefs({ reduceMotion: v })}
+            />
+          </div>
+
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 flex-1">
+              <Eye className="w-5 h-5 mt-0.5 text-primary shrink-0" />
+              <div>
+                <Label className="font-medium">Reduce transparency</Label>
+                <p className="text-sm text-muted-foreground">
+                  Replace glass blur with a solid frosted background for better readability.
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={prefs.reduceTransparency}
+              onCheckedChange={(v) => updatePrefs({ reduceTransparency: v })}
+            />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
