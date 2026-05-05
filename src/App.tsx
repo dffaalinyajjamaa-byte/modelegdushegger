@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import LoadingFallback from "./components/LoadingFallback";
 import PWAInstallPrompt from "./components/PWAInstallPrompt";
+import { AppearanceProvider } from "./components/AppearanceProvider";
 
 // Lazy load page components
 const Index = lazy(() => import("./pages/Index"));
