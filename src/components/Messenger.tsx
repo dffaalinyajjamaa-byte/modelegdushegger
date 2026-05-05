@@ -21,6 +21,7 @@ import UserProfileDialog from './UserProfileDialog';
 import MessageThread from './MessageThread';
 import FriendRequests from './messenger/FriendRequests';
 import VerifiedBadge from './VerifiedBadge';
+import { AppIcon } from './ui/app-icon';
 
 interface MessengerProps {
   user: User;
