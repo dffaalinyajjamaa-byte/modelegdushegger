@@ -1022,16 +1022,25 @@ export default function Messenger({ user, onBack }: MessengerProps) {
                               {/* Reactions */}
                               {reactions.length > 0 && (
                                 <div className="flex items-center gap-1 flex-wrap">
-                                  {reactions.map(reaction => (
-                                    <button 
-                                      key={reaction.emoji} 
-                                      onClick={() => handleReaction(message.id, reaction.emoji)} 
-                                      className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition-colors ${reaction.reacted ? 'bg-primary/20 text-primary' : 'bg-muted hover:bg-muted-foreground/10'}`}
-                                    >
-                                      <span>{reaction.emoji}</span>
-                                      <span>{reaction.count}</span>
-                                    </button>
-                                  ))}
+                                  {reactions.map(reaction => {
+                                    const reactionIconName =
+                                      reaction.emoji === '👍' ? 'like' :
+                                      reaction.emoji === '❤️' ? 'love' :
+                                      reaction.emoji === '🔥' ? 'fire' :
+                                      reaction.emoji === '👏' ? 'clap' :
+                                      reaction.emoji === '😂' ? 'laugh' :
+                                      reaction.emoji === '😢' ? 'sad' : 'like';
+                                    return (
+                                      <button
+                                        key={reaction.emoji}
+                                        onClick={() => handleReaction(message.id, reaction.emoji)}
+                                        className={`px-2 py-0.5 rounded-full text-xs flex items-center gap-1 transition-colors ${reaction.reacted ? 'bg-primary/20 text-primary' : 'bg-muted hover:bg-muted-foreground/10'}`}
+                                      >
+                                        <AppIcon name={reactionIconName as any} size={12} />
+                                        <span>{reaction.count}</span>
+                                      </button>
+                                    );
+                                  })}
                                 </div>
                               )}
                               
