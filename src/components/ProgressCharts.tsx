@@ -122,8 +122,8 @@ export default function ProgressCharts({ userId, stats, compact = false }: Progr
   if (loading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-64 w-full" />
-        {!compact && <Skeleton className="h-64 w-full" />}
+        <SkeletonChartCard />
+        {!compact && <SkeletonChartCard />}
       </div>
     );
   }
