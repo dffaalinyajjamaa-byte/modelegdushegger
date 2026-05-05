@@ -324,7 +324,7 @@ export default function QuizFeature({ user, onBack }: QuizFeatureProps) {
           </div>
         </div>
 
-        <Card>
+        <Card className="lg-glass border-0 rounded-3xl">
           <CardHeader>
             <CardTitle>{selectedQuiz.title}</CardTitle>
             <Progress value={progress} className="mt-2" />
