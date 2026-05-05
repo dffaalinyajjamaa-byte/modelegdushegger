@@ -6,8 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@supabase/supabase-js';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
+import { useAppearance } from '@/components/AppearanceProvider';
 
 interface SettingsProps {
   user: User;
@@ -21,6 +23,7 @@ export default function Settings({ user, onBack }: SettingsProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const { prefs, update: updatePrefs } = useAppearance();
 
   useEffect(() => {
     fetchProfile();
@@ -134,6 +137,45 @@ export default function Settings({ user, onBack }: SettingsProps) {
             <Save className="w-4 h-4" />
             {saving ? 'Saving...' : 'Save Changes'}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="lg-glass border-0">
+        <CardHeader>
+          <CardTitle>Appearance</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 flex-1">
+              <Zap className="w-5 h-5 mt-0.5 text-primary shrink-0" />
+              <div>
+                <Label className="font-medium">Reduce motion</Label>
+                <p className="text-sm text-muted-foreground">
+                  Disable spring animations and transitions across the app.
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={prefs.reduceMotion}
+              onCheckedChange={(v) => updatePrefs({ reduceMotion: v })}
+            />
+          </div>
+
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start gap-3 flex-1">
+              <Eye className="w-5 h-5 mt-0.5 text-primary shrink-0" />
+              <div>
+                <Label className="font-medium">Reduce transparency</Label>
+                <p className="text-sm text-muted-foreground">
+                  Replace glass blur with a solid frosted background for better readability.
+                </p>
+              </div>
+            </div>
+            <Switch
+              checked={prefs.reduceTransparency}
+              onCheckedChange={(v) => updatePrefs({ reduceTransparency: v })}
+            />
+          </div>
         </CardContent>
       </Card>
     </div>

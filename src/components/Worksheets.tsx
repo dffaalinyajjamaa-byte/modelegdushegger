@@ -182,7 +182,7 @@ export default function Worksheets({ user, onBack }: WorksheetsProps) {
             </div>
           </div>
 
-          <Card className="p-8 text-center">
+          <Card className="lg-glass border-0 rounded-3xl p-8 text-center">
             <Lock className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
             <h2 className="text-xl font-semibold mb-2">Worksheets for Grade 8</h2>
             <p className="text-muted-foreground">

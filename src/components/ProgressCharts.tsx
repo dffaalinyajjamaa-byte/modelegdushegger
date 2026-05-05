@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SkeletonChartCard } from '@/components/ui/skeleton-glass';
 import { Button } from '@/components/ui/button';
 
 interface ProgressChartsProps {
@@ -122,8 +123,8 @@ export default function ProgressCharts({ userId, stats, compact = false }: Progr
   if (loading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-64 w-full" />
-        {!compact && <Skeleton className="h-64 w-full" />}
+        <SkeletonChartCard />
+        {!compact && <SkeletonChartCard />}
       </div>
     );
   }

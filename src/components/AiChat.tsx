@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useLearningTime } from '@/hooks/use-learning-time';
+import { GlassTypingDots } from './ui/skeleton-glass';
 
 interface AiChatProps {
   user: User;
@@ -291,18 +292,7 @@ const AiChat: React.FC<AiChatProps> = ({ user, onLogActivity }) => {
           
           {isLoading && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-              <div className="bg-[#202c33] rounded-xl rounded-tl-sm p-3 px-4 shadow-md">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {[0, 1, 2].map(i => (
-                      <motion.div key={i} className="w-2 h-2 bg-gray-500 rounded-full"
-                        animate={{ y: [0, -6, 0] }}
-                        transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <GlassTypingDots />
             </motion.div>
           )}
         </div>
