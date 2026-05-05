@@ -23,6 +23,7 @@ export default function Settings({ user, onBack }: SettingsProps) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const { toast } = useToast();
+  const { prefs, update: updatePrefs } = useAppearance();
 
   useEffect(() => {
     fetchProfile();
