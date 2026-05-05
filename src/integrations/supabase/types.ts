@@ -1873,6 +1873,27 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          reduce_motion: boolean
+          reduce_transparency: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          reduce_motion?: boolean
+          reduce_transparency?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          reduce_motion?: boolean
+          reduce_transparency?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_rankings: {
         Row: {
           badge_tier: string | null
