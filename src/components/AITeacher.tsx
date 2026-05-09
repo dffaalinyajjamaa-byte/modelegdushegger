@@ -610,8 +610,20 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
       </ScrollArea>
 
       {/* Input Area - sits above mobile bottom nav */}
-      <div className="app-footer border-t bg-background/80 backdrop-blur-xl pb-24 md:pb-3">
-        <div className="max-w-3xl mx-auto px-4 py-3">
+      <div className="app-footer border-t bg-background/60 backdrop-blur-2xl pb-28 md:pb-4">
+        <div className="max-w-3xl mx-auto px-4 pt-3 pb-3">
+          {selectedBook && (
+            <div className="mb-2 flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 lg-glass rounded-full px-3 py-1.5 text-xs">
+                <BookOpen className="w-3.5 h-3.5 text-primary" />
+                <span className="font-medium truncate max-w-[160px]">{selectedBook.title}</span>
+                <button onClick={clearBook} className="text-muted-foreground hover:text-foreground"><X className="w-3 h-3" /></button>
+              </div>
+              {['Summarize the book', 'Key points', 'Quiz me on this'].map(p => (
+                <button key={p} onClick={() => setMessage(p)} className="lg-glass lg-press rounded-full px-3 py-1.5 text-xs hover:bg-accent">{p}</button>
+              ))}
+            </div>
+          )}
           <div className="flex items-end gap-2">
             {/* Voice Input Button with Gemini STT */}
             <Button
