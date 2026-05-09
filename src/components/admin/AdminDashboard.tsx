@@ -292,26 +292,26 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top Bar */}
-      <div className="sticky top-0 z-50 border-b px-3 py-2.5 flex items-center gap-2 bg-card">
+    <div className="min-h-screen bg-background pb-2">
+      {/* Floating glass island header */}
+      <div className="lg-island sticky top-2 z-40 mx-2 mt-2 px-2.5 py-2 rounded-3xl flex items-center gap-2">
         {onBack && (
-          <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0 h-8 w-8 lg-press rounded-full">
             <ArrowLeft className="w-4 h-4" />
           </Button>
         )}
-        <div className="w-7 h-7 rounded-md flex items-center justify-center bg-primary text-primary-foreground">
+        <div className="w-7 h-7 rounded-full flex items-center justify-center bg-primary text-primary-foreground shadow-md">
           <Shield className="w-3.5 h-3.5" />
         </div>
-        <div>
-          <h1 className="text-xs font-bold leading-tight">Admin Control Panel</h1>
+        <div className="min-w-0">
+          <h1 className="text-xs font-semibold leading-tight tracking-tight">Admin Control Panel</h1>
           <p className="text-[9px] text-muted-foreground">Model Egdu Management</p>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b overflow-x-auto scrollbar-hide">
-        <div className="flex px-1">
+      {/* Tabs (glass strip) */}
+      <div className="mx-2 mt-2 lg-glass rounded-2xl px-1 overflow-x-auto scrollbar-hide">
+        <div className="flex">
           {tabs.map(tab => {
             const Icon = tab.icon;
             const active = activeSection === tab.id;
@@ -319,8 +319,8 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
               <button
                 key={tab.id}
                 onClick={() => setActiveSection(tab.id)}
-                className={`relative flex items-center gap-1 px-2.5 py-2 text-[11px] font-medium whitespace-nowrap border-b-2 transition-colors ${
-                  active ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
+                className={`relative flex items-center gap-1 px-3 py-2 text-[11px] font-medium whitespace-nowrap rounded-xl transition-colors lg-press ${
+                  active ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <Icon className="w-3 h-3" />
