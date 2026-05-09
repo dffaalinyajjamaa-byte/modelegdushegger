@@ -456,11 +456,36 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant={selectedBook ? "default" : "ghost"} size="sm" className="gap-1 h-9 px-2 lg-press" disabled={bookLoading}>
+                {bookLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookOpen className="w-4 h-4" />}
+                <span className="text-xs hidden sm:inline">{selectedBook ? 'Book' : 'From Book'}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto w-64">
+              {selectedBook && (
+                <DropdownMenuItem onClick={clearBook} className="text-destructive">
+                  <X className="w-4 h-4 mr-2" /> Turn off Book mode
+                </DropdownMenuItem>
+              )}
+              {books.length === 0 && <DropdownMenuItem disabled>No books available</DropdownMenuItem>}
+              {books.map(b => (
+                <DropdownMenuItem key={b.id} onClick={() => pickBook(b)} className={selectedBook?.id === b.id ? 'bg-accent' : ''}>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium truncate">{b.title}</span>
+                    <span className="text-[10px] text-muted-foreground">{b.subject} · Grade {b.grade}</span>
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleNewChat}
-            className="ripple"
+            className="ripple lg-press"
           >
             <Plus className="w-5 h-5" />
           </Button>
