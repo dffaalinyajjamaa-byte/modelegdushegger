@@ -189,7 +189,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, conversationHistory, language = 'en', useSearch } = await req.json();
+    const { message, conversationHistory, language = 'en', useSearch, bookContext, bookTitle } = await req.json();
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     
     if (!GEMINI_API_KEY) {
