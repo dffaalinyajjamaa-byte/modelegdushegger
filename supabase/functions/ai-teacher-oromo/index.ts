@@ -221,7 +221,11 @@ serve(async (req) => {
     });
 
     // Get dynamic system instruction based on selected language
-    const systemInstruction = getSystemInstruction(language);
+    let systemInstruction = getSystemInstruction(language);
+    if (bookContext && typeof bookContext === 'string' && bookContext.trim().length > 0) {
+      const trimmed = bookContext.slice(0, 60000);
+      systemInstruction += `\n\nBOOK CONTEXT MODE:\n- Answer STRICTLY based on the book "${bookTitle || 'selected book'}" provided below.\n- If the answer is not in the book, say so politely and suggest related sections.\n- When the user asks to "summarize" / "key points" / "quiz me", base it on this book.\n\n=== BOOK START ===\n${trimmed}\n=== BOOK END ===`;
+    }
 
     // Build request body with optional Google Search tool
     const requestBody: any = {
