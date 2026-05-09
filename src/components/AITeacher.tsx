@@ -5,7 +5,7 @@ import { AutoExpandingTextarea } from '@/components/ui/auto-expanding-textarea';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { User } from '@supabase/supabase-js';
-import { Send, Sparkles, Plus, Mic, MicOff, Globe, ChevronDown, Volume2, VolumeX, Loader2 } from 'lucide-react';
+import { Send, Sparkles, Plus, Mic, MicOff, Globe, ChevronDown, Volume2, VolumeX, Loader2, BookOpen, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +53,44 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
+
+  // Answer-from-Book state
+  type BookItem = { id: string; title: string; subject: string; grade: string; pdf_url: string };
+  const [books, setBooks] = useState<BookItem[]>([]);
+  const [selectedBook, setSelectedBook] = useState<BookItem | null>(null);
+  const [bookText, setBookText] = useState<string>('');
+  const [bookLoading, setBookLoading] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('auto_quiz_books')
+        .select('id, title, subject, grade, pdf_url')
+        .eq('processing_status', 'ready')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (data) setBooks(data as BookItem[]);
+    })();
+  }, []);
+
+  const pickBook = async (book: BookItem) => {
+    setSelectedBook(book);
+    setBookText('');
+    setBookLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('extract-pdf-text', { body: { fileUrl: book.pdf_url } });
+      if (error) throw error;
+      setBookText(data?.text || data?.content || '');
+      toast({ title: 'Book ready', description: `Answers will be based on "${book.title}".` });
+    } catch (e: any) {
+      toast({ title: 'Could not load book', description: e?.message || 'Try another book', variant: 'destructive' });
+      setSelectedBook(null);
+    } finally {
+      setBookLoading(false);
+    }
+  };
+  const clearBook = () => { setSelectedBook(null); setBookText(''); };
+
 
   // Use Gemini STT hook
   const handleTranscript = useCallback((text: string) => {
@@ -282,7 +320,9 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
           message: userMessage,
           conversationHistory: conversationHistory,
           language: language,
-          useSearch: true,
+          useSearch: !selectedBook,
+          bookContext: selectedBook && bookText ? bookText : undefined,
+          bookTitle: selectedBook?.title,
         }
       });
 
@@ -416,11 +456,36 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
             </DropdownMenuContent>
           </DropdownMenu>
           
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant={selectedBook ? "default" : "ghost"} size="sm" className="gap-1 h-9 px-2 lg-press" disabled={bookLoading}>
+                {bookLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <BookOpen className="w-4 h-4" />}
+                <span className="text-xs hidden sm:inline">{selectedBook ? 'Book' : 'From Book'}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto w-64">
+              {selectedBook && (
+                <DropdownMenuItem onClick={clearBook} className="text-destructive">
+                  <X className="w-4 h-4 mr-2" /> Turn off Book mode
+                </DropdownMenuItem>
+              )}
+              {books.length === 0 && <DropdownMenuItem disabled>No books available</DropdownMenuItem>}
+              {books.map(b => (
+                <DropdownMenuItem key={b.id} onClick={() => pickBook(b)} className={selectedBook?.id === b.id ? 'bg-accent' : ''}>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium truncate">{b.title}</span>
+                    <span className="text-[10px] text-muted-foreground">{b.subject} · Grade {b.grade}</span>
+                  </div>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleNewChat}
-            className="ripple"
+            className="ripple lg-press"
           >
             <Plus className="w-5 h-5" />
           </Button>
@@ -545,8 +610,20 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
       </ScrollArea>
 
       {/* Input Area - sits above mobile bottom nav */}
-      <div className="app-footer border-t bg-background/80 backdrop-blur-xl pb-24 md:pb-3">
-        <div className="max-w-3xl mx-auto px-4 py-3">
+      <div className="app-footer border-t bg-background/60 backdrop-blur-2xl pb-28 md:pb-4">
+        <div className="max-w-3xl mx-auto px-4 pt-3 pb-3">
+          {selectedBook && (
+            <div className="mb-2 flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 lg-glass rounded-full px-3 py-1.5 text-xs">
+                <BookOpen className="w-3.5 h-3.5 text-primary" />
+                <span className="font-medium truncate max-w-[160px]">{selectedBook.title}</span>
+                <button onClick={clearBook} className="text-muted-foreground hover:text-foreground"><X className="w-3 h-3" /></button>
+              </div>
+              {['Summarize the book', 'Key points', 'Quiz me on this'].map(p => (
+                <button key={p} onClick={() => setMessage(p)} className="lg-glass lg-press rounded-full px-3 py-1.5 text-xs hover:bg-accent">{p}</button>
+              ))}
+            </div>
+          )}
           <div className="flex items-end gap-2">
             {/* Voice Input Button with Gemini STT */}
             <Button

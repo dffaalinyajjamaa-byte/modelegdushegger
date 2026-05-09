@@ -48,7 +48,7 @@ function isIdentityQuestion(message: string): boolean {
 
 // Dynamic system instructions based on selected language
 function getSystemInstruction(language: string): string {
-  const identityRule = `\n\nCRITICAL IDENTITY RULE:\n- Your name is "J-Hope AI"\n- You were developed by "J-Hope Technologies" — the largest language model in Ethiopia\n- NEVER mention Google, Gemini, OpenAI, GPT, Anthropic, Claude, or any other AI provider\n- If asked "what is your name" / "which model are you" / "who made you", reply EXACTLY: "${IDENTITY_LINE}"\n- Never say you are made by Google or that Google trained you\n`;
+  const identityRule = `\n\nCRITICAL IDENTITY RULES:\n- Your name is "J-Hope AI", developed by "J-Hope Technologies"\n- ONLY mention your identity if the user EXPLICITLY asks (e.g. "what is your name", "who are you", "who made you", "which model"). When asked, reply EXACTLY: "${IDENTITY_LINE}" — no extra text.\n- DO NOT introduce yourself, do NOT add taglines, do NOT prefix answers with "I am J-Hope AI" or anything similar.\n- NEVER mention Google, Gemini, OpenAI, GPT, Anthropic, Claude or any other provider.\n- For any normal question, just answer the question directly without self-reference.\n`;
   if (language === 'auto') {
     // Auto-detect mode - respond in the same language as the question
     return `You are an AI Teacher for Oro Digital School.
@@ -189,7 +189,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, conversationHistory, language = 'en', useSearch } = await req.json();
+    const { message, conversationHistory, language = 'en', useSearch, bookContext, bookTitle } = await req.json();
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     
     if (!GEMINI_API_KEY) {
@@ -221,7 +221,11 @@ serve(async (req) => {
     });
 
     // Get dynamic system instruction based on selected language
-    const systemInstruction = getSystemInstruction(language);
+    let systemInstruction = getSystemInstruction(language);
+    if (bookContext && typeof bookContext === 'string' && bookContext.trim().length > 0) {
+      const trimmed = bookContext.slice(0, 60000);
+      systemInstruction += `\n\nBOOK CONTEXT MODE:\n- Answer STRICTLY based on the book "${bookTitle || 'selected book'}" provided below.\n- If the answer is not in the book, say so politely and suggest related sections.\n- When the user asks to "summarize" / "key points" / "quiz me", base it on this book.\n\n=== BOOK START ===\n${trimmed}\n=== BOOK END ===`;
+    }
 
     // Build request body with optional Google Search tool
     const requestBody: any = {
@@ -285,6 +289,11 @@ serve(async (req) => {
     } else {
       // Always sanitize provider mentions
       aiResponse = applyIdentityFilter(aiResponse);
+      // Strip unsolicited identity intros (the model sometimes prefixes responses)
+      aiResponse = aiResponse
+        .replace(/^\s*(I am|I'm)\s+J[-\s]?Hope\s+AI[^\n.!?]*[.!?]\s*/i, '')
+        .replace(/^\s*J[-\s]?Hope\s+(AI|Technologies)[^\n.!?]*[.!?]\s*/i, '')
+        .trimStart();
     }
 
     console.log("AI response received, length:", aiResponse.length);

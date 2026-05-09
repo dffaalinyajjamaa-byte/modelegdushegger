@@ -80,17 +80,22 @@ export default function MarketplaceHome({ user, onBack, onUpload, onProductClick
   const filtered = products.filter(p => p.title.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onBack}><ArrowLeft className="w-5 h-5" /></Button>
-          <h2 className="text-xl font-bold">Marketplace</h2>
+    <div className="space-y-4 pb-28">
+      {/* Floating island header */}
+      <div className="lg-island sticky top-2 z-30 mx-1 flex items-center justify-between px-2 py-2 rounded-3xl">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={onBack} className="lg-press rounded-full">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h2 className="text-lg font-semibold tracking-tight">Marketplace</h2>
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => setShowMap(!showMap)}>
+          <Button size="sm" variant="outline" onClick={() => setShowMap(!showMap)} className="rounded-full lg-press">
             <Navigation className="w-4 h-4 mr-1" /> Nearby
           </Button>
-          <Button size="sm" onClick={onUpload}><Plus className="w-4 h-4 mr-1" /> Sell</Button>
+          <Button size="sm" onClick={onUpload} className="rounded-full lg-press">
+            <Plus className="w-4 h-4 mr-1" /> Sell
+          </Button>
         </div>
       </div>
 
@@ -104,55 +109,77 @@ export default function MarketplaceHome({ user, onBack, onUpload, onProductClick
         />
       )}
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Search items..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 backdrop-blur-xl bg-card/50 border-border/30" />
+      <div className="relative px-1">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
+        <Input
+          placeholder="Search items..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="pl-10 h-11 rounded-2xl lg-glass border-white/30 dark:border-white/10"
+        />
       </div>
 
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto pb-1 px-1 scrollbar-hide">
         {categories.map(c => (
-          <Button key={c} size="sm" variant={activeCategory === c ? 'default' : 'outline'} onClick={() => setActiveCategory(c)} className="text-xs shrink-0">
+          <Button
+            key={c}
+            size="sm"
+            variant={activeCategory === c ? 'default' : 'outline'}
+            onClick={() => setActiveCategory(c)}
+            className="text-xs shrink-0 rounded-full lg-press"
+          >
             {c}
           </Button>
         ))}
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 px-1">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="overflow-hidden backdrop-blur-xl bg-card/50 border-border/30">
-              <Skeleton className="aspect-square w-full" />
-              <CardContent className="p-2.5 space-y-2">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-4 w-1/2" />
-              </CardContent>
-            </Card>
+            <div key={i} className="overflow-hidden lg-glass rounded-3xl border border-white/30 dark:border-white/10">
+              <div className="aspect-square w-full lg-skeleton" />
+              <div className="p-3 space-y-2">
+                <div className="h-3.5 w-3/4 lg-skeleton rounded-full" />
+                <div className="h-3.5 w-1/2 lg-skeleton rounded-full" />
+              </div>
+            </div>
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <Card className="backdrop-blur-xl bg-card/50 border-border/30"><CardContent className="py-16 text-center">
-          <p className="text-muted-foreground">No items found</p>
-          <Button className="mt-4" onClick={onUpload}>Be the first to sell!</Button>
-        </CardContent></Card>
+        <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10">
+          <CardContent className="py-16 text-center flex flex-col items-center gap-4">
+            <div className="w-14 h-14 rounded-full lg-glass flex items-center justify-center">
+              <ImageIcon className="w-6 h-6 text-muted-foreground" />
+            </div>
+            <p className="text-muted-foreground">No items found</p>
+            <Button onClick={onUpload} className="rounded-full">Be the first to sell</Button>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 px-1">
           {filtered.map(product => (
-            <Card key={product.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-all backdrop-blur-xl bg-card/50 border-border/30 hover:border-primary/30" onClick={() => onProductClick(product.id)}>
-              <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
+            <button
+              key={product.id}
+              type="button"
+              onClick={() => onProductClick(product.id)}
+              className="text-left overflow-hidden lg-glass lg-press rounded-3xl border border-white/30 dark:border-white/10 hover:border-primary/30 transition-all"
+            >
+              <div className="aspect-square bg-muted/40 flex items-center justify-center overflow-hidden">
                 {product.images?.[0] ? (
                   <img src={product.images[0]} className="w-full h-full object-cover" alt={product.title} />
                 ) : (
                   <ImageIcon className="w-8 h-8 text-muted-foreground" />
                 )}
               </div>
-              <CardContent className="p-2.5">
+              <div className="p-3">
                 <p className="text-sm font-medium truncate">{product.title}</p>
-                <p className="text-primary font-bold text-sm">ETB {product.price}</p>
-                <div className="flex items-center gap-1 mt-1 flex-wrap">
-                  <Badge variant="outline" className="text-[9px] py-0">{product.type}</Badge>
+                <p className="text-primary font-bold text-sm mt-0.5">ETB {product.price}</p>
+                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                  <Badge variant="outline" className="text-[9px] py-0 rounded-full">{product.type}</Badge>
                   {product.distance !== undefined && (
                     <span className="text-[9px] text-muted-foreground flex items-center gap-0.5">
-                      <MapPin className="w-2.5 h-2.5" />{product.distance < 1 ? `${Math.round(product.distance * 1000)}m` : `${product.distance.toFixed(1)}km`}
+                      <MapPin className="w-2.5 h-2.5" />
+                      {product.distance < 1 ? `${Math.round(product.distance * 1000)}m` : `${product.distance.toFixed(1)}km`}
                     </span>
                   )}
                   {!product.distance && product.address && (
@@ -161,8 +188,8 @@ export default function MarketplaceHome({ user, onBack, onUpload, onProductClick
                     </span>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </button>
           ))}
         </div>
       )}

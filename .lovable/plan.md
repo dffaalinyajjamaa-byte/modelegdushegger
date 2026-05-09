@@ -1,90 +1,83 @@
+## Scope
 
-# Liquid Glass: Polish, Consistency & Full Reskin
+This is a large multi-screen redesign + feature work. I'll batch it into focused workstreams using existing Liquid Glass tokens (`.lg-glass`, `.lg-island`, `.lg-press`, `.lg-skeleton`) already in `index.css`.
 
-Four coordinated workstreams to finish the Liquid Glass rollout across the app.
+### 1. Marketplace (`MarketplaceHome.tsx`, `NearbyMap.tsx`)
+- Floating-island sticky header (back, title, Nearby + Sell actions) with `lg-island` + `lg-press`.
+- Search + category chips wrapped in glass surfaces.
+- Product cells → `.lg-glass rounded-3xl` with refined typography, distance badge.
+- Empty state: glass illustration card with primary CTA.
+- Loading state: replace `Skeleton` with `SkeletonGlass` cells.
+- **Map popup**: when a product marker is clicked on `NearbyMap`, show a floating glass popup at the marker's exact lat/lng with the product image, title, price, and "View" button.
 
----
+### 2. PDF Viewer (`PDFViewer.tsx`)
+- Sticky `.lg-island` header (back, title, page indicator, download).
+- Glass card frame around the iframe.
+- Replace blocking spinner with `SkeletonViewer` glass skeleton during fetch.
+- Error state: glass card with retry button.
 
-## 1. Accessibility Settings — Reduced Motion / Transparency Toggle
+### 3. Video Viewer (`VideoViewer.tsx`)
+- Same `.lg-island` sticky header (back, title, share/like).
+- Glass cell for description / metadata below the player.
+- Glass skeleton while video metadata loads.
+- Play state: glass overlay play button. Error state: glass card with retry.
 
-**Goal:** Let users override the OS `prefers-reduced-motion` / `prefers-reduced-transparency` defaults and persist the choice.
+### 4. Admin Dashboard (`AdminDashboard.tsx` + a few key admin cards)
+- Wrap dashboard in `.lg-island` header with admin title + tabs.
+- Stat cards → `.lg-glass rounded-3xl p-4` with Lucide icons (no emoji).
+- Skeleton glass loaders while content lists load.
+- Apply pattern to `AdminQuizList`, `AdminBookManager`, `AdminUserManager` cell rows only (no logic changes).
 
-- New table `user_preferences` (`user_id` PK, `reduce_motion` bool, `reduce_transparency` bool, `updated_at`) with RLS (owner-only select/insert/update).
-- New hook `useAppearancePreferences()` — loads from `user_preferences` on auth, falls back to `safeStorage` for guests, exposes `{ reduceMotion, reduceTransparency, setX }`.
-- New `AppearanceProvider` mounted in `App.tsx`. It toggles two classes on `<html>`: `lg-reduce-motion`, `lg-reduce-transparency`.
-- Extend `src/index.css` so existing `.lg-glass`, `.lg-press`, animations check both the media queries **and** these classes (frosted-matte fallback + disabled springs).
-- Add an "Appearance" section in `Settings.tsx` with two `Switch` rows + helper text. Save on toggle (debounced 400 ms) with toast feedback.
+### 5. Auth (`AuthForm.tsx`)
+- Floating-island top header with logo + "Sign in / Sign up" pill.
+- Glass card containing the form on a softly blurred backdrop.
+- Add **Google sign-in** via Lovable Cloud managed OAuth (`lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })`) — call `configure_social_auth` first.
+- Glass skeleton on submit while pending; consistent toasts.
 
----
+### 6. AI Chat / Messege screen (`AiChat.tsx` and shared chat shell)
+- Reduce header height (compact "Messege" pill dropdown, small menu glass button, circular play button).
+- Move chat composer slightly above the bottom nav (`bottom: calc(var(--bottom-nav) + 12px)`) with `pb-28` content padding.
+- Bubble redesign: AI bubble = lighter glass, user bubble = darker glass; thin border, soft shadow, 28–32px radius.
+- Composer: large `.lg-glass` rounded-[32px] container with inset action chips, black circular send button.
+- Backdrop blur 20–40px; subtle fade/slide-up reveal on new bubbles (respect `.lg-reduce-motion`).
+- Typography: Apple HIG hierarchy, medium weight, spacious line-height.
 
-## 2. Shared Icon Component
+### 7. AI Teacher behavior fixes
+- Identity reply: only respond "I'm developed by J Hope" when the user **explicitly asks** "what's your name / who are you / who made you / who developed you" (in EN/AM/OM). Otherwise never inject the identity line. Implement via a regex guard inside `supabase/functions/ai-teacher-oromo/index.ts` (or wherever the system prompt is composed) and update the system prompt to forbid unsolicited self-introduction.
+- **Answer based on Book** toggle: add a "Answer from Book" button next to the subject selector in `AITeacher.tsx`. When enabled, the chosen subject's admin-uploaded book (from `books` table / `books-for-grade-X-auto-quiz` bucket filtered by grade + subject) is fetched, its extracted text passed as context to the edge function, and the model is instructed to answer / summarize strictly from that book. Add quick-action chips: "Summarize", "Key points", "Quiz me".
 
-**Goal:** One source of truth for emoji-to-Lucide mappings; ban inline emoji.
+### 8. Vercel deployment glitch
+- Likely cause: `GlobalBackground` / `Hyperspeed` / `Iridescence` WebGL canvases re-initializing on route change and a missing `base` in `vite.config.ts` for non-root deploys. Fixes:
+  - Add `base: "/"` and `build.target: "es2020"` if missing.
+  - Guard WebGL components with `useEffect` cleanup + `prefers-reduced-motion`.
+  - Ensure `index.html` references hashed assets (Vite default) and PWA service worker doesn't cache `/~oauth`.
+  - Add `vercel.json` with SPA rewrite `{ "rewrites": [{ "source": "/(.*)", "destination": "/" }] }` to fix route-refresh 404 / flash glitch.
 
-- New `src/components/ui/app-icon.tsx` exporting `<AppIcon name="trophy" size={20} />`. Internally a typed registry mapping semantic names → Lucide components.
-- New `src/lib/icon-map.ts` with grouped maps:
-  - `reactions`: like → ThumbsUp, love → Heart, fire → Flame, clap → Hand, laugh → Smile, sad → Frown.
-  - `relaxCategories`: history → Landmark, war → Swords, drama → Theater, music → Music, science → FlaskConical, etc.
-  - `subjects`, `status` (success/warning/error/info), `actions` (edit/delete/share/upload/download), `files`.
-- Refactor `Messenger.tsx` reactions, `RelaxTime.tsx` category chips, and any leftover emoji literals (audit via `rg "[\\u{1F300}-\\u{1FAFF}]"`).
-- ESLint custom rule (or simple `rg` check noted in README) discouraging raw emoji in JSX.
+### 9. Out of scope
+- Landing page (per memory).
+- Logic changes to Quiz scoring, Worksheets data model, Admin CRUD.
+- Desktop admin tables (only mobile cells get the glass treatment).
 
----
+## Files to edit
+- `src/components/marketplace/MarketplaceHome.tsx`, `marketplace/NearbyMap.tsx`
+- `src/components/PDFViewer.tsx`, `src/components/VideoViewer.tsx`
+- `src/components/admin/AdminDashboard.tsx` (+ light pass on `AdminQuizList`, `AdminBookManager`, `AdminUserManager`)
+- `src/components/AuthForm.tsx`
+- `src/components/AiChat.tsx`, `src/components/AITeacher.tsx`
+- `supabase/functions/ai-teacher-oromo/index.ts` (and `ai-chat/index.ts` if it shares the identity prompt)
+- `vite.config.ts`, new `vercel.json`
 
-## 3. Liquid Glass Reskin — Remaining Screens
+## Files to create
+- `src/components/ui/glass-popup.tsx` (map marker popup card).
+- `vercel.json`.
 
-Apply the existing `.lg-glass`, `.lg-island`, `.lg-press`, `.lg-reflect` tokens plus floating-island headers and glass list cells. No structural UX rewrites — visual layer + spacing.
+## Order of execution
+1. Run `configure_social_auth` for Google, then update `AuthForm.tsx`.
+2. AI Teacher edge function identity fix + book-context prompt.
+3. AiChat + AITeacher UI.
+4. Marketplace + NearbyMap popup.
+5. PDFViewer + VideoViewer.
+6. AdminDashboard pass.
+7. Vercel config.
 
-**Screens to reskin (grouped):**
-
-- **Auth shell:** `AuthForm.tsx`, `pages/ResetPassword.tsx` — glass card on blurred gradient backdrop, iOS-blue primary CTA, segmented Student/Teacher control as glass pill.
-- **Learning content viewers:** `AiChat.tsx`, `BookAIChat.tsx`, `PDFViewer.tsx`, `VideoViewer.tsx`, `DigitalBooksLibrary.tsx`, `VideoLessonsLibrary.tsx` — floating-island top bar (back + title + actions), glass list cells for library rows, glass composer bar for chat.
-- **Quiz & Worksheets:** `QuizFeature.tsx`, `QuizResults.tsx`, `Worksheets.tsx`, `auto-quiz/*` — glass question card, floating timer island, glass option pills with iOS-blue selected state, glass result summary.
-- **Marketplace:** `marketplace/Marketplace.tsx`, `MarketplaceHome.tsx`, `ProductDetail.tsx`, `ProductUpload.tsx`, `NearbyMap.tsx` — glass product cells, floating filter island, glass detail sheet.
-- **Admin:** `admin/AdminDashboard.tsx` and all sub-managers (`AdminQuizList`, `AdminQuizEditor`, `AdminBookManager`, `AdminWorksheetManager`, `AdminContentManager`, `AdminUserManager`, `AdminMarketplace`, `AdminNationalExams`, `AdminBadgeVerification`, `AdminResults`) — convert dense tables to responsive glass card lists on mobile (md: keeps table), floating action bar for bulk ops.
-- **Misc:** `NationalExams.tsx`, `Channels.tsx`, `Stories.tsx`, `Competition.tsx`, `ScienceExperiments.tsx`, `SmartPlanner*`, `StudyByMusic*`, `TeacherStudios.tsx`, `LiveTeacherHome.tsx` — header → island, cards → glass.
-
-**Conventions for every screen:**
-- Top: `lg-island sticky top-3 mx-3` header with back button (glass-button) + title + right-action slot.
-- Body: `space-y-3 px-3 pb-28`, items use `lg-glass rounded-2xl p-4` with `lg-press` on tappables.
-- Touch targets ≥ 44×44 pt; primary CTA uses `--ios-blue`.
-- Respect Section 1 settings — all blur/scale wrapped to honor `.lg-reduce-*` classes.
-
----
-
-## 4. Liquid Glass Skeleton Loaders
-
-**Goal:** Branded loading states matching the glass aesthetic.
-
-- New `src/components/ui/skeleton-glass.tsx` — base `<SkeletonGlass />` with shimmering `lg-glass` background and animated light sweep (respects reduced-motion).
-- Compound exports:
-  - `SkeletonChatBubble` — used in `AiChat`, `BookAIChat`, `AITeacher` while awaiting response or translation.
-  - `SkeletonViewer` — full-bleed glass shimmer for `VideoViewer` (16:9) and `PDFViewer` (A4 ratio).
-  - `SkeletonChartCard` — used in `ProgressCharts`, `OverallProgressCards`, `SubjectProgressCards` during data fetch.
-  - `SkeletonListCell` — for library/admin lists.
-- Wire into existing loading branches (replace current `<Loader2>` spinners and bare `Skeleton` usages in those components only).
-
----
-
-## Technical details
-
-**Files created**
-- `supabase/migrations/<ts>_user_preferences.sql`
-- `src/hooks/use-appearance-preferences.ts`
-- `src/components/AppearanceProvider.tsx`
-- `src/components/ui/app-icon.tsx`
-- `src/lib/icon-map.ts`
-- `src/components/ui/skeleton-glass.tsx`
-
-**Files edited (high level)**
-- `src/App.tsx` (mount `AppearanceProvider`)
-- `src/index.css` (`.lg-reduce-motion`, `.lg-reduce-transparency` selectors)
-- `src/components/Settings.tsx` (Appearance section)
-- `src/components/Messenger.tsx`, `RelaxTime.tsx` (use `AppIcon`)
-- All screens listed in Section 3 (token application; no logic changes)
-- Loading branches in `AiChat.tsx`, `BookAIChat.tsx`, `AITeacher.tsx`, `VideoViewer.tsx`, `PDFViewer.tsx`, `Dashboard.tsx`, `ProgressCharts.tsx`
-
-**Out of scope**
-- Landing page (per existing constraint).
-- Logic/feature changes — visual + a11y layer only.
-- Replacing the table-based admin UX on desktop; we add a card layout below `md:` only.
+Confirm and I'll execute end-to-end.

@@ -124,33 +124,35 @@ export default function VideoViewer({ content, user, onBack, onLogActivity, onVi
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Dashboard
-        </Button>
-        <div className="flex gap-2">
-          <Badge variant="secondary">{content.subject}</Badge>
-          <Badge variant="outline">{content.grade_level}</Badge>
+    <div className="max-w-6xl mx-auto space-y-4 pb-24">
+      {/* Floating island header */}
+      <div className="lg-island sticky top-2 z-30 mx-1 flex items-center justify-between px-2 py-2 rounded-3xl">
+        <div className="flex items-center gap-2 min-w-0">
+          <Button variant="ghost" size="icon" onClick={onBack} className="lg-press rounded-full shrink-0">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center gap-2 min-w-0">
+            <Play className="w-4 h-4 text-primary shrink-0" />
+            <h2 className="text-sm font-semibold tracking-tight truncate">{content.title}</h2>
+          </div>
+        </div>
+        <div className="flex gap-1.5 shrink-0">
+          <Badge variant="secondary" className="rounded-full text-[10px]">{content.subject}</Badge>
+          <Badge variant="outline" className="rounded-full text-[10px]">{content.grade_level}</Badge>
         </div>
       </div>
 
-      <Card className="shadow-glow">
-        <CardHeader>
-          <CardTitle className="text-2xl flex items-center gap-2">
-            <Play className="w-6 h-6 text-primary" />
-            {content.title}
-          </CardTitle>
+      <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10">
+        <CardHeader className="pb-3">
           {content.description && (
-            <p className="text-muted-foreground">{content.description}</p>
+            <p className="text-sm text-muted-foreground">{content.description}</p>
           )}
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Video Player */}
             <div className="relative w-full">
-              <div className="aspect-video bg-black rounded-lg overflow-hidden shadow-lg">
+              <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-lg border border-white/20">
                 {videoId ? (
                   <YouTube
                     videoId={videoId}
@@ -161,7 +163,7 @@ export default function VideoViewer({ content, user, onBack, onLogActivity, onVi
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-white">
-                    <p>Invalid video URL</p>
+                    <div className="lg-glass rounded-full px-4 py-2 text-sm">Invalid video URL</div>
                   </div>
                 )}
               </div>

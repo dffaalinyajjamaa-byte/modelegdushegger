@@ -11,6 +11,13 @@ import { Eye, EyeOff, Camera, Mail, RefreshCw, WifiOff, ArrowLeft, GraduationCap
 import logo from '@/assets/model-egdu-logo.png';
 import { motion } from 'framer-motion';
 import VerifiedBadge from '@/components/VerifiedBadge';
+import { lovable } from '@/integrations/lovable/index';
+
+const GoogleIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-4 h-4" aria-hidden="true">
+    <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.24 1.4-1.7 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.5 14.6 2.6 12 2.6 6.8 2.6 2.6 6.8 2.6 12s4.2 9.4 9.4 9.4c5.4 0 9-3.8 9-9.2 0-.6-.1-1.1-.2-1.6H12z"/>
+  </svg>
+);
 
 interface AuthFormProps {
   onAuthChange: () => void;
@@ -965,6 +972,32 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
               ) : (
                 isLogin ? 'Sign In' : (userRole === 'admin' ? 'Create Admin Account' : userRole === 'teacher' ? 'Create Teacher Account' : 'Create Account')
               )}
+            </Button>
+
+            <div className="relative my-2">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/40" /></div>
+              <div className="relative flex justify-center text-[11px] uppercase tracking-wider">
+                <span className="bg-background px-3 text-muted-foreground">or</span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="w-full lg-press rounded-2xl"
+              disabled={loading}
+              onClick={async () => {
+                try {
+                  const result = await lovable.auth.signInWithOAuth('google', { redirect_uri: window.location.origin });
+                  if (result.error) toast({ title: 'Google sign-in failed', description: String((result.error as any)?.message || result.error), variant: 'destructive' });
+                } catch (e: any) {
+                  toast({ title: 'Google sign-in failed', description: e?.message || 'Try again', variant: 'destructive' });
+                }
+              }}
+            >
+              <GoogleIcon />
+              <span className="ml-2">Continue with Google</span>
             </Button>
 
             {isOffline && (
