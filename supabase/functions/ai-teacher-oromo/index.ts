@@ -289,6 +289,11 @@ serve(async (req) => {
     } else {
       // Always sanitize provider mentions
       aiResponse = applyIdentityFilter(aiResponse);
+      // Strip unsolicited identity intros (the model sometimes prefixes responses)
+      aiResponse = aiResponse
+        .replace(/^\s*(I am|I'm)\s+J[-\s]?Hope\s+AI[^\n.!?]*[.!?]\s*/i, '')
+        .replace(/^\s*J[-\s]?Hope\s+(AI|Technologies)[^\n.!?]*[.!?]\s*/i, '')
+        .trimStart();
     }
 
     console.log("AI response received, length:", aiResponse.length);
