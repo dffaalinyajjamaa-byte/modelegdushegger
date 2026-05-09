@@ -320,7 +320,9 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
           message: userMessage,
           conversationHistory: conversationHistory,
           language: language,
-          useSearch: true,
+          useSearch: !selectedBook,
+          bookContext: selectedBook && bookText ? bookText : undefined,
+          bookTitle: selectedBook?.title,
         }
       });
 
