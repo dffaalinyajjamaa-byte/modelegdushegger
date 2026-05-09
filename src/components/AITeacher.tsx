@@ -5,7 +5,7 @@ import { AutoExpandingTextarea } from '@/components/ui/auto-expanding-textarea';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { User } from '@supabase/supabase-js';
-import { Send, Sparkles, Plus, Mic, MicOff, Globe, ChevronDown, Volume2, VolumeX, Loader2 } from 'lucide-react';
+import { Send, Sparkles, Plus, Mic, MicOff, Globe, ChevronDown, Volume2, VolumeX, Loader2, BookOpen, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
