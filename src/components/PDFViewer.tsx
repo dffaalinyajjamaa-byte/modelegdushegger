@@ -110,45 +110,47 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="outline" onClick={onBack} className="flex items-center gap-2">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Dashboard
-        </Button>
-        <div className="flex gap-2">
-          <Badge variant="secondary">{content.subject}</Badge>
-          <Badge variant="outline">{content.grade_level}</Badge>
+    <div className="max-w-6xl mx-auto space-y-4 pb-24">
+      {/* Floating island header */}
+      <div className="lg-island sticky top-2 z-30 mx-1 flex items-center justify-between px-2 py-2 rounded-3xl">
+        <div className="flex items-center gap-2 min-w-0">
+          <Button variant="ghost" size="icon" onClick={onBack} className="lg-press rounded-full shrink-0">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center gap-2 min-w-0">
+            <FileText className="w-4 h-4 text-primary shrink-0" />
+            <h2 className="text-sm font-semibold tracking-tight truncate">{content.title}</h2>
+          </div>
+        </div>
+        <div className="flex gap-1.5 shrink-0">
+          <Badge variant="secondary" className="rounded-full text-[10px]">{content.subject}</Badge>
+          <Badge variant="outline" className="rounded-full text-[10px]">{content.grade_level}</Badge>
         </div>
       </div>
 
-      <Card className="shadow-glow">
-        <CardHeader>
-          <CardTitle className="text-2xl flex items-center gap-2">
-            <FileText className="w-6 h-6 text-primary" />
-            {content.title}
-          </CardTitle>
+      <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10">
+        <CardHeader className="pb-3">
           {content.description && (
-            <p className="text-muted-foreground">{content.description}</p>
+            <p className="text-sm text-muted-foreground">{content.description}</p>
           )}
         </CardHeader>
         <CardContent>
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* PDF Viewer */}
             <div className="relative w-full">
-              {/* Loading State */}
+              {/* Loading State (glass skeleton) */}
               {!iframeLoaded && !iframeError && (
-                <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg" style={{ height: '70vh' }}>
-                  <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                    <p className="text-muted-foreground">Loading document...</p>
+                <div className="absolute inset-0 lg-glass rounded-2xl overflow-hidden" style={{ height: '70vh' }}>
+                  <div className="lg-skeleton w-full h-full" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="lg-glass rounded-full px-4 py-2 text-xs font-medium">Loading document…</div>
                   </div>
                 </div>
               )}
 
               {/* Error State */}
               {iframeError && (
-                <div className="flex items-center justify-center bg-muted rounded-lg" style={{ height: '70vh' }}>
+                <div className="flex items-center justify-center lg-glass rounded-2xl border border-white/30 dark:border-white/10" style={{ height: '70vh' }}>
                   <div className="text-center p-6">
                     <AlertCircle className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">Unable to load document</h3>
@@ -156,11 +158,11 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
                       The document preview may not be available. Try opening it externally.
                     </p>
                     <div className="flex gap-2 justify-center">
-                      <Button onClick={handleRetry} variant="outline">
+                      <Button onClick={handleRetry} variant="outline" className="rounded-full lg-press">
                         <RefreshCw className="w-4 h-4 mr-2" />
                         Retry
                       </Button>
-                      <Button onClick={handleOpenExternal}>
+                      <Button onClick={handleOpenExternal} className="rounded-full lg-press">
                         <ExternalLink className="w-4 h-4 mr-2" />
                         Open Externally
                       </Button>
@@ -170,12 +172,12 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
               )}
 
               {/* Iframe */}
-              <div 
-                className={`bg-white rounded-lg overflow-hidden shadow-lg border ${iframeError ? 'hidden' : ''}`} 
+              <div
+                className={`bg-white rounded-2xl overflow-hidden shadow-lg border border-white/30 dark:border-white/10 ${iframeError ? 'hidden' : ''}`}
                 style={{ height: '70vh' }}
               >
                 <iframe
-                  key={retryCount} // Force re-render on retry
+                  key={retryCount}
                   src={embedUrl}
                   title={content.title}
                   className="w-full h-full"
