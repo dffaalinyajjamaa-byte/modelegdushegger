@@ -54,6 +54,44 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
 
+  // Answer-from-Book state
+  type BookItem = { id: string; title: string; subject: string; grade: string; pdf_url: string };
+  const [books, setBooks] = useState<BookItem[]>([]);
+  const [selectedBook, setSelectedBook] = useState<BookItem | null>(null);
+  const [bookText, setBookText] = useState<string>('');
+  const [bookLoading, setBookLoading] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('auto_quiz_books')
+        .select('id, title, subject, grade, pdf_url')
+        .eq('processing_status', 'ready')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (data) setBooks(data as BookItem[]);
+    })();
+  }, []);
+
+  const pickBook = async (book: BookItem) => {
+    setSelectedBook(book);
+    setBookText('');
+    setBookLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('extract-pdf-text', { body: { fileUrl: book.pdf_url } });
+      if (error) throw error;
+      setBookText(data?.text || data?.content || '');
+      toast({ title: 'Book ready', description: `Answers will be based on "${book.title}".` });
+    } catch (e: any) {
+      toast({ title: 'Could not load book', description: e?.message || 'Try another book', variant: 'destructive' });
+      setSelectedBook(null);
+    } finally {
+      setBookLoading(false);
+    }
+  };
+  const clearBook = () => { setSelectedBook(null); setBookText(''); };
+
+
   // Use Gemini STT hook
   const handleTranscript = useCallback((text: string) => {
     setMessage(prev => {
