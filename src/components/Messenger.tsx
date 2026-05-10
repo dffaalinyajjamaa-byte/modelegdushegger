@@ -719,20 +719,39 @@ export default function Messenger({ user, onBack }: MessengerProps) {
         {/* Left Sidebar - Chat List */}
         {showChatList && (
           <div className={`${isMobile ? 'w-full' : 'w-96'} h-full border-r border-border/50 flex flex-col bg-background overflow-y-auto overflow-x-hidden`}>
-            {/* Compact Header */}
-            <div className="flex items-center justify-between px-3 py-2 border-b border-border/50 bg-background/80 backdrop-blur-md flex-shrink-0">
-              <div className="flex items-center gap-1">
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onBack}>
-                  <ArrowLeft className="w-4 h-4" />
+            {/* Floating-island Apple-style header */}
+            <div className="lg-island sticky top-2 z-30 mx-2 mt-2 rounded-3xl flex items-center justify-between px-3 py-2 flex-shrink-0">
+              <div className="flex items-center gap-1.5">
+                <Button size="icon" variant="ghost" className="lg-press h-10 w-10 rounded-full" onClick={onBack} aria-label="Back">
+                  <ArrowLeft className="w-5 h-5" />
                 </Button>
-                <h2 className="text-sm font-semibold text-foreground">Messages</h2>
+                <h2 className="text-[17px] font-semibold tracking-tight">Messages</h2>
               </div>
-              <div className="flex items-center gap-0.5">
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setIsUserSearchOpen(true)} title="Search Users">
-                  <Search className="w-4 h-4" />
+              <div className="flex items-center gap-1.5">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="lg-press lg-glass h-10 w-10 rounded-full"
+                  onClick={() => setIsUserSearchOpen(true)}
+                  aria-label="Find friends by name"
+                  title="Find friends"
+                >
+                  <Search className="w-5 h-5" />
                 </Button>
-                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setActiveTab('requests')} title="Friend Requests">
-                  <UserPlus className="w-4 h-4" />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="lg-press lg-glass h-10 w-10 rounded-full relative"
+                  onClick={() => setActiveTab('requests')}
+                  aria-label="Friend requests"
+                  title="Friend Requests"
+                >
+                  <UserPlus className="w-5 h-5" />
+                  {pendingRequests.length > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
+                      {pendingRequests.length}
+                    </span>
+                  )}
                 </Button>
               </div>
             </div>
