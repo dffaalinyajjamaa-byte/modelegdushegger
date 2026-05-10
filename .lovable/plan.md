@@ -1,83 +1,88 @@
-## Scope
+# Phase Plan — Liquid Glass Polish + Functional Fixes
 
-This is a large multi-screen redesign + feature work. I'll batch it into focused workstreams using existing Liquid Glass tokens (`.lg-glass`, `.lg-island`, `.lg-press`, `.lg-skeleton`) already in `index.css`.
+A focused single-phase pass covering all the items you listed.
 
-### 1. Marketplace (`MarketplaceHome.tsx`, `NearbyMap.tsx`)
-- Floating-island sticky header (back, title, Nearby + Sell actions) with `lg-island` + `lg-press`.
-- Search + category chips wrapped in glass surfaces.
-- Product cells → `.lg-glass rounded-3xl` with refined typography, distance badge.
-- Empty state: glass illustration card with primary CTA.
-- Loading state: replace `Skeleton` with `SkeletonGlass` cells.
-- **Map popup**: when a product marker is clicked on `NearbyMap`, show a floating glass popup at the marker's exact lat/lng with the product image, title, price, and "View" button.
+## 1. Google OAuth — auto-enable & redirect to Dashboard
 
-### 2. PDF Viewer (`PDFViewer.tsx`)
-- Sticky `.lg-island` header (back, title, page indicator, download).
-- Glass card frame around the iframe.
-- Replace blocking spinner with `SkeletonViewer` glass skeleton during fetch.
-- Error state: glass card with retry button.
+- Call `configure_social_auth` to enable Google (keep email).
+- In `AuthForm.tsx`, after `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })` succeeds (non-redirect path), navigate to `/` (Dashboard route in `Index.tsx`). For the redirect path, ensure `Index.tsx` detects an active session on mount and routes to Dashboard.
+- Confirm `redirect_uri` matches the published origin.
 
-### 3. Video Viewer (`VideoViewer.tsx`)
-- Same `.lg-island` sticky header (back, title, share/like).
-- Glass cell for description / metadata below the player.
-- Glass skeleton while video metadata loads.
-- Play state: glass overlay play button. Error state: glass card with retry.
+## 2. AI Chat identity bug ("built by J Hope" on every message)
 
-### 4. Admin Dashboard (`AdminDashboard.tsx` + a few key admin cards)
-- Wrap dashboard in `.lg-island` header with admin title + tabs.
-- Stat cards → `.lg-glass rounded-3xl p-4` with Lucide icons (no emoji).
-- Skeleton glass loaders while content lists load.
-- Apply pattern to `AdminQuizList`, `AdminBookManager`, `AdminUserManager` cell rows only (no logic changes).
+- Edit `supabase/functions/ai-chat/index.ts` and `ai-teacher-oromo/index.ts` system prompt:
+  - Add a strict instruction: "Only mention identity/creator if the user's last message matches the identity-question regex; otherwise NEVER mention J Hope or who built you."
+  - Add a server-side regex guard: detect identity questions (en/am/om: name, who are you, who made/built/developed you, manfaa, ስም, ማን ሰራህ). If matched, allow identity reply; else strip any sentence containing "J Hope/J-Hope/built by/developed by" from the model output before returning.
 
-### 5. Auth (`AuthForm.tsx`)
-- Floating-island top header with logo + "Sign in / Sign up" pill.
-- Glass card containing the form on a softly blurred backdrop.
-- Add **Google sign-in** via Lovable Cloud managed OAuth (`lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })`) — call `configure_social_auth` first.
-- Glass skeleton on submit while pending; consistent toasts.
+## 3. AI Teacher — Book-based Q&A suggestions
 
-### 6. AI Chat / Messege screen (`AiChat.tsx` and shared chat shell)
-- Reduce header height (compact "Messege" pill dropdown, small menu glass button, circular play button).
-- Move chat composer slightly above the bottom nav (`bottom: calc(var(--bottom-nav) + 12px)`) with `pb-28` content padding.
-- Bubble redesign: AI bubble = lighter glass, user bubble = darker glass; thin border, soft shadow, 28–32px radius.
-- Composer: large `.lg-glass` rounded-[32px] container with inset action chips, black circular send button.
-- Backdrop blur 20–40px; subtle fade/slide-up reveal on new bubbles (respect `.lg-reduce-motion`).
-- Typography: Apple HIG hierarchy, medium weight, spacious line-height.
+- In `AITeacher.tsx`, when user toggles "Answer from Book":
+  - Subject selector → fetch books from `auto_quiz_books` filtered by subject + grade + language.
+  - Book selector → load extracted chunks (`auto_quiz_chunks`) for context.
+  - Language selector (English / Amharic / Oromo).
+  - Show suggestion chips: "Summarize this chapter", "Key points", "Quiz me", "Explain like I'm a student", "Translate to {lang}".
+  - Pass `bookContext`, `language`, `subject` to the edge function.
 
-### 7. AI Teacher behavior fixes
-- Identity reply: only respond "I'm developed by J Hope" when the user **explicitly asks** "what's your name / who are you / who made you / who developed you" (in EN/AM/OM). Otherwise never inject the identity line. Implement via a regex guard inside `supabase/functions/ai-teacher-oromo/index.ts` (or wherever the system prompt is composed) and update the system prompt to forbid unsolicited self-introduction.
-- **Answer based on Book** toggle: add a "Answer from Book" button next to the subject selector in `AITeacher.tsx`. When enabled, the chosen subject's admin-uploaded book (from `books` table / `books-for-grade-X-auto-quiz` bucket filtered by grade + subject) is fetched, its extracted text passed as context to the edge function, and the model is instructed to answer / summarize strictly from that book. Add quick-action chips: "Summarize", "Key points", "Quiz me".
+## 4. Student-created Quizzes with language selection
 
-### 8. Vercel deployment glitch
-- Likely cause: `GlobalBackground` / `Hyperspeed` / `Iridescence` WebGL canvases re-initializing on route change and a missing `base` in `vite.config.ts` for non-root deploys. Fixes:
-  - Add `base: "/"` and `build.target: "es2020"` if missing.
-  - Guard WebGL components with `useEffect` cleanup + `prefers-reduced-motion`.
-  - Ensure `index.html` references hashed assets (Vite default) and PWA service worker doesn't cache `/~oauth`.
-  - Add `vercel.json` with SPA rewrite `{ "rewrites": [{ "source": "/(.*)", "destination": "/" }] }` to fix route-refresh 404 / flash glitch.
+- In `QuizFeature.tsx` add a "Create your own quiz" entry that opens a setup modal mirroring `auto-quiz/AutoQuizSetup.tsx`:
+  - Subject, grade, **language (EN/AM/OM)**, number of questions, source (book or topic prompt).
+  - Generates via `generate-auto-quiz` edge function. Saves to existing `auto_quiz_results` flow on submit.
+- Save the generated quiz set into `task_manager` (see #5) as a study task.
 
-### 9. Out of scope
-- Landing page (per memory).
-- Logic changes to Quiz scoring, Worksheets data model, Admin CRUD.
-- Desktop admin tables (only mobile cells get the glass treatment).
+## 5. AI-generated quiz → Task Manager
 
-## Files to edit
-- `src/components/marketplace/MarketplaceHome.tsx`, `marketplace/NearbyMap.tsx`
-- `src/components/PDFViewer.tsx`, `src/components/VideoViewer.tsx`
-- `src/components/admin/AdminDashboard.tsx` (+ light pass on `AdminQuizList`, `AdminBookManager`, `AdminUserManager`)
-- `src/components/AuthForm.tsx`
-- `src/components/AiChat.tsx`, `src/components/AITeacher.tsx`
-- `supabase/functions/ai-teacher-oromo/index.ts` (and `ai-chat/index.ts` if it shares the identity prompt)
-- `vite.config.ts`, new `vercel.json`
+- In `TaskManager.tsx` add a "Study Tasks" section.
+- When AI Teacher / Student Quiz generates a quiz, insert a row into the existing tasks table with:
+  - title = "Quiz: {subject}", due_date = +3 days default, source = "ai_quiz", payload = quiz id.
+- Add progress chip (Not started / In progress / Done) and link back to the quiz play screen.
 
-## Files to create
-- `src/components/ui/glass-popup.tsx` (map marker popup card).
-- `vercel.json`.
+## 6. NearbyMap filters
 
-## Order of execution
-1. Run `configure_social_auth` for Google, then update `AuthForm.tsx`.
-2. AI Teacher edge function identity fix + book-context prompt.
-3. AiChat + AITeacher UI.
-4. Marketplace + NearbyMap popup.
-5. PDFViewer + VideoViewer.
-6. AdminDashboard pass.
-7. Vercel config.
+- Add floating-island filter chips above the map (Subject categories + Price ranges: <100, 100–500, 500–1500, >1500 ETB).
+- Filter `geoProducts` client-side before rendering markers.
+- Fix the "white screen" bug: it's caused by Leaflet container needing a known height before tiles render. Wrap the map in a div with explicit `height: 380px` (already set) **and** call `map.invalidateSize()` after mount via a tiny effect — add an `InvalidateOnMount` child component.
 
-Confirm and I'll execute end-to-end.
+## 7. Profile + Messenger search
+
+- `Messenger.tsx`: add a top-right search icon button. Tapping opens a Liquid-Glass popover (anchored top-right) with input that queries `search_users_similar` RPC and shows results as glass list cells. Tap → open chat.
+- `StudentProfile.tsx`: add small enhancements — bio edit, favorite subject, school, goals (already in schema), plus a "Find friends" button reusing the same search popover.
+
+## 8. Apple-style Liquid Glass pass on remaining screens
+
+Apply `lg-island` floating header + `lg-glass rounded-3xl` cells + Lucide-only icons + 44pt touch targets to:
+
+- `AiChat.tsx` (refine), `Messenger.tsx`, `StudentProfile.tsx`, `AboutUs.tsx`, `Leaderboard.tsx`, `RelaxTime.tsx`, `Channels.tsx`, `Stories.tsx`, `Settings.tsx`, `NationalExams.tsx`, `Worksheets.tsx`, `DigitalBooksLibrary.tsx`, `VideoLessonsLibrary.tsx`, `ScienceExperiments.tsx`, `Competition.tsx`, `DailyChallenge.tsx`, `SmartPlanner.tsx`, `TeacherStudios.tsx`, `StudyByMusic.tsx`, `MarketplaceHome.tsx` (refine).
+- Admin sub-cards: `AdminBookManager`, `AdminQuizList`, `AdminUserManager`, `AdminMarketplace`, `AdminWorksheetManager`, `AdminBadgeVerification`, `AdminContentManager`, `AdminNationalExams`, `AdminResults`.
+- Auto-quiz screens: `AutoQuiz`, `AutoQuizPlay`, `AutoQuizResult`, `AutoQuizSetup`, `CertificateView`.
+
+Header pattern:
+
+```tsx
+<header className="lg-island sticky top-3 mx-3 z-30 px-4 py-3 flex items-center gap-3">
+  <button className="lg-press h-11 w-11 rounded-full grid place-items-center"><AppIcon name="back" /></button>
+  <h1 className="text-[17px] font-semibold tracking-tight">Title</h1>
+</header>
+```
+
+## 9. Vercel deploy from GitHub keeps failing
+
+Likely causes & fixes:
+
+- `vercel.json` rewrites currently serve `/index.html` for asset paths too. Tighten regex to exclude `/assets`, `/favicon.ico`, image extensions.
+- Set Vercel build to `bun run build`, output `dist`, install `bun install`.
+- Add `NODE_VERSION=20` env hint via `engines` in `package.json`.
+- PWA: ensure `navigateFallbackDenylist: [/^\/~oauth/, /^\/assets/]` in `vite.config.ts` to prevent SW caching breaking deploys.
+- Add `.vercelignore` to skip `supabase/`, `.lovable/`.
+
+## Technical notes
+
+- New files: none required beyond a small `<MapChips />` and `<UserSearchPopover />` component.
+- Migrations: none — reuse `tasks`, `auto_quiz_*` tables.
+- Edge function deploy will happen automatically after editing `ai-chat` and `ai-teacher-oromo`.
+
+## Out of scope
+
+- New gamification mechanics, new tables, push notifications.
+
+Approve and I will implement everything in one pass.Create study tasks in my task manager from the AI Teacher’s generated quizzes so I can track due dates and progress.and in student quiz for them selves like admin do select languageReskin the remaining admin sub-cards and any unstyled viewer screens with the floating-island header and Liquid Glass cards. (Auth, Marketplace, Admin, Quiz play, etc.)Add map filter chips to NearbyMap so I can quickly show products by subject or price range.
