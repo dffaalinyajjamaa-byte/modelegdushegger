@@ -1,0 +1,5 @@
+supabase/
+.lovable/
+*.md
+.env.local
+.env.*.local

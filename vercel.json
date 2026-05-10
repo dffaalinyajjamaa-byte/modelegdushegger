@@ -1,6 +1,10 @@
 {
+  "buildCommand": "bun run build",
+  "outputDirectory": "dist",
+  "installCommand": "bun install",
+  "framework": "vite",
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!assets/|favicon\\.ico|robots\\.txt|manifest\\.json|.*\\.(?:png|jpg|jpeg|svg|webp|ico|css|js|woff2?|ttf|map)).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
