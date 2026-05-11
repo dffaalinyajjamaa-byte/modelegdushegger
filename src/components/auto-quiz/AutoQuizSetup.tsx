@@ -24,6 +24,8 @@ interface Book {
   processing_status: string;
 }
 
+const LANG_KEY = 'student-quiz-language';
+
 export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSetupProps) {
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedBook, setSelectedBook] = useState<string>('');
@@ -31,7 +33,10 @@ export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSet
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [userGrade, setUserGrade] = useState<string>('');
+  const [language, setLanguage] = useState<string>(() => localStorage.getItem(LANG_KEY) || 'en');
   const { toast } = useToast();
+
+  useEffect(() => { localStorage.setItem(LANG_KEY, language); }, [language]);
 
   useEffect(() => {
     const fetchGrade = async () => {

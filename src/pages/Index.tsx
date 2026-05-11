@@ -16,6 +16,16 @@ const Index = () => {
   // Track real-time online/last-seen presence
   usePresence(user?.id);
 
+  // Daily streak: bump streak once per session when user is logged in
+  useEffect(() => {
+    if (!user?.id) return;
+    const key = `streak-bumped-${user.id}-${new Date().toISOString().slice(0, 10)}`;
+    if (localStorage.getItem(key)) return;
+    supabase.rpc('update_user_streak', { p_user_id: user.id })
+      .then(() => localStorage.setItem(key, '1'))
+      .catch(() => {});
+  }, [user?.id]);
+
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | null = null;
     let mounted = true;
