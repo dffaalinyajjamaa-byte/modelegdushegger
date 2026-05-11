@@ -84,7 +84,7 @@ export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSet
           bookId: selectedBook,
           pdfUrl: book.pdf_url,
           questionCount: parseInt(questionCount),
-          language: book.language
+          language
         }
       });
 
@@ -93,7 +93,7 @@ export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSet
         throw new Error('No questions generated');
       }
 
-      onStartQuiz(data.questions, selectedBook, book.subject, book.language);
+      onStartQuiz(data.questions, selectedBook, book.subject, language);
     } catch (error: any) {
       console.error('Error generating quiz:', error);
       toast({
