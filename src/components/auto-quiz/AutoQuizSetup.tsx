@@ -158,6 +158,33 @@ export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSet
             </CardContent>
           </Card>
 
+          {/* Language Picker */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Quiz Language</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { v: 'en', label: 'English' },
+                  { v: 'om', label: 'Afaan Oromoo' },
+                ].map(opt => (
+                  <Button
+                    key={opt.v}
+                    variant={language === opt.v ? 'default' : 'outline'}
+                    onClick={() => setLanguage(opt.v)}
+                    className="font-semibold"
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Saved for next time across the app.
+              </p>
+            </CardContent>
+          </Card>
+
           {/* Question Count */}
           <Card>
             <CardHeader>
