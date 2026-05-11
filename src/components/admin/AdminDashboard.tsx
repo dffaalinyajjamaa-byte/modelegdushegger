@@ -226,6 +226,7 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
     totalUsers: 0, totalBooks: 0, totalQuizzes: 0, avgScore: 0, passRate: 0,
     certificates: 0, nationalExams: 0, contentItems: 0, worksheets: 0, marketplaceProducts: 0, pendingReports: 0
   });
+  const [statsLoading, setStatsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<AdminSection>('overview');
 
   useEffect(() => {
