@@ -974,32 +974,6 @@ export default function AuthForm({ onAuthChange }: AuthFormProps) {
               )}
             </Button>
 
-            <div className="relative my-2">
-              <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/40" /></div>
-              <div className="relative flex justify-center text-[11px] uppercase tracking-wider">
-                <span className="bg-background px-3 text-muted-foreground">or</span>
-              </div>
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              className="w-full lg-press rounded-2xl"
-              disabled={loading}
-              onClick={async () => {
-                try {
-                  const result = await lovable.auth.signInWithOAuth('google', { redirect_uri: window.location.origin });
-                  if (result.error) toast({ title: 'Google sign-in failed', description: String((result.error as any)?.message || result.error), variant: 'destructive' });
-                } catch (e: any) {
-                  toast({ title: 'Google sign-in failed', description: e?.message || 'Try again', variant: 'destructive' });
-                }
-              }}
-            >
-              <GoogleIcon />
-              <span className="ml-2">Continue with Google</span>
-            </Button>
-
             {isOffline && (
               <Button
                 type="button"

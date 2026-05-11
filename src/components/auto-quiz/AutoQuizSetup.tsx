@@ -24,6 +24,8 @@ interface Book {
   processing_status: string;
 }
 
+const LANG_KEY = 'student-quiz-language';
+
 export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSetupProps) {
   const [books, setBooks] = useState<Book[]>([]);
   const [selectedBook, setSelectedBook] = useState<string>('');
@@ -31,7 +33,10 @@ export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSet
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [userGrade, setUserGrade] = useState<string>('');
+  const [language, setLanguage] = useState<string>(() => localStorage.getItem(LANG_KEY) || 'en');
   const { toast } = useToast();
+
+  useEffect(() => { localStorage.setItem(LANG_KEY, language); }, [language]);
 
   useEffect(() => {
     const fetchGrade = async () => {
@@ -79,7 +84,7 @@ export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSet
           bookId: selectedBook,
           pdfUrl: book.pdf_url,
           questionCount: parseInt(questionCount),
-          language: book.language
+          language
         }
       });
 
@@ -88,7 +93,7 @@ export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSet
         throw new Error('No questions generated');
       }
 
-      onStartQuiz(data.questions, selectedBook, book.subject, book.language);
+      onStartQuiz(data.questions, selectedBook, book.subject, language);
     } catch (error: any) {
       console.error('Error generating quiz:', error);
       toast({
@@ -150,6 +155,33 @@ export default function AutoQuizSetup({ user, onBack, onStartQuiz }: AutoQuizSet
                   ))}
                 </SelectContent>
               </Select>
+            </CardContent>
+          </Card>
+
+          {/* Language Picker */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Quiz Language</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { v: 'en', label: 'English' },
+                  { v: 'om', label: 'Afaan Oromoo' },
+                ].map(opt => (
+                  <Button
+                    key={opt.v}
+                    variant={language === opt.v ? 'default' : 'outline'}
+                    onClick={() => setLanguage(opt.v)}
+                    className="font-semibold"
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Saved for next time across the app.
+              </p>
             </CardContent>
           </Card>
 
