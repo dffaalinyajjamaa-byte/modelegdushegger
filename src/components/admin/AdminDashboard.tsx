@@ -77,9 +77,9 @@ function AdminReports() {
     <div className="space-y-3">
       <h3 className="text-sm font-bold">Reported Messages ({reports.length})</h3>
       {reports.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-muted-foreground">No reports yet</CardContent></Card>
+        <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10"><CardContent className="py-12 text-center text-muted-foreground">No reports yet</CardContent></Card>
       ) : reports.map(r => (
-        <Card key={r.id}>
+        <Card key={r.id} className="lg-glass rounded-2xl border-white/30 dark:border-white/10">
           <CardContent className="p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
@@ -110,7 +110,7 @@ function AdminSettings() {
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-bold">Platform Settings</h3>
-      <Card>
+      <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10">
         <CardContent className="p-4 space-y-4">
           <div>
             <Label className="text-xs">Announcement Banner</Label>
@@ -197,7 +197,7 @@ function AdminQuizCreator({ user }: { user: User }) {
       </div>
 
       {questions.map((q, qIdx) => (
-        <Card key={qIdx}>
+        <Card key={qIdx} className="lg-glass rounded-2xl border-white/30 dark:border-white/10">
           <CardContent className="p-3 space-y-2">
             <Label className="text-[10px] text-muted-foreground">Question {qIdx + 1}</Label>
             <Input value={q.question} onChange={e => updateQuestion(qIdx, 'question', e.target.value)} placeholder="Question text" />
