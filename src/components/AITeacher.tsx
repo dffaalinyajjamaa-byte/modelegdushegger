@@ -562,6 +562,32 @@ export default function AITeacher({ user, onLogActivity }: AITeacherProps) {
                           <Volume2 className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
                         )}
                       </Button>
+                      {/* Save as study task */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 rounded-full hover:bg-primary/10"
+                        title="Save as study task"
+                        onClick={async () => {
+                          const due = new Date();
+                          due.setDate(due.getDate() + 3);
+                          const title = (msg.message || 'AI Teacher suggestion').slice(0, 80);
+                          const description = (msg.response || '').slice(0, 500);
+                          const { error } = await supabase.from('tasks').insert({
+                            user_id: user.id,
+                            title: `📚 ${title}`,
+                            description,
+                            due_date: due.toISOString().slice(0, 10),
+                          } as any);
+                          if (error) {
+                            toast({ title: 'Could not save task', description: error.message, variant: 'destructive' });
+                          } else {
+                            toast({ title: 'Added to Task Manager', description: `Due ${due.toLocaleDateString()}` });
+                          }
+                        }}
+                      >
+                        <ListPlus className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+                      </Button>
                     </div>
                     <div className="bg-muted rounded-2xl rounded-bl-sm px-4 py-3 w-full">
                       <p className="text-sm whitespace-pre-wrap break-words">{msg.response}</p>
