@@ -258,6 +258,7 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
         marketplaceProducts: productsRes.count || 0,
         pendingReports: reportsRes.count || 0,
       });
+      setStatsLoading(false);
     };
     fetchStats();
   }, []);
