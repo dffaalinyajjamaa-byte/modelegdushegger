@@ -343,24 +343,33 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
         {activeSection === 'overview' && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2">
-              {statCards.map(card => {
-                const Icon = card.icon;
-                return (
-                  <Card key={card.label}>
-                    <CardContent className="p-2.5">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">{card.label}</p>
-                          <p className="text-lg font-bold mt-0.5">{card.value}</p>
-                        </div>
-                        <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0" style={{ background: `${card.color}15`, color: card.color }}>
-                          <Icon className="w-3.5 h-3.5" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+              {statsLoading
+                ? Array.from({ length: 8 }).map((_, i) => (
+                    <Card key={i} className="lg-glass rounded-2xl border-white/30 dark:border-white/10">
+                      <CardContent className="p-2.5">
+                        <div className="lg-skeleton h-3 w-16 rounded mb-2" />
+                        <div className="lg-skeleton h-5 w-10 rounded" />
+                      </CardContent>
+                    </Card>
+                  ))
+                : statCards.map(card => {
+                    const Icon = card.icon;
+                    return (
+                      <Card key={card.label} className="lg-glass rounded-2xl border-white/30 dark:border-white/10 lg-press">
+                        <CardContent className="p-2.5">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">{card.label}</p>
+                              <p className="text-lg font-bold mt-0.5">{card.value}</p>
+                            </div>
+                            <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0" style={{ background: `${card.color}15`, color: card.color }}>
+                              <Icon className="w-3.5 h-3.5" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
             </div>
             <AdminQuizCreator user={user} />
           </div>
