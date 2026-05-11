@@ -21,9 +21,12 @@ const Index = () => {
     if (!user?.id) return;
     const key = `streak-bumped-${user.id}-${new Date().toISOString().slice(0, 10)}`;
     if (localStorage.getItem(key)) return;
-    supabase.rpc('update_user_streak', { p_user_id: user.id })
-      .then(() => localStorage.setItem(key, '1'))
-      .catch(() => {});
+    (async () => {
+      try {
+        await supabase.rpc('update_user_streak', { p_user_id: user.id });
+        localStorage.setItem(key, '1');
+      } catch {}
+    })();
   }, [user?.id]);
 
   useEffect(() => {
