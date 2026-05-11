@@ -195,7 +195,7 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
 
             {/* Document Controls and Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
+              <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10">
                 <CardHeader>
                   <CardTitle className="text-lg">Document Information</CardTitle>
                 </CardHeader>
