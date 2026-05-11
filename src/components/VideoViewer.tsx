@@ -189,7 +189,7 @@ export default function VideoViewer({ content, user, onBack, onLogActivity, onVi
 
             {/* Video Controls and Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
+              <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10">
                 <CardHeader>
                   <CardTitle className="text-lg">Video Information</CardTitle>
                 </CardHeader>
@@ -210,7 +210,7 @@ export default function VideoViewer({ content, user, onBack, onLogActivity, onVi
                   </div>
                   <Button
                     variant="outline"
-                    className="w-full mt-4"
+                    className="w-full mt-4 rounded-full lg-press"
                     onClick={() => window.open(content.url, '_blank')}
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
@@ -219,7 +219,7 @@ export default function VideoViewer({ content, user, onBack, onLogActivity, onVi
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10">
                 <CardHeader>
                   <CardTitle className="text-lg">Learning Tips</CardTitle>
                 </CardHeader>
@@ -236,11 +236,11 @@ export default function VideoViewer({ content, user, onBack, onLogActivity, onVi
             </div>
 
             {/* Motivational Message */}
-            <Card className="gradient-secondary text-center text-white">
+            <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10 text-center">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-bold mb-2">Keep Learning! 🌟</h3>
-                <p>
-                  Every minute you spend learning brings you closer to your goals. 
+                <p className="text-muted-foreground">
+                  Every minute you spend learning brings you closer to your goals.
                   You're doing amazing work by engaging with this content!
                 </p>
               </CardContent>
