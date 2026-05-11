@@ -195,7 +195,7 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
 
             {/* Document Controls and Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
+              <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10">
                 <CardHeader>
                   <CardTitle className="text-lg">Document Information</CardTitle>
                 </CardHeader>
@@ -249,7 +249,7 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10">
                 <CardHeader>
                   <CardTitle className="text-lg">Study Tips</CardTitle>
                 </CardHeader>
@@ -267,7 +267,7 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
             </div>
 
             {/* Navigation Tips */}
-            <Card className="bg-muted/50">
+            <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10">
               <CardContent className="pt-6">
                 <h3 className="font-semibold mb-3">Document Navigation Tips:</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -284,11 +284,11 @@ export default function PDFViewer({ content, user, onBack, onLogActivity, onMate
             </Card>
 
             {/* Motivational Message */}
-            <Card className="gradient-accent text-center text-white">
+            <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10 text-center">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-bold mb-2">Excellence in Learning! 📚</h3>
-                <p>
-                  Reading and understanding documents is a crucial skill for academic success. 
+                <p className="text-muted-foreground">
+                  Reading and understanding documents is a crucial skill for academic success.
                   Take your time, read carefully, and don't hesitate to revisit sections as needed!
                 </p>
               </CardContent>

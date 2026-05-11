@@ -77,9 +77,9 @@ function AdminReports() {
     <div className="space-y-3">
       <h3 className="text-sm font-bold">Reported Messages ({reports.length})</h3>
       {reports.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-muted-foreground">No reports yet</CardContent></Card>
+        <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10"><CardContent className="py-12 text-center text-muted-foreground">No reports yet</CardContent></Card>
       ) : reports.map(r => (
-        <Card key={r.id}>
+        <Card key={r.id} className="lg-glass rounded-2xl border-white/30 dark:border-white/10">
           <CardContent className="p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
@@ -110,7 +110,7 @@ function AdminSettings() {
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-bold">Platform Settings</h3>
-      <Card>
+      <Card className="lg-glass rounded-3xl border-white/30 dark:border-white/10">
         <CardContent className="p-4 space-y-4">
           <div>
             <Label className="text-xs">Announcement Banner</Label>
@@ -197,7 +197,7 @@ function AdminQuizCreator({ user }: { user: User }) {
       </div>
 
       {questions.map((q, qIdx) => (
-        <Card key={qIdx}>
+        <Card key={qIdx} className="lg-glass rounded-2xl border-white/30 dark:border-white/10">
           <CardContent className="p-3 space-y-2">
             <Label className="text-[10px] text-muted-foreground">Question {qIdx + 1}</Label>
             <Input value={q.question} onChange={e => updateQuestion(qIdx, 'question', e.target.value)} placeholder="Question text" />
@@ -226,6 +226,7 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
     totalUsers: 0, totalBooks: 0, totalQuizzes: 0, avgScore: 0, passRate: 0,
     certificates: 0, nationalExams: 0, contentItems: 0, worksheets: 0, marketplaceProducts: 0, pendingReports: 0
   });
+  const [statsLoading, setStatsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<AdminSection>('overview');
 
   useEffect(() => {
@@ -257,6 +258,7 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
         marketplaceProducts: productsRes.count || 0,
         pendingReports: reportsRes.count || 0,
       });
+      setStatsLoading(false);
     };
     fetchStats();
   }, []);
@@ -341,24 +343,33 @@ export default function AdminDashboard({ user, onBack }: AdminDashboardProps) {
         {activeSection === 'overview' && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2">
-              {statCards.map(card => {
-                const Icon = card.icon;
-                return (
-                  <Card key={card.label}>
-                    <CardContent className="p-2.5">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="text-[9px] text-muted-foreground uppercase tracking-wider">{card.label}</p>
-                          <p className="text-lg font-bold mt-0.5">{card.value}</p>
-                        </div>
-                        <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0" style={{ background: `${card.color}15`, color: card.color }}>
-                          <Icon className="w-3.5 h-3.5" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+              {statsLoading
+                ? Array.from({ length: 8 }).map((_, i) => (
+                    <Card key={i} className="lg-glass rounded-2xl border-white/30 dark:border-white/10">
+                      <CardContent className="p-2.5">
+                        <div className="lg-skeleton h-3 w-16 rounded mb-2" />
+                        <div className="lg-skeleton h-5 w-10 rounded" />
+                      </CardContent>
+                    </Card>
+                  ))
+                : statCards.map(card => {
+                    const Icon = card.icon;
+                    return (
+                      <Card key={card.label} className="lg-glass rounded-2xl border-white/30 dark:border-white/10 lg-press">
+                        <CardContent className="p-2.5">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">{card.label}</p>
+                              <p className="text-lg font-bold mt-0.5">{card.value}</p>
+                            </div>
+                            <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0" style={{ background: `${card.color}15`, color: card.color }}>
+                              <Icon className="w-3.5 h-3.5" />
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
             </div>
             <AdminQuizCreator user={user} />
           </div>
